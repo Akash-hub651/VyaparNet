@@ -181,29 +181,3 @@ The following MUST NOT be introduced in Phase 1 under any circumstances:
 ## SECTION 9: MANDATORY COLUMNS (ALL OPERATIONAL TABLES)
 
 Every Prisma model that is operational MUST have:
-
-id          String    @id @default(cuid())
-createdAt   DateTime  @default(now())
-updatedAt   DateTime  @updatedAt
-createdBy   String?
-updatedBy   String?
-isDeleted   Boolean   @default(false)
-deletedAt   DateTime?
-version     Int       @default(0)   // optimistic locking
-
-Partition-ready tables additionally require: `{entity}Month String` (format: YYYY-MM)
-
----
-
-## SECTION 10: CHANGE CONTROL GATE
-
-Proposing a change to any locked decision requires:
-
-1. DDR document created in `/docs/ddr/`
-2. Impact analysis across: operational, UX, DB, infra, scalability, workflow, security, cost
-3. Backward-compatible migration path defined
-4. Minimum 2 stakeholder approvals
-5. CTO sign-off
-6. Announcement to all contributors
-
-**No silent overrides. No "just this once." No exceptions.**
