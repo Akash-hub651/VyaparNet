@@ -1,0 +1,2079 @@
+VyaparNet Information Architecture — FINAL OFFICIAL MASTER FREEZE
+
+Document Version: VyaparNet_IA_Final_Master_Freeze_v3
+Status: FINAL LOCKED VERSION
+Purpose:
+This document is the single authoritative and complete Information Architecture blueprint for VyaparNet.
+
+This version preserves:
+- the original detailed 45+ page architecture
+- all workflows
+- all screen hierarchies
+- all operational governance systems
+- all buyer/supplier/operator/admin flows
+- all segment isolation systems
+- all Bharat-first UX principles
+- all notification & escalation systems
+- all offline-first systems
+
+PLUS:
+- all cleanup fixes
+- governance normalization
+- architecture corrections
+- missing sections
+- final enterprise freeze additions
+
+This supersedes all previous IA versions.
+
+VyaparNet Information Architecture — FINAL MASTER FREEZE
+
+Merged Final Enterprise Information Architecture
+
+Combining:
+- IA v1 detailed workflow architecture
+- IA Final Freeze operational governance architecture
+
+Status: FINAL MASTER FREEZE
+Purpose:
+Long-term operational, engineering, workflow, UX, governance, and scalability reference.
+
+Document Strategy
+
+This master document merges the strengths of both Information Architecture versions.
+
+IA v1 contributed:
+- detailed buyer/supplier/operator/admin flows
+- screen hierarchy explanations
+- onboarding clarity
+- UX journey explanations
+- segment-specific discovery structure
+
+IA Final Freeze contributed:
+- operational governance
+- notification architecture
+- exception systems
+- ownership tracking
+- offline-first rules
+- escalation systems
+- draft states
+- dynamic taxonomy
+- architecture constraints
+- governance policies
+
+This merged document is the final authoritative Information Architecture blueprint for VyaparNet.
+
+
+
+PART 1 — Detailed Information Architecture
+# VyaparNet Information Architecture v1
+## Platform Structure, Navigation & User Journey Foundation
+
+**Status:** Architecture Planning — Post-PRDv2 Freeze  
+**Date:** 2026-05-22  
+**Scope:** MVP Information Architecture for Buyer, Supplier, Operator, Admin  
+**Segments:** Textile + Spare Parts  
+**Geography:** Patna + Bihar  
+
+---
+
+# 1. INFORMATION ARCHITECTURE PHILOSOPHY
+
+## 1.1 Core Principle
+
+Information Architecture (IA) is the invisible skeleton of VyaparNet. It defines:
+
+- Where users land
+- How they navigate
+- How information is structured
+- How workflows flow
+- How screens connect
+- How roles are isolated
+
+## 1.2 Bharat-First IA Principles
+
+| Principle | Implementation |
+|---|---|
+| Low cognitive load | One screen, one primary action |
+| Mobile-first | Thumb-friendly, vertical scroll |
+| Visual hierarchy | Most important action highest |
+| Progressive disclosure | Simple first, details on demand |
+| WhatsApp fallback | Every screen has WhatsApp help |
+| Segment isolation | User never sees wrong category |
+| Multilingual-ready | Hindi-English labels, RTL support later |
+| Low-data | Compressed images, lazy loading |
+| Trust signals | Verified badges, support visible |
+
+## 1.3 IA vs UI
+
+IA answers:
+- What goes on this screen?
+- What comes next?
+- How do users get there?
+- What information is needed?
+
+UI answers later:
+- How does it look?
+- What colors?
+- What animations?
+- What typography?
+
+**IA comes before UI. Always.**
+
+---
+
+# 2. PLATFORM IA OVERVIEW
+
+## 2.1 High-Level Platform Map
+
+```
++----------------------------------------------------------+
+|                      VYAPARNET PLATFORM                   |
++----------------------------------------------------------+
+|                                                           |
+|  +-------------+  +-------------+  +-----------------+ |
+|  |   BUYER     |  |  SUPPLIER   |  |    OPERATOR      | |
+|  |    PWA      |  |   PORTAL    |  |   DASHBOARD      | |
+|  |             |  |             |  |                  | |
+|  | Mobile-     |  | Lite Web    |  | Task-Based       | |
+|  | First Web   |  | App         |  | Mobile-Friendly  | |
+|  +-------------+  +-------------+  +-----------------+ |
+|                                                           |
+|  +-----------------------------------------------------+ |
+|  |              ADMIN DASHBOARD                        | |
+|  |           (Web, Desktop-Optimized)                   | |
+|  +-----------------------------------------------------+ |
+|                                                           |
++----------------------------------------------------------+
+```
+
+## 2.2 Navigation Principles
+
+### Global Navigation (Available Everywhere)
+
+**For Buyer:**
+```
+[Home] [Search] [Orders] [Support]
+```
+
+**For Supplier:**
+```
+[Orders] [Stock] [Payments] [Profile]
+```
+
+**For Operator:**
+```
+[Tasks] [QC] [Dispatch] [Profile]
+```
+
+**For Admin:**
+```
+[Overview] [Orders] [Buyers] [Suppliers] [Catalog] [Finance] [Settings]
+```
+
+### Segment Switching (If Multi-Business)
+
+```
+Current: Textile Business
+[Switch to Spare Parts Business]
+```
+
+**Rule:** Segment switch resets home/dashboard but keeps session.
+
+---
+
+# 3. BUYER PWA INFORMATION ARCHITECTURE
+
+## 3.1 Core Buyer Personas
+
+| Persona | Description | Primary Need |
+|---|---|---|
+| Textile Retailer | Sells fabric, sarees, kurtis | New designs, MOQ deals, seasonal stock |
+| Spare Parts Retailer | Sells 2W/4W parts | Fast-moving consumables, vehicle compatibility |
+| Mechanic | Repairs vehicles | Urgent parts, reliable delivery, best price |
+| Reseller | Buys bulk for retail | Competitive pricing, bulk deals, variety |
+
+## 3.2 Buyer Screen Hierarchy
+
+```
+BUYER PWA
+|
++-- Auth Layer
+|   +-- Login (OTP)
+|   +-- Onboarding (First Time)
+|   |   +-- Select Business Type
+|   |   +-- Choose Segment (Textile / Spare Parts)
+|   |   +-- Enter Shop Details
+|   |   +-- Location
+|   |   +-- GST (Optional, Prompt Later)
+|   +-- Segment Switch (If Multi-Business)
+|
++-- Home / Dashboard
+|   +-- Search Bar (Prominent)
+|   +-- Category Grid
+|   +-- Recently Viewed
+|   +-- Deals and Flash Sales
+|   +-- Quick Reorder (Recent Orders)
+|   +-- Support / WhatsApp
+|
++-- Category Browse
+|   +-- Segment-Specific Categories
+|   +-- Subcategories
+|   +-- Filters (Dynamic per segment)
+|   +-- Sort Options
+|
++-- Search Results
+|   +-- Query Display
+|   +-- Segment Filter Applied
+|   +-- Product Cards
+|   +-- Active Filters
+|   +-- Sort
+|
++-- Product Detail
+|   +-- Image Gallery
+|   +-- Product Name + Code
+|   +-- Segment-Specific Attributes
+|   +-- Price / MOQ
+|   +-- Stock Status
+|   +-- Delivery Estimate
+|   +-- Return Rules
+|   +-- [Request Quote] Button
+|   +-- [Add to Order] Button
+|   +-- Trust Badges
+|
++-- Request Quote / Direct Order
+|   +-- Quantity Input
+|   +-- Delivery Address
+|   +-- Expected Delivery
+|   +-- Special Instructions
+|   +-- [Submit Request]
+|   +-- Confirmation + WhatsApp Link
+|
++-- Orders
+|   +-- Active Orders
+|   +-- Past Orders
+|   +-- Quotes
+|   +-- Reorder
+|
++-- Order Tracking
+|   +-- Status Timeline
+|   +-- Delivery Info
+|   +-- Invoice
+|   +-- Support Link
+|
++-- Profile and Support
+    +-- Business Profile
+    +-- Addresses
+    +-- Payment History
+    +-- Invoices
+    +-- Settings
+    +-- WhatsApp Support
+```
+
+## 3.3 Buyer Screen Detail - Home
+
+```
++----------------------------------+
+| Patna    [Search Bar]     [User] |
++----------------------------------+
+|                                  |
+| [Festival Collection]            |
+| [Deals of the Day]               |
+|                                  |
++----------------------------------+
+| Categories                       |
+| +--------+ +--------+ +------+ |
+| |Sarees  | |Kurtis  | |Fabric| |
+| +--------+ +--------+ +------+ |
+| +--------+ +--------+ +------+ |
+| |Dress   | |Men     | |Women | |
+| |Material| |Wear    | |Ethnic| |
+| +--------+ +--------+ +------+ |
++----------------------------------+
+| Recently Viewed                |
+| [Product] [Product] [Product]  |
+|                                  |
++----------------------------------+
+| Quick Reorder                  |
+| Last Ordered: Activa Brake Shoe|
+| [Reorder Now]                   |
+|                                  |
++----------------------------------+
+| Need Help?                     |
+| [WhatsApp] [Call Support]      |
++----------------------------------+
+```
+
+## 3.4 Buyer Screen Detail - Product Detail
+
+```
++----------------------------------+
+| [Back]    [Share]    [Heart]    |
++----------------------------------+
+|                                  |
+|     [Image Gallery]              |
+|                                  |
++----------------------------------+
+| Product Name                     |
+| Design Code: TX-8847             |
+|                                  |
+| Price: Rs. 120/piece            |
+| MOQ: 6 pieces                   |
+| Stock: Live Confirmed           |
+| Delivery: 2-3 days               |
+|                                  |
++----------------------------------+
+| Attributes                       |
+| Fabric: Cotton                  |
+| Color: Red                      |
+| Width: 44 inches                |
+| Season: Summer                   |
+|                                  |
++----------------------------------+
+| Verified Supplier                |
+| Supplier Score: 4.5/5           |
+|                                  |
++----------------------------------+
+| [Request Quote]                 |
+| [Add to Order]                  |
+|                                  |
++----------------------------------+
+| Support Call                    |
+| WhatsApp                         |
++----------------------------------+
+```
+
+## 3.5 Buyer Screen Detail - Order Tracking
+
+```
++----------------------------------+
+| [Back]         Order VN-10042   |
++----------------------------------+
+|                                  |
+| Order Timeline:                  |
+|                                  |
+| [OK] Order Placed               |
+| [OK] Availability Confirmed     |
+| [OK] Price Confirmed             |
+| [..] Procurement In Progress    |
+| [  ] Packed                     |
+| [  ] Dispatched                 |
+| [  ] Delivered                  |
+| [  ] Closed                     |
+|                                  |
+| Expected: 24 May 2026           |
+|                                  |
++----------------------------------+
+| Order Items                      |
+| Cotton Kurti Lot x 20 - 2400   |
+| Saree TX-8847 x 10 - 1200      |
+|                                  |
+| Total: Rs. 5,400               |
+| GST: Rs. 540                   |
+| Grand Total: Rs. 5,940          |
+|                                  |
++----------------------------------+
+| [Report] [WhatsApp] [Call]     |
++----------------------------------+
+```
+
+---
+
+# 4. SUPPLIER PORTAL INFORMATION ARCHITECTURE
+
+## 4.1 Core Supplier Personas
+
+| Persona | Description | Primary Need |
+|---|---|---|
+| Textile Wholesaler | Sells fabric/garments | Manage orders, update stock |
+| Spare Parts Distributor | Sells 2W/4W parts | Confirm stock, upload invoices |
+| Manufacturer | Own production | Order visibility, dispatch proof |
+
+## 4.2 Supplier Screen Hierarchy
+
+```
+SUPPLIER PORTAL
+|
++-- Login
+|   +-- OTP
+|
++-- Dashboard
+|   +-- Today's Orders
+|   +-- Pending Confirmations
+|   +-- Recent Payments
+|   +-- My Scorecard
+|
++-- Orders
+|   +-- New Orders (Confirm/Accept)
+|   +-- In Progress
+|   +-- Ready to Dispatch
+|   +-- Dispatched
+|   +-- Completed
+|
++-- Stock Management
+|   +-- Update Stock
+|   +-- Update Prices
+|   +-- Upload New Products (Approval Based)
+|
++-- Dispatch
+|   +-- Upload Dispatch Proof
+|   +-- Upload Invoice
+|   +-- Update Tracking
+|
++-- Payments
+|   +-- Pending Payments
+|   +-- Payment History
+|   +-- Settlement Status
+|
++-- Profile
+    +-- Business Info
+    +-- Documents
+    +-- Scorecard
+```
+
+## 4.3 Supplier Screen Detail - Dashboard
+
+```
++----------------------------------+
+| Supplier Dashboard               |
+| Welcome, ABC Textiles           |
++----------------------------------+
+|                                  |
+| Score: 87/100 (Reliable)       |
+|                                  |
++----------------------------------+
+| Quick Stats                      |
+| +-------+ +-------+ +-------+   |
+| |Orders |Pending|Revenue|        |
+| |  24   |   3   |4.2L  |        |
+| +-------+ +-------+ +-------+   |
+|                                  |
++----------------------------------+
+| Action Required                 |
+| - 3 orders need confirmation   |
+| - 1 return needs response      |
+| - Stock update pending (5)     |
+|                                  |
++----------------------------------+
+| [WhatsApp] [Call Support]      |
++----------------------------------+
+```
+
+---
+
+# 5. CITY OPERATOR DASHBOARD INFORMATION ARCHITECTURE
+
+## 5.1 Core Operator Personas
+
+| Persona | Description | Primary Need |
+|---|---|---|
+| Sourcing Operator | Visits supplier markets | Stock confirmation, QC, consolidation |
+| Dispatch Coordinator | Manages dispatches | Packing check, dispatch proof, tracking |
+| Quality Inspector | Verifies quality | Photo/video evidence, defect flagging |
+
+## 5.2 Operator Screen Hierarchy
+
+```
+OPERATOR DASHBOARD
+|
++-- Login
+|   +-- OTP (Admin assigned)
+|
++-- Today (Tasks)
+|   +-- Pending Stock Confirmations
+|   +-- QC Tasks
+|   +-- Dispatch Tasks
+|   +-- Supplier Visits
+|
++-- Stock Confirmation
+|   +-- List of pending confirmations
+|   +-- Supplier details
+|   +-- [Confirm Stock] Button
+|   +-- [Add Note] Button
+|
++-- QC Upload
+|   +-- Order reference
+|   +-- [Capture Photo/Video]
+|   +-- [Pass/Fail]
+|   +-- [Add Notes]
+|   +-- Submit
+|
++-- Dispatch Proof
+|   +-- Order reference
+|   +-- [Packed Photo]
+|   +-- [Invoice Photo]
+|   +-- Docket Number
+|   +-- Carrier Name
+|   +-- Submit
+|
++-- Supplier Visit Log
+    +-- Supplier name
+    +-- Date/Time
+    +-- GPS Location
+    +-- [Photo of Shop]
+    +-- Notes
+    +-- Submit
+```
+
+## 5.3 Operator Task Detail Screen
+
+```
++----------------------------------+
+| Task OP-2026                     |
+| Type: QC Check                   |
+| Order: VN-10492                  |
+| Deadline: Today, 6 PM          |
++----------------------------------+
+|                                  |
+| Order Items:                     |
+| - Cotton Kurti Lot x 20         |
+| - Saree TX-8847 x 10            |
+|                                  |
++----------------------------------+
+| [Upload QC Photos]              |
+|                                  |
+| [Pass QC]  [Fail QC]            |
+|                                  |
+| Notes:                           |
+| [____________________________] |
+|                                  |
+| [Submit]                        |
++----------------------------------+
+```
+
+---
+
+# 6. ADMIN DASHBOARD INFORMATION ARCHITECTURE
+
+## 6.1 Core Admin Personas
+
+| Persona | Description | Primary Need |
+|---|---|---|
+| Super Admin | Full control | Platform governance, risk |
+| Operations Manager | Daily ops | Order flow, exceptions |
+| Catalog Manager | Product control | Category, listing, supplier offers |
+| Supplier Manager | Supplier health | Onboarding, scores, SLAs |
+| Finance Manager | Money flow | Payments, settlements, disputes |
+| Segment Admin | Per-segment | Textile or Spare Parts control |
+
+## 6.2 Admin Screen Hierarchy
+
+```
+ADMIN DASHBOARD
+|
++-- Overview
+|   +-- Order Metrics (Today/Week/Month)
+|   +-- Revenue Snapshot
+|   +-- Supplier Performance
+|   +-- Buyer Activity
+|   +-- Exception Alerts
+|
++-- Orders (Segment Filtered)
+|   +-- All Orders
+|   +-- Pending Approval
+|   +-- In Procurement
+|   +-- QC Pending
+|   +-- Ready to Dispatch
+|   +-- In Transit
+|   +-- Delivered
+|   +-- Returns/Disputes
+|   +-- Closed
+|
++-- Buyers
+|   +-- List View
+|   +-- Details
+|   +-- Orders
+|   +-- Payments
+|   +-- Support Issues
+|
++-- Suppliers
+|   +-- List View
+|   +-- Onboarding Queue
+|   +-- Scorecard
+|   +-- Catalog
+|   +-- Orders
+|   +-- Payments
+|   +-- Disputes
+|
++-- Catalog (Segment Filtered)
+|   +-- Categories
+|   +-- Products
+|   +-- Supplier Offers
+|   +-- Pending Approvals
+|   +-- Stock Updates
+|
++-- Procurement Board
+|   +-- Pending Tasks
+|   +-- In Progress
+|   +-- QC Queue
+|   +-- Ready to Dispatch
+|   +-- Completed
+|
++-- Shipments
+|   +-- Pending Dispatch
+|   +-- In Transit
+|   +-- Delivered
+|   +-- Delayed
+|   +-- Returns
+|
++-- Payments
+|   +-- Buyer Collections
+|   +-- Supplier Settlements
+|   +-- Pending Reconciliation
+|   +-- Refunds
+|   +-- Credit Notes
+|
++-- Returns and Disputes
+|   +-- Active Disputes
+|   +-- Pending Resolution
+|   +-- Closed
+|   +-- Fraud Flags
+|
++-- Reports
+|   +-- Orders
+|   +-- Revenue
+|   +-- Suppliers
+|   +-- Buyers
+|   +-- Segments
+|   +-- Operations
+|
++-- Settings
+    +-- Segments
+    +-- Categories
+    +-- Roles & Permissions
+    +-- Feature Flags
+    +-- Integrations
+    +-- Audit Logs
+```
+
+## 6.3 Admin Order Detail Screen
+
+```
++----------------------------------+
+| Order VN-10492          [Active]|
+| Buyer: Ramesh Textiles, Patna   |
+| Segment: Textile                 |
++----------------------------------+
+|                                  |
+| Status: Procurement In Progress |
+| Timeline:                        |
+| [OK] Order Placed (24 May)     |
+| [OK] Availability Confirmed    |
+| [OK] Price Confirmed           |
+| [..] Procurement Assigned      |
+| [  ] QC Pending                |
+| [  ] Packed                    |
+| [  ] Dispatched                |
+|                                  |
++----------------------------------+
+| Order Items                      |
+| - Cotton Kurti x 20 - 2400     |
+| - Saree TX-8847 x 10 - 1200    |
+|                                  |
+| Subtotal: Rs. 3,600            |
+| GST: Rs. 360                   |
+| Total: Rs. 3,960               |
+|                                  |
++----------------------------------+
+| Procurement                      |
+| Source: Surat Supplier ABC      |
+| Operator: Amit                  |
+| Expected Dispatch: 26 May       |
+|                                  |
+| [Assign Another Source]          |
+| [Update Notes]                   |
+|                                  |
++----------------------------------+
+| [Invoice] [Print] [Download]    |
+| [Cancel] [Escalate] [Support]   |
++----------------------------------+
+```
+
+---
+
+# 7. USER FLOW ARCHITECTURE
+
+## 7.1 First-Time Buyer Flow
+
+```
+Open VyaparNet
+|
++-- Phone Number Input
+|   +-- OTP Verification
+|
++-- Onboarding
+|   +-- Business Type Selection
+|   |   +-- Retailer
+|   |   +-- Mechanic
+|   |   +-- Reseller
+|   |   +-- Other
+|   |
+|   +-- Segment Selection
+|   |   +-- Textile / Garments
+|   |   +-- Spare Parts
+|   |   +-- Both (rare initially)
+|   |
+|   +-- Shop Name
+|   +-- Location (City/Pincode)
+|   +-- WhatsApp Number (optional)
+|   +-- GST (optional - prompt later)
+|
++-- Welcome Screen
+|   +-- "Aap VyaparNet par swagat hain!"
+|   +-- How to order
+|   +-- Support info
+|
++-- Home Dashboard
+```
+
+## 7.2 Returning Buyer Flow
+
+```
+Open VyaparNet
+|
++-- Auto-login (Token valid)
+|
++-- Home Dashboard
+|   |
+|   +-- [Search / Browse / Quick Reorder]
+|   |
+|   +-- Search
+|   |   +-- Enter product name / part number / design code
+|   |   +-- Search results
+|   |   +-- Select product
+|   |   +-- [Request Quote] or [Add to Order]
+|   |
+|   +-- Browse Categories
+|   |   +-- Select category
+|   |   +-- Filter / Sort
+|   |   +-- Select product
+|   |   +-- [Request Quote] or [Add to Order]
+|   |
+|   +-- Quick Reorder
+|       +-- Select previous order
+|       +-- [Reorder Now]
+|       +-- Confirm quantity / address
+|       +-- Submit
+```
+
+## 7.3 Order-to-Delivery Flow
+
+```
+Buyer places order
+|
++-- System checks availability
++-- Price confirmed
++-- Buyer confirms order
++-- Procurement task created
++-- Operator / supplier confirms stock
++-- Price locked
++-- QC task created (if applicable)
++-- Operator uploads QC proof
++-- Packing / Dispatch proof uploaded
++-- Shipment tracking updated
++-- Delivery completed
++-- Buyer confirms acceptance
++-- Order closed / payment settled
+```
+
+## 7.4 Exception Flow
+
+```
+Buyer reports issue
+|
++-- [Return / Dispute] initiated
++-- Evidence collected (photo/video/description)
++-- Root cause assigned
++-- Decision: Reject / Replace / Refund / Credit Note
++-- Reverse logistics (if needed)
++-- Financial settlement
++-- Score update (buyer/supplier/operator)
++-- Case closed
+```
+
+---
+
+# 8. SEGMENT-SPECIFIC IA
+
+## 8.1 Textile Segment IA
+
+```
+TEXTILE WORKSPACE
+|
++-- Home
+|   +-- New Arrivals
+|   +-- Festival Collection
+|   +-- Popular Designs
+|   +-- Deals
+|
++-- Categories
+|   +-- Sarees
+|   |   +-- Silk
+|   |   +-- Cotton
+|   |   +-- Synthetic
+|   |   +-- Blend
+|   +-- Kurtis
+|   +-- Fabrics
+|   +-- Dress Materials
+|   +-- Mens Wear
+|   +-- Womens Wear
+|   +-- Kids Wear
+|
++-- Filters
+|   +-- Fabric Type
+|   +-- Color
+|   +-- Price Range
+|   +-- MOQ
+|   +-- Supplier City
+|   +-- Season
+|
++-- Search
+    +-- by Design Code
+    +-- by Color
+    +-- by Fabric
+    +-- by Supplier
+    +-- by Price
+```
+
+## 8.2 Spare Parts Segment IA
+
+```
+SPARE PARTS WORKSPACE
+|
++-- Home
+|   +-- Vehicle Search (Primary)
+|   +-- Fast Moving Parts
+|   +-- Lubricants
+|   +-- Accessories
+|   +-- Deals
+|
++-- Vehicle Search
+|   +-- 2-Wheeler
+|   +-- 4-Wheeler
+|   +-- Commercial Vehicle
+|   +-- Truck
+|   +-- Heavy Vehicle
+|
++-- Vehicle Selection
+|   +-- Brand (Hero, Honda, Bajaj, etc.)
+|   +-- Model (Splendor, Activa, etc.)
+|   +-- Year
+|   +-- Engine Type
+|   +-- Part Category
+|       +-- Brake
+|       +-- Engine
+|       +-- Electrical
+|       +-- Accessories
+|       +-- Body Parts
+|
++-- Filters
+|   +-- Vehicle Type
+|   +-- Brand
+|   +-- Model
+|   +-- Part Category
+|   +-- Genuine/Aftermarket
+|   +-- Price Range
+|   +-- Availability
+|   +-- Supplier Location
+|
++-- Search
+    +-- by Part Number
+    +-- by Vehicle Model
+    +-- by Brand
+    +-- by Category
+    +-- by OEM Reference
+```
+
+---
+
+# 9. MULTILINGUAL IA STRATEGY
+
+## Language Priority
+
+- **Phase 1:** Hindi-English Mixed (Hinglish)
+- **Phase 2:** Bhojpuri, Maithili (Bihar-specific)
+- **Phase 3:** Bengali, Marathi, Gujarati
+- **Phase 4:** Full regional language support
+
+## Label Examples
+
+| English | Hindi-English | Context |
+|---|---|---|
+| Search | "Search karein" | Search bar |
+| Order | "Order" | Button |
+| Request Quote | "Rate mangayein" | Button |
+| Delivered | "Pohunch gaya" | Status |
+| In Stock | "Stock mein hai" | Status |
+| Out of Stock | "Stock khatam" | Status |
+| Payment Due | "Baki payment" | Status |
+| Reorder | "Phir se order karein" | Button |
+
+## Voice-First IA
+
+Where voice input is useful:
+- WhatsApp voice note to order creation
+- Search by voice (textile colors, vehicle models)
+- Issue reporting by voice
+- Support call by voice
+
+---
+
+# 10. WHATSAPP-INTEGRATED IA
+
+## WhatsApp as Parallel Channel
+
+- Every buyer order gets WhatsApp confirmation
+- Product updates sent via WhatsApp
+- Delivery tracking sent via WhatsApp
+- Payment reminders via WhatsApp
+- Support fallback via WhatsApp
+
+## WhatsApp to App Bridge
+
+```
+Buyer sends photo on WhatsApp
+-> Support/AI captures product info
+-> Creates structured request/order
+-> Sends app link to confirm
+-> Buyer opens app -> confirms -> order created
+```
+
+## Fallback Strategy
+
+If app fails:
+- WhatsApp continues working
+- Phone support available
+- Manual order entry by admin
+- No business loss
+
+---
+
+# 11. INFORMATION ARCHITECTURE CHECKLIST
+
+| # | Item | Status |
+|---|---|---|
+| 1 | Buyer PWA screen hierarchy defined | Done |
+| 2 | Supplier portal screen hierarchy defined | Done |
+| 3 | Operator dashboard screen hierarchy defined | Done |
+| 4 | Admin dashboard modules defined | Done |
+| 5 | User flows documented | Done |
+| 6 | Segment isolation in navigation | Done |
+| 7 | Segment-specific filters documented | Done |
+| 8 | WhatsApp fallback in every flow | Done |
+| 9 | Multilingual labels strategy | Done |
+| 10 | Error/fallback flows defined | Done |
+| 11 | Role-based access in IA | Done |
+| 12 | Bharat-first UX principles applied | Done |
+
+---
+
+# 12. NEXT STEPS AFTER IA
+
+1. **Module Breakdown** - Define each module's responsibility
+2. **Database Schema Design** - Tables, relations, constraints
+3. **API Contract Design** - REST endpoints, request/response
+4. **Workflow Diagrams** - Visual flows
+5. **Wireframes** - Low-fidelity screen layouts
+6. **Design System** - Components, typography, spacing, colors
+7. **Engineering Standards** - Naming, folder structure, validation
+8. **Development Roadmap** - Sprints, milestones, timeline
+
+---
+
+# CONCLUSION
+
+This Information Architecture document defines:
+
+- How buyers discover and order
+- How suppliers manage their business
+- How operators execute daily tasks
+- How admins control the platform
+- How segments remain isolated
+- How information flows
+- How trust is built
+
+It is the blueprint before wireframes, before UI, before development.
+
+**Next deliverable: VyaparNet_Module_Breakdown_v1.md**
+
+
+PART 2 — Operational Governance & Freeze Architecture
+# VyaparNet Information Architecture — FINAL FREEZE
+
+## Complete, turbine &nbsp;nonvolatile, &nbsp;production-ready stack.    
+**Status:** ARCHITECTURE FROZEN  
+**Date:** 2025-07-18  
+**Segments:** Textile + Spare Parts  
+**Geography:** Patna + Bihar  
+
+---
+
+# SECTION 1 — INFORMATION ARCHITECTURE PHILOSOPHY
+
+## 1.1 Core Principle
+
+The Information Architecture (IA) is the invisible skeleton of VyaparNet. It defines:
+
+- Where users land  
+- How they navigate  
+- How information is structured  
+- How roles are isolated  
+- How data trickles between participants  
+- How power balances across the platform
+
+## 1.2 Bharat-First IA Principles
+
+| Principle | Implementation |
+|---|---|
+| Single-focus screen | Only one primary action at a time |
+| Thumb-friendly layout | Big tap targets, serial scrolls |
+| Viewed where priority lives | Top items first |
+| Progressive revelation | Surface details only when asked |
+| Always have a path home | WhatsApp or direct line back |
+| Segment isolation enforced | Cross-segment defaults denied |
+| Bilingual by birth | Hindi labels, English where standard, Hinglish for dabble |
+| Zip-bang efficient | Lazy images, compressed first byte |
+
+## 1.3 IA vs UI
+
+- **IA asks:**
+  - What goes on this screen?  
+  - How does a user arrive here?  
+  - What information is returned?  
+  - What is retained, and why?
+
+- **UI (future) answers:**  
+  - How does it look?  
+  - What colors?  
+  - What animations?  
+  - What typography?
+
+**IA is fixed before any visual production.**  
+
+---
+
+# SECTION 2 — GLOBAL NAVIGATION (ALL-RULE CONSTRAINTS)
+
+## 2.1 Per-Role Global Navigation
+
+| Role | Global Navigation Links |
+|---|---|
+| **Buyer** | [Home] [Search] [Orders] [Saved Lists] [Support] |
+| **Supplier** | [Orders] [Stock] [Payments] [Communicate] [Profile] |
+| **Operator** | [Tasks] [QC] [Dispatch] [Comm Center] [Profile] |
+| **Admin** | [Overview] [Orders] [Buyers] [Suppliers] [Catalog] [Finance] [Audit] [Setup] |
+
+## 2.2 Cross-Segment Boundary Rule (CRITICAL)
+
+**This is a hard platform rule. No role or screen displays information from more than one segment simultaneously, except where explicitly authorized.**
+
+- A Textile buyer **cannot see** Spare Parts categories  
+- A Spare Parts buyer **cannot receive** Textile product recommendations  
+- Search indexes, sort fields, filters are segment-isolated  
+
+Whenever a user operates across segments, a **context switch screen** explicitly restarts the viewport and flushes browser state.
+
+---
+
+# SECTION 3 — BUYER PWA IA
+
+## 3.1 Platform Level: Saved Lists & Collections
+
+Buyers have a saved-list capability. This is an IA-level feature (data + navigation), so it is defined here and not left to UI incompletion.
+
+| List Type | Description | Example |
+|---|---|---|
+| Personal list | Short-term saved products | Seasonal Sarees |
+| Procurement basket | Closer to an order, false float | Summer Stock 2025 |
+| Reorder shortcut | Automatic, based on prior cart success | Activa Consumables 2x |
+| Seasonal list | Event-driven, prompted by system | Diwali Dress Materials |
+
+## 3.2 Screen Hierarchy — 12 Screens Strict Limit (MVP)
+
+```
+BUYER PWA
+│
+├── AUTH-AREA
+│   ├── 1. Login (OTP)
+│   └── 2. First-Time Onboarding (Segment-Select → Business-Create → Address → GST Optional)
+│
+├── DASHBOARD-FRONT
+│   ├── 3. Home Screen (Tabs: Home, Search, Orders, Saved, Support)
+│   │       ├── Prominent Search Bar
+│   │       ├── Quick-Reorder Tile
+│   │       ├── Category Grid
+│   │       ├── Recent Views
+│   │       └── Deal/Badges
+│   ├── 4. Segment-Specific Categories (Drill List)
+│   │       └── Dynamic Filters + Sort
+│   ├── 5. Search / Results (No-Results Exit included)
+│   │       ├── Active Suggestions
+│   │       └── Recent / Trending
+│   └── 6. Product Detail (Image, Name, Code, Price/MOQ, Stock State, Delivery Estimate, Return Policy)
+│
+├── COMMERCE-FLOWS
+│   ├── 7. Cart / Order Compose (Draft Flagged)
+│   ├── 8. Orders List (Active | Past | Quotes)
+│   └── 9. Order Tracking (Timeline + Recovery + Support Trigger)
+│
+└── PROFILE & SAVED
+    ├── 10. Saved Lists (Collections on Bever Display; Edit, Delete, Rename)
+    ├── 11. Profile & Invoices
+    └── 12. Support / WhatsApp / Help
+```
+
+## 3.3 Purposeful Empty States
+
+When content missing, provide direction and next-step context. If all content fits, example below.
+
+| Empty State | Helper Navigation |
+|---|---|
+| No Orders Yet | Navigate to "Popular Products" |
+| No Saved Products | Suggest "Browse Sarees / Brake Shoes" |
+| No Search Results | Trigger Request Sourcing routine |
+| No History | Show "Reorder" quick-starts |
+
+## 3.4 Loading States & Connectivity
+
+- **Skeleton loaders** are the default pattern (never blank dashed screens).  
+- **CB and retry history** on every creation fail.  
+- **Session restoration** if a device was severed: next launch restores the last active screen, rehydrates any unsent forms from `draft_state`.
+
+---
+
+# SECTION 4 — SUPPLIER PORTAL IA
+
+## 4.1 Scope
+
+Suppliers are critical partners but their tasks are scoped to confirmation, dispatch, and payment visibility. They never see buyer capabilities or buyer details.
+
+## 4.2 Screen Hierarchy — 7 Screens Max
+
+```
+SUPPLIER PORTAL
+│
+├── DASHBOARD-FRONT
+│   ├── 1. Dashboard (Score, Action List, Revenue Snapshot)
+│   ├── 2. Orders (New → In Progress → Dispatched → Complete)
+│   ├── 3. Stock / Price Management (Live Update by Change + Bulk Upload)
+│   └── 4. Dispatch Upload (Invoice + Proof + Tracking Info)
+│
+├── MONEY & PROFILE
+│   ├── 5. Payments (Pending / History / Settlement)
+│   ├── 6. Scorecard (Metric Breakdown + Plain-English Narrative)
+│   └── 7. Profile & Documents
+```
+
+## 4.3 Supplier Score Explanation (CRITICAL FOR TRUST)
+
+Suppliers must understand why their score goes up or down. This is not hidden logic.
+
+| Change | Points | Explanation Display |
+|---|---|---|
+| Excellent fulfillment rate > 95% | +3 | "Aapke deliveries aasaan hain" |
+| Correct dispatch on time | +2 | "Delivery correct & fast" |
+| Late dispatch by > 24 h | −2 | "Shipment mein der hui" |
+| QC failure | −5 | "Product standard nahi match hua" |
+| Buyer complaint confirmed | −5 | "Buyer ko issue aaya" |
+
+`score_detail` is a **live historical log**, not just a top-line number.
+
+---
+
+# SECTION 5 — CITY OPERATOR DASHBOARD IA
+
+## 5.1 Purpose
+
+Operators work in a walking, signal-flaky world. Every screen is MOBILE-FIRST and designed for speed, visibility, and offline resilience.
+
+## 5.2 Screen Hierarchy — 6 Screens Max
+
+```
+CITY OPERATOR DASHBOARD
+│
+├── 1. Today (Tasks by Urgency: Critical | High | Normal | Low)
+├── 2. Stock Confirmation (List → Supplier Details → Confirm/Reject)
+├── 3. QC Upload (Order Ref → Media → Status → Submit)
+├── 4. Dispatch Proof (Packing, Invoice, Docket, Carrier, GPS)
+├── 5. Visit Log (Supplier, Location, Photo, Notes)
+└── 6. Profile & Offline Status
+```
+
+## 5.3 Offline-First Design (CRITICAL)
+
+**All operator actions must be storable locally if network drops.**
+
+| Action When Offline | Behavior |
+|---|---|
+| QC Photo Modern | Save to local device queue |
+| Stock Confirm/Edit | Local conflict resolution if server state changed |
+| Dispatch Proof | Save blob locally; upload when available |
+| Visit Note / Lancement | Stalled in queue with explicit meta |
+
+**Conflict detection: If local state differs from server after reconnect, operator is prompted.**
+
+---
+
+# SECTION 6 — ADMIN DASHBOARD IA
+
+## 6.1 Overview
+
+Admins see everything. But data is segmented by view and restricted by role. Nothing is noise by default.
+
+## 6.2 Screen Hierarchy — 20 Module Max
+
+```
+ADMIN DASHBOARD
+│
+├── OVERVIEW
+│   ├── Global Metrics (Revenue, Orders, Exceptions)
+│   ├── Segment-Level Breakout
+│   └── Live Operational Health Band
+│
+├── CORE-BUSINESS
+│   ├── Orders (All States + Advanced Filter)
+│   ├── Buyers (Detail, Orders, Payments, Support Threads)
+│   ├── Suppliers (Onboarding, Scorecards, Catalogs, Disputes)
+│   └── Catalog (Approve, Edit, Merge, Stock Sync)
+│
+├── OPERATIONAL-PROFICIENCY
+│   ├── Procurement Board
+│   ├── QC Queue
+│   ├── Shipments & Tracking
+│   └── Exception Center (CRITICAL)
+│
+├── MONEY
+│   ├── Buyer Collection
+│   ├── Supplier Settlement
+│   ├── Disputes Settlement
+│   └── Reconciliation
+│
+└── GOVERNANCE
+    ├── Reports (Orders, Revenue, Suppliers, Geography)
+    ├── Audit Log (Entity Timeline)
+    └── System Config (Segments, Roles, Feature Flags)
+```
+
+## 6.3 Exception Center (CRITICAL)
+
+One unified view for every disruptor. Powered by a priority assignment system so the admin never starts in a sea of disorder.
+
+| Exception Type | Priority | Auto-Action |
+|---|---|---|
+| Order stuck > 8h | Critical | Alarm to procurement |
+| Supplier score < 70 | High | Restrict new orders |
+| QC fail > 2 in 7 days | High | Operator s flagged |
+| Payment mismatch | Critical | Finance swo to head |
+| Fraud alert | Odd Stuff | Auto-escalate |
+
+## 6.4 Activity Timeline (Audit All Levels)
+
+Every critical entity gets a log:
+
+```
+Order #VN-6042
+11:05 AM — Order placed by buyer
+11:12 AM — Availability confirmed by Operator #3
+11:47 AM — Price changed +2% due to supplier request
+12:03 PM — Buyer approved new rate
+12:05 PM — Procurement assigned to City A
+```
+
+## 6.5 Session Recovery Across the Entire System
+
+- **Client-side keep visible all unsaved drafts.**
+- **On re-open:** return to latest user context.
+- **If multiple drafts survive, show them in order as a list.**
+- **Accidental close: everything is recoverable.**
+
+---
+
+# SECTION 7 — NOTIFICATION ARCHITECTURE (CRITICAL)
+
+## 7.1 Notification Hub
+
+A verified single truth of every backend event that reaches a user.
+
+| Platform | Channel | Used For |
+|---|---|---|
+| In-App | Bell icon + badge | All non-urgent |
+| WhatsApp | Instant Template messages | Priority high +  nudges |
+| SMS | Fallback | OTP, Payment reminders |
+| Email | Daily / Weekly summaries | Admin, Finance |
+| Push (future) | PWA | Delivery state change |
+
+## 7.2 Notification Types by Receiver
+
+**For Buyers:**
+- Order created, confirmed, in procurement, dispatches, delivered, issue detected
+- Return state change
+- Due payment reminders
+- Quote speedback loop replaced by system finalized message
+- Seasonal inventory stat boost sent: low stock items they should restock
+
+**For Suppliers:**
+- New request assigned for confirmation
+- Deadline coming + 4 h before cut-off
+- State of payment signals
+- Return / dispute notices
+- Scorecard movements, clear rewards
+
+**For Operators:**
+- Task assigned with correct urgency response protocol
+- Offline queues synced
+- Urgent hit-and-resolve situations
+
+**For Admins:**
+- Exception firehose display
+- System health pulse
+- Fraud alerts
+- Pipeline stuck signals
+
+---
+
+# SECTION 8 — UNIVERSAL COMMERCE INBOX (FUTURE-READY)
+
+One message center for all interaction.
+
+| Thread Type | Example |
+|---|---|
+| Order support | "Order adjusted after QC" |
+| Supplier threads | "Given price 3% more on urgent shipment" |
+| Sourcing requests | "Can you get this in 6 days?" |
+| Dispute threads | "Rejected due to->___ evidence attached" |
+
+MVP: WhatsApp fallback only, inbox monitor for admin.  
+Phase 2+: Quotient rename after platform-native conversation.
+
+---
+
+# SECTION 9 — DRAFT STATES (ALL ROLES)
+
+Every role supports autosaved work-in-progress.
+
+| Role | Draft Capabilities |
+|---|---|
+| Buyer | Draft order, draft quotation request, saved procurement lists |
+| Supplier | Draft listing, draft stock update, draft dispatch |
+| Operator | Draft QC, draft visit note, draft dispatch proof |
+| Admin | Draft approvals, draft timeline, draft save resolution |
+
+Save logic: local timestamp → server sync on opportunity.  
+Behavior: flush on submit; otherwise flush to a dedicated `/drafts` API.
+
+---
+
+# SECTION 10 — DYNAMIC TAXONOMY ARCHITECTURE
+
+No Name工匠 categories. Name engine changes.
+
+| Current Part | Current Options | Future Expandibility |
+|---|---|---|
+| Segments  | Textile, Spare Parts | Pharma by entering new liquid name and metadata set |
+| Vehicle tree | 2W / 4W / Truck / Heavy | Commercial / 3W inserted by a mapping subsystem  |
+| Serving materials | Sarees, Fabrics, Handlooms, etc. | Future metro consumer by software activation |
+| Textile fiber | Cotton, Silk, Synthetic, Mixed | Future category is textile synthetic steel |
+
+Built via a `category_config` + `category_attributes` + `category_taxonomy` engine in the code.
+
+---
+
+# SECTION 11 — OPERATIONAL OWNERSHIP TRACKING
+
+Every workflow entity MUST have a visible assignee at all time.
+
+| Entity | Owner | Backup Owner |
+|---|---|---|
+| Order | Supplier | Procurement Manager |
+| Procurement Task | City Operator | Ops Manager |
+| QC | City Operator | Ops Manager |
+| Shipment | Logistics | Supplier |
+| Dispute | Admin | Senior Admin |
+| Exception | Ops Manager | Admin Lead |
+
+Owner change must leave a **reason a trail** in the activity timeline.
+
+---
+
+# SECTION 12 — FALLBACK HUMAN ESCALATION PHILOSOPHY
+
+**If automation fails, a human agent accepts the work in less than 1 escalation jump.**
+
+| Scenario | Fallback Path |
+|---|---|
+| Automated supplier trigger fails | Human operator picks, buyer notified |
+| Price round-trip day deadline | Human operator intervenes after warning |
+| QC NOT performed in time | Admin receives escalated alert |
+| Payment reconciliation failure | Human finance reviews directly |
+| Exception center  high crossed | Founder on every >6 hrs delay |
+
+---
+
+# SECTION 13 — INDEPENDENT PLATFORMS (ALL TOOLS)
+
+## 13.1 Help / Education In-System
+
+| Mode | Content |
+|---|---|
+| Mini-tour | First-time buyer onboard |
+| Tooltips | Hover (desktop) / tap-and-hold (mobile) |
+| "Kaise order karein" | 30-second GIF examples |
+| Contextual hint | "Usa query `OL` search spread" |
+| WhatsApp help | Direct human path always in global bar |
+
+## 13.2 Final Score: Operational Readiness Check
+
+| Capability | Status |
+|---|---|
+| Segment cross-protection | Enforced at router + search + filter + product surface |
+| Notification hub | Multi-channel, per-role, priority defined |
+| Taskeings priority model | Critical / High / Normal / Low enforced |
+| Saved lists present | Collections managed at buyer and operator |
+| Supplier score explanation | Narrative-aware, not number-only |
+| Offline operator → conflict detect | Web storage + sync + conflict UI |
+| Empty states | Standardized per-screen and topic |
+| Loading skeletons | Default user expectation |
+| Session recovery | Auto-rehydration at open |
+| Ownership traceability | All entities / all views / all roles |
+| Escalation fallbacks | Human recovery is architecturally always possible |
+| Dynamic taxonomy | Ready for new segments without recompile |
+| Draft states | All roles, all primary flows, never lost |
+| Universal inbox | Placeholder parallel to WhatsApp always |
+| Help & education | Minimal, but structurally present in all role flows |
+| Language accessibility | Hindi-first with fallback, not polyglot default |
+
+---
+
+# FINAL LOCK VERDICT
+
+This document is **100% complete and frozen** as per PRDv2 and user-review-cycle completion. No further IA-level changes permitted unless the following triggers:
+
+- **Workflow breakage confirmed in production**
+- **Database schema collision**
+- **Engineering bottleneck flagged**
+- **Usability testing failure (usability test not yet run)**
+
+Any new feature proposal must pass through the formal **Impact Analysis** and **Impact Change Control Policy** documented in PRDv2.
+
+---
+
+*File generated and blessed after 3 full review cycles.*
+
+
+FINAL MASTER VERDICT
+
+This merged Information Architecture document is considered:
+
+- Enterprise-grade
+- Bharat-first
+- Workflow-driven
+- Operationally scalable
+- Segment-isolated
+- Future-ready
+- AI-compatible
+- Governance-aware
+- Offline-resilient
+- Human-escalation safe
+
+This document should now be treated as the final authoritative IA freeze for VyaparNet.
+
+No further IA-level changes should occur unless:
+- production workflow failure occurs
+- database architecture conflict occurs
+- usability testing reveals critical issue
+- operational bottleneck emerges
+
+Next official deliverable:
+VyaparNet_Module_Breakdown_v1.md
+
+
+
+FINAL ENTERPRISE CLEANUP & NORMALIZATION PATCH
+Document Governance
+This Information Architecture document is governed under the VyaparNet PRDv2 Change Control Policy.
+
+All future changes must pass:
+- workflow impact analysis
+- database impact review
+- operational review
+- UX consistency validation
+- scalability review
+
+No uncontrolled IA-level changes are permitted after freeze approval.
+Role Isolation Principle
+Every role experiences a purpose-built interface.
+
+Buyers:
+- discovery-first
+
+Suppliers:
+- operations-first
+
+Operators:
+- task-first
+
+Admins:
+- control-first
+
+No role should experience unnecessary interface complexity from another role's workflow.
+Human Fallback Experience
+If any automated workflow fails:
+- buyer can escalate to WhatsApp support,
+- operator intervention becomes available,
+- admin override supported,
+- manual procurement possible.
+
+Platform reliability must never depend solely on automation success.
+Supplier Trust Philosophy
+Suppliers are operational partners, not passive vendors.
+
+The platform must:
+- clearly explain penalties,
+- reward reliability,
+- provide transparent score movement,
+- avoid hidden operational punishments,
+- maintain dispute visibility.
+Field Operation Principles
+Operator workflows are optimized for:
+- fast execution,
+- weak network environments,
+- low device capability,
+- camera-first evidence collection,
+- minimal typing,
+- rapid escalation.
+
+Operator workflows prioritize speed and proof collection over visual complexity.
+Exception Response Principle
+Every critical exception must:
+- have an owner,
+- have a visible priority,
+- have an escalation timer,
+- appear in operational dashboards,
+- generate an audit trail,
+- remain unresolved until explicitly closed.
+Notification Fatigue Control
+The platform must avoid excessive notification spam.
+
+Rules:
+- merge duplicate notifications,
+- prioritize action-required alerts,
+- suppress unnecessary informational spam,
+- allow notification preference management later.
+Draft Recovery Guarantee
+User-generated work should never be silently lost.
+
+Draft recovery applies to:
+- order composition,
+- quotation requests,
+- QC submissions,
+- dispatch uploads,
+- admin approvals,
+- dispute resolutions.
+Segment Expansion Principle
+New business segments must be addable without:
+- platform rewrite,
+- database redesign,
+- navigation restructuring,
+- search engine replacement,
+- frontend rebuild.
+
+All segment systems must remain configuration-driven wherever possible.
+Non-Goals (MVP)
+The MVP intentionally excludes:
+- native mobile applications,
+- microservices architecture,
+- OpenSearch infrastructure,
+- advanced AI automation,
+- fintech lending systems,
+- self-serve marketplace onboarding,
+- autonomous procurement AI,
+- advanced recommendation engines,
+- social-commerce systems,
+- supplier advertisement systems.
+
+These remain future architecture placeholders only.
+
+VyaparNet Information Architecture — FINAL OFFICIAL FREEZE
+
+Document Version: VyaparNet_IA_Final_Official_Freeze_v1
+Status: LOCKED
+Architecture State: FINAL FREEZE APPROVED
+Governed By: VyaparNet PRDv2 Change Control Policy
+
+Purpose:
+This document is the single authoritative Information Architecture blueprint for VyaparNet.
+It combines:
+- detailed workflow architecture
+- operational governance architecture
+- Bharat-first UX principles
+- enterprise workflow systems
+- offline-first systems
+- escalation architecture
+- notification systems
+- segment isolation principles
+- future scalability principles
+
+1. Information Architecture Philosophy
+Information Architecture defines:
+- navigation structure
+- role boundaries
+- workflow sequencing
+- operational visibility
+- information relationships
+- system interaction flow
+
+IA is finalized before:
+- UI design
+- wireframes
+- development
+- API implementation
+
+The platform is workflow-first, not screen-first.
+2. Bharat-First UX Principles
+Core principles:
+- low cognitive load
+- mobile-first design
+- progressive disclosure
+- WhatsApp fallback
+- low-bandwidth optimization
+- multilingual-ready architecture
+- trust visibility
+- rapid operational flow
+- minimal typing
+- segment isolation
+
+The platform must remain:
+- simple for small buyers
+- operationally efficient for suppliers
+- scalable for enterprise operations
+3. Global Navigation Architecture
+Every role experiences a purpose-built interface.
+
+Buyer:
+- discovery-first
+
+Supplier:
+- operations-first
+
+Operator:
+- task-first
+
+Admin:
+- governance-first
+
+No role should experience unnecessary complexity from another role's workflows.
+4. Segment Isolation Architecture
+Textile and Spare Parts operate as isolated business environments.
+
+Isolation applies to:
+- categories
+- search
+- filters
+- recommendations
+- analytics
+- dashboards
+- workflows
+- notifications
+
+Future segments:
+- pharma
+- electronics
+- machinery
+must follow same architecture.
+
+Cross-segment visibility prohibited unless explicitly authorized.
+5. Buyer Information Architecture
+Buyer workflows include:
+- onboarding
+- business profile setup
+- segment selection
+- category browsing
+- dynamic search
+- product discovery
+- quotation requests
+- saved lists
+- sourcing requests
+- order placement
+- order tracking
+- reorder flow
+- support escalation
+
+Buyer priorities:
+- simplicity
+- procurement speed
+- trust visibility
+- transparent pricing
+- easy discovery
+6. Supplier Information Architecture
+Supplier workflows include:
+- stock updates
+- order confirmation
+- pricing updates
+- dispatch proof uploads
+- invoice uploads
+- catalog management
+- payment visibility
+- dispute handling
+- fulfillment tracking
+- scorecard visibility
+
+Supplier score system:
+- transparent
+- explainable
+- audit-visible
+
+Examples:
+- late dispatch penalties
+- QC penalties
+- reliability bonuses
+- fulfillment bonuses
+7. Operator Information Architecture
+Operator workflows include:
+- stock verification
+- QC verification
+- dispatch proof uploads
+- field visit notes
+- supplier confirmations
+- escalation handling
+- evidence collection
+
+Operator architecture priorities:
+- offline-first execution
+- weak-network resilience
+- camera-first workflows
+- minimal typing
+- rapid sync recovery
+- fast field execution
+8. Admin Information Architecture
+Admin systems include:
+- operational overview
+- procurement management
+- supplier governance
+- buyer governance
+- catalog governance
+- payment management
+- audit systems
+- dispute handling
+- exception center
+- reporting systems
+- feature flag management
+
+Admin dashboards prioritize:
+- governance
+- operational visibility
+- auditability
+- exception awareness
+- scalability oversight
+9. Search & Discovery Architecture
+Search systems support:
+- segment-specific discovery
+- independent filters
+- recent searches
+- saved searches
+- trending searches
+- dynamic attributes
+- no-result fallback flows
+- sourcing requests
+
+No-result flows:
+- request sourcing
+- upload image
+- contact support
+
+Search behavior always remains segment-aware.
+10. Notification Architecture
+Supported channels:
+- in-app notifications
+- WhatsApp
+- SMS fallback
+- email summaries
+- future push notifications
+
+Priority levels:
+- critical
+- high
+- normal
+- low
+
+Notification systems must:
+- avoid spam
+- merge duplicates
+- prioritize actionable alerts
+- support escalation
+11. Exception Management Architecture
+Centralized Exception Center manages:
+- delayed orders
+- procurement failures
+- QC failures
+- fraud alerts
+- supplier SLA breaches
+- payment mismatches
+- stock mismatches
+
+Every exception:
+- has an owner
+- has priority visibility
+- supports escalation
+- generates audit logs
+- remains visible until resolved
+12. Offline-First Operational Design
+Offline support required for:
+- QC uploads
+- dispatch proof uploads
+- stock confirmations
+- operator notes
+- field evidence uploads
+
+System behavior:
+- local queue storage
+- reconnect sync
+- conflict resolution
+- upload retry systems
+- offline recovery support
+13. Draft State & Session Recovery
+Draft support required for:
+- order creation
+- quotations
+- dispatch uploads
+- QC submissions
+- dispute handling
+- admin approvals
+
+Session recovery principles:
+- restore unsaved work
+- restore last context
+- prevent silent data loss
+- support interrupted workflows
+14. Dynamic Taxonomy Architecture
+Every segment supports:
+- independent categories
+- custom attributes
+- custom filters
+- custom metadata
+- independent search logic
+
+New segments must be addable without:
+- platform redesign
+- DB restructuring
+- frontend rewrite
+- search replacement
+15. Operational Ownership & Auditability
+Every workflow entity maintains:
+- ownership visibility
+- assignment history
+- escalation visibility
+- activity timeline
+- audit traceability
+
+Ownership changes require:
+- timestamp
+- actor identity
+- change reason
+16. Human Escalation & Fallback Systems
+If automation fails:
+- WhatsApp escalation available
+- operator intervention supported
+- admin override supported
+- manual workflows allowed
+
+Platform reliability must never depend solely on automation.
+17. Loading, Empty & Recovery States
+The platform supports:
+- skeleton loaders
+- low-bandwidth placeholders
+- guided empty states
+- workflow recovery states
+
+Examples:
+- No orders yet
+- No saved products
+- No search results
+
+Every empty state must guide the user toward the next action.
+18. Saved Lists & Procurement Collections
+Buyers can:
+- save products
+- create procurement collections
+- build seasonal lists
+- maintain reorder groups
+
+Examples:
+- Summer Collection
+- Festival Sarees
+- Activa Consumables
+19. Business Intelligence Placeholders
+Future-ready placeholders:
+- fast-moving products
+- regional demand trends
+- price drop alerts
+- low-stock alerts
+- festival demand signals
+
+These remain placeholders in MVP.
+20. Help & Education Systems
+Platform supports:
+- onboarding guidance
+- contextual tooltips
+- workflow education
+- ordering help
+- multilingual assistance
+- WhatsApp support
+
+Goal:
+reduce onboarding friction for Bharat-first users.
+21. Universal Inbox Placeholder
+Future architecture placeholder:
+- unified support inbox
+- WhatsApp integration
+- sourcing requests
+- dispute communication
+- operational escalations
+
+Not part of MVP implementation.
+22. Feature Flag Architecture
+Feature flags support:
+- controlled rollout
+- operational testing
+- beta features
+- safe deployment
+
+Initial implementation:
+- database-backed flags
+- admin toggles
+- environment-aware
+23. Operational Principles
+Platform philosophy:
+- workflow-first
+- operationally transparent
+- audit-driven
+- scalable
+- configuration-oriented
+- future-extensible
+
+Every workflow must prioritize:
+- clarity
+- traceability
+- operational reliability
+24. MVP Constraints & Non-Goals
+MVP intentionally excludes:
+- native mobile apps
+- microservices architecture
+- OpenSearch infrastructure
+- advanced AI systems
+- fintech lending
+- advanced recommendation engines
+- supplier advertisements
+- autonomous procurement AI
+- self-serve marketplace onboarding
+
+These remain future placeholders only.
+25. Final Freeze Verdict
+This Information Architecture is considered:
+- enterprise-grade
+- workflow-driven
+- operationally scalable
+- Bharat-first
+- governance-safe
+- future-ready
+- segment-isolated
+- offline-resilient
+
+No further IA-level architectural changes allowed unless:
+- production workflow failure occurs
+- DB conflict occurs
+- operational bottleneck emerges
+- usability testing reveals critical issues
+26. Next Official Deliverables
+Next execution documents:
+1. VyaparNet_Module_Breakdown_v1.md
+2. Database Schema Design
+3. API Contract Design
+4. Workflow Diagrams
+5. Wireframes
+6. Design System
+7. Engineering Standards
+8. Development Roadmap
+
+
+
+FINAL ENTERPRISE CLEANUP & NORMALIZATION PATCH
+Document Governance
+All future IA-level modifications must pass:
+- workflow impact analysis
+- database impact review
+- scalability review
+- operational review
+- UX consistency validation
+
+No uncontrolled architecture modifications allowed after freeze approval.
+Role Isolation Principle
+Every role experiences a purpose-built interface.
+
+Buyers:
+- discovery-first
+
+Suppliers:
+- operations-first
+
+Operators:
+- task-first
+
+Admins:
+- governance-first
+
+No role should experience unnecessary workflow complexity from another role.
+Human Fallback Principle
+If automation fails:
+- WhatsApp fallback remains available
+- operator intervention supported
+- admin override supported
+- manual workflows supported
+
+Platform reliability must never depend solely on automation.
+Notification Fatigue Control
+Notification systems must:
+- avoid spam
+- merge duplicates
+- prioritize actionable alerts
+- suppress unnecessary informational noise
+Draft Recovery Guarantee
+User-generated work must never be silently lost.
+
+Draft recovery applies to:
+- orders
+- quotations
+- QC submissions
+- dispatch uploads
+- dispute handling
+- admin approvals
+Segment Expansion Principle
+New segments must be addable without:
+- frontend rewrite
+- platform redesign
+- search engine replacement
+- database restructuring
+
+All segment systems should remain configuration-driven wherever possible.
+MVP Non-Goals
+MVP intentionally excludes:
+- native mobile applications
+- microservices architecture
+- OpenSearch infrastructure
+- advanced AI systems
+- fintech lending
+- advanced recommendation engines
+- autonomous procurement AI
+
+These remain future architecture placeholders only.
+Final Freeze Verdict
+This document is now considered:
+- enterprise-grade
+- workflow-driven
+- operationally scalable
+- Bharat-first
+- governance-safe
+- future-ready
+- segment-isolated
+- offline-resilient
+
+No further IA-level architectural redesign is recommended.
+Only production-driven corrections are permitted after this freeze.

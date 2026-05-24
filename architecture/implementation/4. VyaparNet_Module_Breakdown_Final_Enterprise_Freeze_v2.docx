@@ -1,0 +1,1209 @@
+VyaparNet Module Breakdown — FINAL ENTERPRISE FREEZE
+
+Document Version: VyaparNet_Module_Breakdown_Final_Enterprise_Freeze_v2
+Status: FINAL LOCKED VERSION
+Purpose:
+This document is the final authoritative module architecture breakdown for VyaparNet.
+
+This version preserves the original detailed module architecture and additionally includes:
+- infrastructure-grade module additions
+- workflow orchestration systems
+- observability architecture
+- feature flag systems
+- caching architecture
+- media & storage systems
+- platform security hardening
+- operator bounded context
+- enterprise workflow state management
+
+This supersedes all previous module breakdown drafts.
+
+ORIGINAL COMPLETE MODULE BREAKDOWN
+# VyaparNet Module Breakdown v1
+
+## Platform-Wide Architecture Decomposition
+**Status:** Post-IA Freeze  
+**Date:** 2025-07-18  
+**Scope:** MVP + Future-Ready Foundation  
+**Tech Stack:** NestJS Modular Monolith + Prisma + PostgreSQL  
+
+---
+
+# Module Philosophy
+
+VyaparNet is engineered as a **modular monolith**, never a tightly coupled ball of mud.
+
+Each module is:
+- **Cohesive**: Single clear responsibility  
+- **Loosely coupled**: Communicates only via defined APIs and events  
+- **Testable in isolation**: Mock dependencies at module boundaries  
+- **Future-ready**: Can be extracted to a microservice without rewrites  
+- **Self-documenting**: README.md inside every module folder  
+
+**The golden rule:** A module NEVER imports from another module's internal files. Only public APIs and shared packages are allowed.
+
+---
+
+# Module Dependency Map
+
+```
+Identity & Access (Auth, RBAC)
+        |
+        v
++-------+--------+  +--------+  +--------+  +--------+
+|    Segment     |  | Catalog |  | Supplier|  |  Buyer  |
+|    Engine      |  | Engine  |  | Engine  |  | Engine |
++-------+--------+  +----+---+  +----+---+  +----+---+
+        |                |           |           |
+        v                v           v           v
++-------+--------+  +----+---+  +----+---+  +----+---+
+|   Inventory    |  | Pricing |  | Search  |  | Order  |
+|   Engine       |  | Engine  |  | Engine  |  | Engine |
++-------+--------+  +----+---+  +----+---+  +----+---+
+        |                |           |           |
+        v                v           v           v
++-------+--------+  +----+---+  +----+---+  +----+---+
+|  Procurement   |  |    Payment     |  |  Fulfillment |
+|  Engine        |  |    & Ledger    |  |  Engine      |
++-------+--------+  +----+---+  +----+---+  +----+---+
+        |                |           |           |
+        v                v           v           v
++-------+--------+  +----+---+  +----+---+  +----+---+
+|   Trust &      |  | Exception |  | Notification |
+|   Safety       |  | Center    |  | Engine       |
++-------+--------+  +----+---+  +----+---+  +----+---+
+        |                |           |           |
+        v                v           v           v
++-------+--------+  +----+---+  +----+---+  +----+---+
+|   Analytics    |  |   Event    |  |  Audit &     |
+|   Engine       |  |   Bus      |  |  Reporting   |
++----------------+  +----------+  +--------------+
+```
+
+---
+
+# Core Module Definitions
+
+## Module 1: Identity & Access
+**Folder:** `src/modules/identity`
+
+**Responsibility:**
+- User authentication (OTP + JWT)
+- Role management
+- Permission management
+- Session tracking
+- Device management
+- Password reset
+
+**Owns Data:**
+- `users`
+- `roles`
+- `permissions`
+- `user_roles`
+- `user_sessions`
+- `user_devices`
+- `password_resets`
+
+**API Surface:**
+```typescript
+POST /api/v1/auth/otp/send
+POST /api/v1/auth/otp/verify
+POST /api/v1/auth/login
+POST /api/v1/auth/logout
+POST /api/v1/auth/refresh
+GET  /api/v1/auth/me
+GET  /api/v1/users/:id
+PUT  /api/v1/users/:id
+POST /api/v1/users/:id/roles
+DELETE /api/v1/users/:id/roles
+```
+
+**Events Published:**
+- `UserRegistered`
+- `UserLoggedIn`
+- `UserLoggedOut`
+- `RoleChanged`
+
+**Dependencies:**
+- None (foundational module)
+
+---
+
+## Module 2: Segment Engine
+**Folder:** `src/modules/segment`
+
+**Responsibility:**
+- Define platform segments (Textile, Spare Parts, Future...)
+- Manage segment configs (attributes, filters, rules)
+- Enforce cross-segment isolation
+- Switch segment context
+- Dynamic category tree per segment
+
+**Owns Data:**
+- `segments`
+- `segment_configs`
+- `segment_taxonomies`
+- `category_trees`
+- `segment_attribute_schemas`
+
+**API Surface:**
+```typescript
+GET  /api/v1/segments
+GET  /api/v1/segments/:id
+GET  /api/v1/segments/:id/categories
+GET  /api/v1/segments/:id/filters
+POST /api/v1/segments/:id/switch
+GET  /api/v1/segments/:id/attributes
+```
+
+**Events Published:**
+- `SegmentCreated`
+- `SegmentUpdated`
+- `SegmentContextChanged`
+
+**Dependencies:**
+- Identity & Access (for segment access permissions)
+
+---
+
+## Module 3: Catalog Engine
+**Folder:** `src/modules/catalog`
+
+**Responsibility:**
+- Product management
+- Category management
+- Variant management
+- Attribute schema enforcement
+- Media asset management
+- Listing approval workflow
+
+**Owns Data:**
+- `products`
+- `product_attributes`
+- `product_variants`
+- `media_assets`
+- `categories`
+- `category_trees`
+- `product_catalog_rules`
+
+**API Surface:**
+```typescript
+GET    /api/v1/products
+GET    /api/v1/products/:id
+POST   /api/v1/products
+PUT    /api/v1/products/:id
+DELETE /api/v1/products/:id
+GET    /api/v1/categories
+GET    /api/v1/categories/:id
+POST   /api/v1/categories
+PUT    /api/v1/categories/:id
+GET    /api/v1/products/:id/attributes
+POST   /api/v1/products/:id/attributes
+POST   /api/v1/media/upload
+```
+
+**Events Published:**
+- `ProductCreated`
+- `ProductUpdated`
+- `ProductApproved`
+- `ProductRejected`
+- `MediaUploaded`
+- `CategoryCreated`
+
+**Dependencies:**
+- Identity & Access
+- Segment Engine
+
+---
+
+## Module 4: Supplier Engine
+**Folder:** `src/modules/supplier`
+
+**Responsibility:**
+- Supplier onboarding & verification
+- Supplier profile management
+- Supplier score calculation
+- Supplier-segment access management
+- Supplier catalog management
+- Supplier compliance tracking
+
+**Owns Data:**
+- `suppliers`
+- `supplier_segment_access`
+- `supplier_verifications`
+- `supplier_scores`
+- `supplier_bank_accounts`
+- `supplier_documents`
+
+**API Surface:**
+```typescript
+POST   /api/v1/suppliers/onboard
+GET    /api/v1/suppliers
+GET    /api/v1/suppliers/:id
+PUT    /api/v1/suppliers/:id
+GET    /api/v1/suppliers/:id/score
+GET    /api/v1/suppliers/:id/orders
+GET    /api/v1/suppliers/:id/catalog
+POST   /api/v1/suppliers/:id/verify
+PUT    /api/v1/suppliers/:id/segment
+```
+
+**Events Published:**
+- `SupplierCreated`
+- `SupplierVerified`
+- `SupplierScoreUpdated`
+- `SupplierAccessGranted`
+
+**Dependencies:**
+- Identity & Access
+- Segment Engine
+
+---
+
+## Module 5: Buyer Engine
+**Folder:** `src/modules/buyer`
+
+**Responsibility:**
+- Buyer onboarding & verification
+- Buyer profile management
+- Buyer-segment access management
+- Buyer saved lists & collections
+- Buyer address management
+- Buyer loyalty / score tracking
+
+**Owns Data:**
+- `buyers`
+- `buyer_business_profiles`
+- `buyer_addresses`
+- `buyer_saved_lists`
+- `buyer_segments`
+- `buyer_scores`
+
+**API Surface:**
+```typescript
+POST /api/v1/buyers/onboard
+GET  /api/v1/buyers
+GET  /api/v1/buyers/:id
+PUT  /api/v1/buyers/:id
+GET  /api/v1/buyers/:id/saved-lists
+POST /api/v1/buyers/:id/saved-lists
+DELETE /api/v1/buyers/:id/saved-lists/:listId
+GET  /api/v1/buyers/:id/orders
+GET  /api/v1/buyers/:id/payments
+```
+
+**Events Published:**
+- `BuyerCreated`
+- `BuyerVerified`
+- `BuyerScoreUpdated`
+- `SavedListCreated`
+
+**Dependencies:**
+- Identity & Access
+- Segment Engine
+
+---
+
+## Module 6: Inventory Engine
+**Folder:** `src/modules/inventory`
+
+**Responsibility:**
+- Stock level tracking
+- Inventory confidence scoring
+- Stock update history
+- Supplier stock sync
+- Low stock alerts
+- Warehouse / location management (placeholder)
+
+**Owns Data:**
+- `inventory_records`
+- `stock_updates`
+- `stock_confidence_logs`
+- `warehouse_locations`
+- `supplier_stock_snapshots`
+
+**API Surface:**
+```typescript
+GET    /api/v1/inventory
+GET    /api/v1/inventory/:productId
+POST   /api/v1/inventory/stock-check
+PUT    /api/v1/inventory/:productId
+GET    /api/v1/inventory/:productId/history
+POST   /api/v1/inventory/sync
+```
+
+**Events Published:**
+- `StockChanged`
+- `StockLow`
+- `StockOutOfStock`
+- `InventorySynced`
+
+**Dependencies:**
+- Catalog Engine
+- Supplier Engine
+
+---
+
+## Module 7: Pricing Engine
+**Folder:** `src/modules/pricing`
+
+**Responsibility:**
+- Landed price calculation
+- Dynamic pricing rules
+- Supplier offer management
+- MOQ enforcement
+- Margin calculation
+- Price validity window management
+
+**Owns Data:**
+- `supplier_offers`
+- `price_rules`
+- `pricing_snapshots`
+- `margin_records`
+- `landed_price_calculations`
+
+**API Surface:**
+```typescript
+GET    /api/v1/pricing/offers
+GET    /api/v1/pricing/offers/:id
+POST   /api/v1/pricing/offers
+PUT    /api/v1/pricing/principles/:id
+POST   /api/v1/pricing/quote
+POST   /api/v1/pricing/landed-price
+GET    /api/v1/pricing/history
+```
+
+**Events Published:**
+- `PriceUpdated`
+- `OfferCreated`
+- `OfferExpired`
+- `LanddedPriceCalculated`
+
+**Dependencies:**
+- Catalog Engine
+- Supplier Engine
+- Inventory Engine
+
+---
+
+## Module 8: Search Engine
+**Folder:** `src/modules/search`
+
+**Responsibility:**
+- Full-text search (PostgreSQL FTS in MVP)
+- Segment-isolated search
+- Synonym / typo tolerance
+- Filter orchestration
+- Search analytics (queries, clicks, no-results)
+- Future: OpenSearch migration path
+
+**Owns Data:**
+- `search_queries`
+- `search_clicks`
+- `search_suggestions`
+- `search_indices` (future)
+
+**API Surface:**
+```typescript
+GET    /api/v1/search?q=...&segment=...&filters=...
+GET    /api/v1/search/suggestions?q=...
+GET    /api/v1/search/trending
+GET    /api/v1/search/popular
+POST   /api/v1/search/feedback
+```
+
+**Events Published:**
+- `SearchPerformed`
+- `SearchResultClicked`
+- `SearchNoResults`
+
+**Dependencies:**
+- Catalog Engine
+- Segment Engine
+
+---
+
+## Module 9: Order Engine
+**Folder:** `src/modules/order`
+
+**Responsibility:**
+- Order creation & lifecycle management
+- Order status transitions
+- Order item management
+- Quote-to-order conversion
+- Order cancel / hold / resume
+- Order ownership tracking
+- Order insurance / warranty (future)
+
+**Owns Data:**
+- `orders`
+- `order_items`
+- `quotes`
+- `quote_items`
+- `order_status_logs`
+- `order_cancel_reasons`
+
+**API Surface:**
+```typescript
+POST   /api/v1/orders
+GET    /api/v1/orders
+GET    /api/v1/orders/:id
+PUT    /api/v1/orders/:id
+DELETE /api/v1/orders/:id
+POST   /api/v1/orders/:id/cancel
+GET    /api/v1/orders/:id/status
+POST   /api/v1/orders/:id/hold
+POST   /api/v1/orders/:id/resume
+POST   /api/v1/quotes
+GET    /api/v1/quotes/:id
+POST   /api/v1/quotes/:id/approve
+```
+
+**Events Published:**
+- `OrderCreated`
+- `OrderConfirmed`
+- `OrderPriceConfirmed`
+- `OrderCancelled`
+- `OrderStatusChanged`
+- `QuoteCreated`
+- `QuoteApproved`
+
+**Dependencies:**
+- Catalog Engine
+- Pricing Engine
+- Buyer Engine
+- Supplier Engine
+
+---
+
+## Module 10: Procurement Engine
+**Folder:** `src/modules/procurement`
+
+**Responsibility:**
+- Source selection intelligence
+- Procurement task creation & assignment
+- Supplier confirmation flow
+- Price locking logic
+- Operator task routing
+- Procurement SLA tracking
+
+**Owns Data:**
+- `procurement_tasks`
+- `procurement_assignments`
+- `source_selection_scores`
+- `procurement_sla_records`
+
+**API Surface:**
+```typescript
+GET    /api/v1/procurement/tasks
+GET    /api/v1/procurement/tasks/:id
+POST   /api/v1/procurement/tasks
+PUT    /api/v1/procurement/tasks/:id/assign
+PUT    /api/v1/procurement/tasks/:id/confirm
+PUT    /api/v1/procurement/:id/lock-price
+GET    /api/v1/procurement/tasks/:id/sla
+```
+
+**Events Published:**
+- `ProcurementTaskCreated`
+- `ProcurementAssigned`
+- `PriceLocked`
+- `StockConfirmed`
+- `SLABreach`
+
+**Dependencies:**
+- Order Engine
+- Supplier Engine
+- Operator Engine (future)
+
+---
+
+## Module 11: Fulfillment Engine
+**Folder:** `src/modules/fulfillment`
+
+**Responsibility:**
+- QC task management
+- Packing & dispatch proof
+- Shipment tracking
+- Delivery confirmation
+- Return logistics management
+- City operator task routing
+
+**Owns Data:**
+- `qc_tasks`
+- `shipments`
+- `delivery_events`
+- `dispatch_proofs`
+- `consolidation_tasks`
+
+**API Surface:**
+```typescript
+GET    /api/v1/fulfillment/qc-tasks
+GET    /api/v1/fulfillment/qc-tasks/:id
+POST   /api/v1/fulfillment/qc-tasks/:id/approve
+POST   /api/v1/fulfillment/qc-tasks/:id/reject
+GET    /api/v1/shipments
+GET    /api/v1/shipments/:id
+POST   /api/v1/shipments/:id/proof
+POST   /api/v1/shipments/:id/track
+POST   /api/v1/shipments/:id/confirm-delivery
+```
+
+**Events Published:**
+- `QCFailed`
+- `QCPassed`
+- `ShipmentDispatched`
+- `DeliveryConfirmed`
+- `ReturnInitiated`
+
+**Dependencies:**
+- Order Engine
+- Procurement Engine
+
+---
+
+## Module 12: Payment & Ledger Engine
+**Folder:** `src/modules/payment`
+
+**Responsibility:**
+- Payment collection (online + offline)
+- Supplier settlement
+- Double-entry ledger foundation
+- Invoice generation (GST)
+- Credit note management
+- Refund processing
+- Reconciliation batch jobs
+
+**Owns Data:**
+- `payments`
+- `payment_transactions`
+- `supplier_settlements`
+- `buyer_ledgers`
+- `supplier_ledgers`
+- `invoices`
+- `credit_notes`
+- `settlement_batches`
+
+**API Surface:**
+```typescript
+POST   /api/v1/payments
+GET    /api/v1/payments
+GET    /api/v1/payments/:id
+POST   /api/v1/payments/:id/refund
+GET    /api/v1/ledgers/buyers
+GET    /api/v1/ledgers/suppliers
+GET    /api/v1/ledgers/:id
+POST   /api/v1/invoices
+GET    /api/v1/invoices/:id
+POST   /api/v1/credit-notes
+POST   /api/v1/reconciliation/batch
+```
+
+**Events Published:**
+- `PaymentReceived`
+- `PaymentFailed`
+- `RefundInitiated`
+- `InvoiceGenerated`
+- `SettlementProcessed`
+
+**Dependencies:**
+- Order Engine
+- Supplier Engine
+- Buyer Engine
+
+---
+
+## Module 13: Trust & Safety Engine
+**Folder:** `src/modules/trust-safety`
+
+**Responsibility:**
+- Dispute case management
+- Return / replacement workflow
+- Fraud detection (basic rules in MVP)
+- Buyer / supplier / operator score management
+- Review / rating aggregation
+- Penalty enforcement
+
+**Owns Data:**
+- `disputes`
+- `returns`
+- `fraud_flags`
+- `supplier_scores`
+- `buyer_scores`
+- `operating_scores`
+- `penalty_records`
+
+**API Surface:**
+```typescript
+POST   /api/v1/disputes
+GET    /api/v1/disputes
+GET    /api/v1/disputes/:id
+PUT    /api/v1/disputes/:id
+POST   /api/v1/disputes/:id/resolve
+GET    /api/v1/scores/supplier/:id
+GET    /api/v1/scores/buyer/:id
+PUT    /api/v1/scores/recalculate
+```
+
+**Events Published:**
+- `DisputeOpened`
+- `DisputeResolved`
+- `ReturnInitiated`
+- `ReturnApproved`
+- `FraudDetected`
+- `ScoreUpdated`
+
+**Dependencies:**
+- Order Engine
+- Payment & Ledger Engine
+- Fulfillment Engine
+
+---
+
+## Module 14: Notification Engine
+**Folder:** `src/modules/notification`
+
+**Responsibility:**
+- Multi-channel notification delivery (in-app, WhatsApp, SMS, email, push)
+- Notification preference management
+- Notification queue management
+- Template management (per language, per segment)
+- Priority routing
+
+**Owns Data:**
+- `notifications`
+- `notification_templates`
+- `notification_logs`
+- `notification_preferences`
+- `notification_queues` (BullMQ)
+
+**API Surface:**
+```typescript
+GET    /api/v1/notifications
+GET    /api/v1/notifications/:id
+POST   /api/v1/notifications/send
+POST   /api/v1/notifications/read
+GET    /api/v1/notifications/preferences
+PUT    /api/v1/notifications/preferences
+```
+
+**Events Published:**
+- `NotificationSent`
+- `NotificationRead`
+- `NotificationFailed`
+
+**Dependencies:**
+- Identity & Access
+- Notifier services (WhatsApp, SMS, Email)
+
+---
+
+## Module 15: Exception & Operational Control Engine
+**Folder:** `src/modules/exception`
+
+**Responsibility:**
+- Centralized exception tracking
+- Priority-based alerting
+- Escalation matrix enforcement
+- Operational health monitoring
+- Automated retry / fallback
+- Queue health dashboard
+
+**Owns Data:**
+- `exceptions`
+- `escalation_logs`
+- `operational_health_metrics`
+- `work_failure_logs`
+
+**API Surface:**
+```typescript
+GET    /api/v1/exceptions
+GET    /api/v1/exceptions/:id
+PUT    /api/v1/exceptions/:id/resolve
+GET    /api/v1/operations/health
+GET    /api/v1/operations/queue-status
+GET    /api/v1/operations/stuck-orders
+```
+
+**Events Published:**
+- `ExceptionRaised`
+- `ExceptionResolved`
+- `EscalationTriggered`
+- `HealthAlert`
+
+**Dependencies:**
+- Order Engine
+- Procurement Engine
+- Fulfillment Engine
+- Notification Engine
+
+---
+
+## Module 16: Audit & Reporting Engine
+**Folder:** `src/modules/audit`
+
+**Responsibility:**
+- Immutable audit trail for all operations
+- Activity timeline per entity
+- Compliance reporting
+- Change history
+- Admin overview of user actions
+
+**Owns Data:**
+- `audit_logs`
+- `activity_timelines`
+- `change_history`
+- `compliance_records`
+
+**API Surface:**
+```typescript
+GET    /api/v1/audit/logs
+GET    /api/v1/audit/entities/:entityId
+GET    /api/v1/audit/timelines/:entityType/:entityId
+GET    /api/v1/audit/reports
+POST   /api/v1/audit/export
+```
+
+**Events Published:**
+- `AuditEventLogged`
+- `ComplianceFlagRaised`
+
+**Dependencies:**
+- All modules (consumes their events)
+
+---
+
+## Shared Packages
+
+### `@vyaparnet/types`
+Shared TypeScript types, enums, and interfaces.
+
+### `@vyaparnet/utils`
+Shared utilities: formatting, validation, date handling, encryption.
+
+### `@vyaparnet/config`
+Environment configuration, feature flags, constants.
+
+---
+
+# Module Dependency Table
+
+| Module | Depends On | Is Depended By |
+|---|---|---|
+| Identity & Access | — | All |
+| Segment Engine | Identity | Catalog, Search, Buyer, Supplier |
+| Catalog Engine | Identity, Segment | Search, Inventory, Pricing, Order |
+| Supplier Engine | Identity, Segment | Pricing, Inventory, Order, Procurement |
+| Buyer Engine | Identity, Segment | Order, Payment |
+| Inventory Engine | Catalog, Supplier | Pricing, Order |
+| Pricing Engine | Catalog, Supplier, Inventory | Order |
+| Search Engine | Catalog, Segment | — |
+| Order Engine | Catalog, Pricing, Buyer, Supplier | Payment, Trust & Safety, Procurement |
+| Procurement Engine | Order, Supplier, Operator | Fulfillment |
+| Fulfillment Engine | Order, Procurement | Trust & Safety, Payment |
+| Payment & Ledger | Order, Supplier, Buyer | Trust & Safety |
+| Trust & Safety | Order, Payment, Fulfillment | — |
+| Notification | Identity | All (indirectly) |
+| Exception | All | — |
+| Audit | All | — |
+
+---
+
+# Module Folder Structure
+
+```
+src/
+├── modules/
+│   ├── identity/
+│   ├── segment/
+│   ├── catalog/
+│   ├── supplier/
+│   ├── buyer/
+│   ├── inventory/
+│   ├── pricing/
+│   ├── search/
+│   ├── order/
+│   ├── procurement/
+│   ├── fulfillment/
+│   ├── payment/
+│   ├── trust-safety/
+│   ├── notification/
+│   ├── exception/
+│   └── audit/
+├── shared/
+│   ├── types/
+│   ├── utils/
+│   └── config/
+└── main.ts
+```
+
+Each module follows this internal structure:
+
+```
+modules/{moduleName}/
+├── README.md
+├── {moduleName}.module.ts
+├── controllers/
+├── services/
+├── entities/
+├── dto/
+├── events/
+├── interfaces/
+├── tests/
+└── index.ts
+```
+
+---
+
+# Module Communication Rules
+
+1. **Direct API call:** A module can call another module's public service method.
+2. **Event bus:** A module can publish events for another module to consume.
+3. **NO direct DB access:** A module must NEVER query another module's tables directly.
+4. **Shared DTOs only:** All inter-module communication uses shared DTOs, not raw entities.
+5. **Transaction boundaries:** Cross-module transactions use explicit event-based saga or orchestrator, not distributed transactions.
+
+---
+
+# Module API Contracts
+
+API contracts define the public interface of each module.
+
+## Example: Order Engine -> Catalog Engine
+
+```typescript
+// Order Engine requests from Catalog Engine
+interface CatalogProductService {
+  getProduct(id: string): Promise<ProductDto>;
+  checkAvailability(productId: string, quantity: number): Promise<AvailabilityResult>;
+  lockStock(productId: string, quantity: number): Promise<StockLockResult>;
+  releaseStock(productId: string, quantity: number): Promise<void>;
+}
+```
+
+## Example: Order Engine -> Payment Engine
+
+```typescript
+// Order Engine requests from Payment Engine
+interface PaymentService {
+  createPayment(orderId: string, amount: number): Promise<PaymentResult>;
+  verifyPayment(paymentId: string): Promise<PaymentVerificationResult>;
+  processRefund(orderId: string, reason: string): Promise<RefundResult>;
+}
+```
+
+---
+
+# Module Testing Strategy
+
+| Level | Scope | Tools |
+|---|---|---|
+| Unit | Inside a module | Vitest |
+| Module | Module boundary, mocked dependencies | Vitest + mocks |
+| Integration | Module + real dependencies | Supertest + test DB |
+| E2E | Full API flow | Playwright |
+
+---
+
+# Module Extraction Roadmap (Future)
+
+When the platform scales, these modules can be extracted first:
+
+1. **Notification Service** → Independent microservice
+2. **Search Service** → OpenSearch/Elasticsearch cluster
+3. **Payment Service** → Financial microservice
+4. **Analytics Service** → Data warehouse pipeline
+5. **Catalog Service** → Product microservice
+6. **AI Service** → ML inference service
+
+---
+
+# Module Completion Checklist
+
+| Module | Status | Notes |
+|---|---|---|
+| Identity & Access | Planned | Core, start first |
+| Segment Engine | Planned | After Identity |
+| Catalog Engine | Planned | After Identity + Segment |
+| Supplier Engine | Planned | After Identity + Segment |
+| Buyer Engine | Planned | After Identity + Segment |
+| Inventory Engine | Planned | After Catalog + Supplier |
+| Pricing Engine | Planned | After Catalog + Supplier + Inventory |
+| Search Engine | Planned | After Catalog + Segment |
+| Order Engine | Planned | After Catalog + Pricing + Buyer + Supplier |
+| Procurement Engine | Planned | After Order + Supplier |
+| Fulfillment Engine | Planned | After Order + Procurement |
+| Payment & Ledger | Planned | After Order + Buyer + Supplier |
+| Trust & Safety | Planned | After All Core |
+| Notification Engine | Planned | After Identity |
+| Exception Control | Planned | After Order + Procurement + Fulfillment |
+| Audit & Reporting | Planned | After All |
+
+---
+
+# Module Sprint Assignment (Suggested)
+
+| Sprint | Modules |
+|---|---|
+| Sprint 1 | Identity & Access, Segment Engine |
+| Sprint 2 | Catalog Engine, Supplier Engine |
+| Sprint 3 | Buyer Engine, Inventory Engine, Pricing Engine |
+| Sprint 4 | Search Engine, Order Engine |
+| Sprint 5 | Procurement Engine, Fulfillment Engine |
+| Sprint 6 | Payment & Ledger, Trust & Safety |
+| Sprint 7 | Notification, Exception, Audit |
+| Sprint 8 | Integration, E2E, Polish |
+
+---
+
+# Conclusion
+
+This module breakdown defines a clean, testable, and scalable architecture for VyaparNet.
+
+Every module is:
+- Self-contained
+- Has clear boundaries
+- Communicates via defined APIs and events
+- Can be extracted to a microservice in the future
+- Is fully documented
+
+This is the foundation for a world-class B2B commerce operating system.
+
+**Next Deliverable: VyaparNet_DB_Architecture_v1.md**
+
+
+ENTERPRISE ARCHITECTURE UPGRADES & GAP CLOSURE
+1. Media & Storage Engine
+Folder: src/modules/media
+
+Responsibilities:
+- product image uploads
+- QC evidence uploads
+- invoice storage
+- dispute evidence storage
+- KYC document storage
+- image compression
+- thumbnail generation
+- signed URL generation
+- CDN integration
+- storage lifecycle policies
+- malware / virus scanning
+
+Owns Data:
+- media_files
+- upload_sessions
+- media_transformations
+- evidence_archives
+
+Future Ready:
+- S3-compatible storage
+- Cloudflare R2
+- CDN edge optimization
+2. Configuration & Feature Flag Engine
+Folder: src/modules/configuration
+
+Responsibilities:
+- runtime configs
+- feature flags
+- maintenance mode
+- environment-aware toggles
+- segment-based feature rollout
+- safe deployment controls
+- operational kill switches
+
+Owns Data:
+- feature_flags
+- runtime_configs
+- environment_overrides
+- rollout_rules
+
+Future Ready:
+- percentage rollout
+- A/B experiments
+- staged deployment
+3. Workflow Orchestration Engine
+Folder: src/modules/workflow
+
+Responsibilities:
+- long-running workflow orchestration
+- saga coordination
+- retries
+- compensating actions
+- timeout handling
+- workflow recovery
+- state transition management
+
+Manages:
+- order lifecycle orchestration
+- procurement lifecycle orchestration
+- fulfillment orchestration
+- dispute lifecycle orchestration
+
+Future Ready:
+- Temporal.io migration
+- workflow visualization
+4. Cache & Performance Layer
+Folder: src/modules/cache
+
+Responsibilities:
+- Redis abstraction
+- cache invalidation
+- hot-product caching
+- search-result caching
+- session caching
+- rate-limit caching
+- temporary workflow caching
+
+Future Ready:
+- distributed Redis cluster
+- edge caching
+- CDN-assisted acceleration
+5. Observability & Monitoring Engine
+Folder: src/modules/observability
+
+Responsibilities:
+- metrics collection
+- centralized logging
+- distributed tracing
+- SLA dashboards
+- operational monitoring
+- alert routing
+- queue health visibility
+- API latency monitoring
+
+Integrations:
+- Prometheus
+- Grafana
+- Sentry
+- OpenTelemetry
+
+Future Ready:
+- anomaly detection
+- AI-assisted operational alerts
+6. Operator Engine (Promoted to Core Module)
+Folder: src/modules/operator
+
+Responsibilities:
+- operator onboarding
+- city-level assignment
+- task execution tracking
+- offline task queues
+- QC ownership
+- field visit workflows
+- escalation management
+- geo-evidence collection
+
+Owns Data:
+- operators
+- operator_assignments
+- operator_regions
+- field_visit_logs
+- operator_device_sessions
+
+Why Separate:
+Operator workflows form an independent bounded context and are MVP-critical.
+7. Workflow State Machine Definitions
+Every major workflow must use explicit state machines.
+
+Required State Machines:
+- Order State Machine
+- Procurement State Machine
+- Fulfillment State Machine
+- Payment State Machine
+- Dispute State Machine
+- Return State Machine
+
+Rules:
+- invalid transitions prohibited
+- every transition audited
+- transitions timestamped
+- compensating transitions supported
+8. Platform Security & Abuse Protection Engine
+Folder: src/modules/platform-security
+
+Responsibilities:
+- OTP abuse prevention
+- API throttling
+- suspicious activity detection
+- brute-force protection
+- bot detection
+- IP reputation checks
+- device fingerprinting
+- rate limiting
+
+Future Ready:
+- fraud scoring
+- anomaly detection
+- adaptive security policies
+9. Event Bus Hardening
+The Event Bus must support:
+- retry queues
+- dead-letter queues
+- event replay
+- idempotent processing
+- event versioning
+- event tracing
+- guaranteed delivery semantics
+
+MVP:
+- BullMQ + Redis queues
+
+Future:
+- Kafka / RabbitMQ
+10. Transaction & Consistency Principles
+Cross-module consistency rules:
+
+- no distributed database transactions
+- use event-driven consistency
+- use compensating workflows
+- all critical workflows idempotent
+- audit every state transition
+
+Examples:
+- order placement
+- payment confirmation
+- supplier settlement
+- inventory reservation
+11. API Governance Standards
+All module APIs must support:
+- versioning
+- pagination
+- rate limiting
+- validation
+- structured errors
+- idempotency keys
+- audit correlation IDs
+
+Response standards:
+- consistent DTO structure
+- machine-readable error codes
+- trace IDs for debugging
+12. Engineering Governance Principles
+Every module must:
+- own its data
+- expose public contracts only
+- avoid direct DB access to other modules
+- maintain README documentation
+- include test coverage
+- support future extraction
+
+No module may become:
+- a God object
+- a hidden shared dependency
+- a tightly coupled internal utility
+13. Final Enterprise Verdict
+This module architecture is considered:
+
+- enterprise-grade
+- modular
+- future-scalable
+- microservice-ready
+- workflow-safe
+- governance-safe
+- operationally resilient
+- Bharat-scale ready
+
+No further module-level redesign is recommended unless:
+- production bottlenecks emerge
+- scalability constraints appear
+- workflow orchestration limitations arise

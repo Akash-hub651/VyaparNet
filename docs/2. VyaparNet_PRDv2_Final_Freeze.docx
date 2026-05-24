@@ -1,0 +1,658 @@
+VyaparNet PRDv2 — Final Architecture Freeze
+VyaparNet PRDv2 — Final Architecture Freeze (Updated with Minor Improvements)
+Status: ARCHITECTURE FROZEN — No additions without impact analysis
+Date: 2026-05-22
+Scope: MVP + Future-Ready Architecture
+Initial Segments: Textile + Spare Parts
+Initial Geography: Patna + Bihar
+
+1. LOCKED CORE FOUNDATION
+Product Vision — LOCKED
+VyaparNet = Controlled single-storefront B2B procurement platform. Buyer trusts VyaparNet brand. Backend uses verified supplier network, city operators, virtual inventory, selective owned stock, and consolidated logistics.
+
+Long-term: Data-rich, AI-enabled, logistics-optimized, fintech-capable B2B operating system with curated marketplace.
+
+2. LOCKED ARCHITECTURE DECISIONS
+Decision	Final Lock
+Backend architecture	Modular monolith (NestJS)
+APIs	REST only
+Search engine MVP	PostgreSQL FTS (Prisma)
+Search future	OpenSearch placeholder
+Mobile app	PWA first, native later
+Event system	Internal domain events + BullMQ
+AI/ML	Placeholder only
+GraphQL	NOT in MVP
+gRPC	NOT in MVP
+OpenSearch	NOT in MVP
+Kafka	NOT in MVP
+Native mobile app	NOT in MVP
+Microservices	NOT in MVP
+Self-serve marketplace	NOT in MVP
+Fintech/lending	NOT in MVP
+Graph databases	NOT in MVP
+Data warehouse	NOT in MVP
+Complex BI dashboards	NOT in MVP
+3. LOCKED TECH STACK
+Layer	Technology	Justification
+Frontend	Next.js / React	SSR, PWA, fast iteration
+Styling	Tailwind CSS	Utility-first, low bundle
+Backend	NestJS Modular Monolith	Enterprise-grade, type-safe, AI-dev-friendly
+Database	PostgreSQL	ACID, JSONB, enterprise-proven
+ORM	Prisma	Type-safe, migration-safe, AI-coding friendly
+Cache	Redis	Sessions, OTP, rate-limiting, queues
+Queue	BullMQ (Redis-based)	Async jobs, light, sufficient
+Auth	OTP + JWT	Bharat-first, low friction
+Password Hash	Argon2id	Modern, safer than bcrypt
+Search	PostgreSQL FTS	Sufficient for MVP scale
+Storage	S3-compatible	Images, invoices, proofs
+CDN	Cloudflare	Edge cache, SSL, DDoS
+Infra	Public Cloud (AWS/Hetzner)	Managed services, low ops
+Container	Docker	Local + staging + prod parity
+CI/CD	GitHub Actions	Simple, AI-friendly, scalable
+Monitoring	Sentry + Prometheus + Grafana	Error + infra + viz
+Testing	Vitest + Supertest + Playwright	Integration-first
+API Style	REST resource-oriented	Debuggable, predictable, versioned
+4. NAMING CONVENTION STANDARDS
+AI-code chaos se bachne ke liye strict naming required.
+
+Layer	Convention	Example
+Database tables	snake_case, plural	users, supplier_offers, order_items
+Database columns	snake_case	created_at, segment_id, is_active
+Prisma models	PascalCase, singular	User, SupplierOffer, OrderItem
+TypeScript types	PascalCase	CreateOrderDto, ProductResponse
+TypeScript variables	camelCase	orderItem, supplierId
+API routes	kebab-case	/api/v1/orders, /api/v1/products
+Functions	camelCase	createOrder, updateInventory
+Constants	UPPER_SNAKE_CASE	MAX_RETRY_COUNT, DEFAULT_PAGE_SIZE
+Enums	PascalCase	OrderStatus, SegmentType
+DTOs	PascalCase + Dto suffix	CreateOrderDto, UpdateProductDto
+Rules:
+
+Singular for entity names, plural for tables
+No abbreviations (user not usr, product not prod)
+No mixed naming (do not use userId and user_id interchangeably)
+AI code must follow these strictly
+5. ERROR HANDLING PHILOSOPHY
+Standardized error format for all APIs.
+
+API Error Format
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Product quantity must be greater than 0",
+    "field": "quantity",
+    "details": []
+  },
+  "requestId": "req_abc123xyz"
+}
+Validation Error Format
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid input data",
+    "fields": {
+      "quantity": "Must be greater than 0",
+      "price": "Must be a positive number"
+    }
+  }
+}
+Error Severity Levels
+Level	Action
+FATAL	Log + Alert + Stop execution
+ERROR	Log + Alert + Return 500
+WARNING	Log + Do not alert
+INFO	Log only
+DEBUG	Log in dev only
+Retry Policies
+Scenario	Max Retries	Backoff Strategy
+Payment processing	3	Exponential (1s, 2s, 4s)
+Shipment tracking	5	Exponential
+Notification delivery	3	Linear (2s, 2s, 2s)
+Inventory sync	2	Exponential
+External API calls	3	Exponential + jitter
+Retry only idempotent operations.
+
+6. IDEMPOTENCY RULES
+Critical for:
+
+Payments
+Order status updates
+Shipment retries
+Webhook processing
+Inventory adjustments
+Implementation
+Every write endpoint accepting external input must support:
+
+Idempotency key header: Idempotency-Key
+Prisma upsert where applicable
+Transaction boundaries
+Duplicate request detection
+Example:
+
+// Orders service
+async createOrder(data, idempotencyKey) {
+  // Check if already processed
+  const existing = await this.prisma.order.findUnique({
+    where: { idempotencyKey }
+  });
+  
+  if (existing) {
+    return existing; // Return same response
+  }
+  
+  // Proceed with transaction
+  return this.prisma.$transaction(async (tx) => {
+    // Create order
+    // Update inventory
+    // Create payment
+    // All in one atomic transaction
+  });
+}
+7. API CONTRACT STANDARDS
+Response Envelope Format
+{
+  "success": true,
+  "data": { },
+  "meta": {
+    "page": 1,
+    "perPage": 20,
+    "total": 100,
+    "totalPages": 5
+  }
+}
+Pagination Standard
+{
+  "page": 1,
+  "perPage": 20,
+  "sortBy": "createdAt",
+  "sortOrder": "desc",
+  "filters": {
+    "segmentId": "TEXTILE",
+    "status": "ACTIVE"
+  }
+}
+Filtering Standard
+URL query params:
+
+?segmentId=TEXTILE&status=ACTIVE&minPrice=100&maxPrice=500
+Sorting Standard
+?sortBy=createdAt&sortOrder=desc
+Validation Rules
+All inputs validated via Zod schemas
+Type-safe request/response DTOs
+Consistent error messages
+No raw database errors exposed
+8. SOFT DELETE POLICY
+Soft Delete (enable)
+Entity	Reason
+users	Audit trail, historical orders
+buyers	Business records, tax compliance
+suppliers	Order history, audit
+products	Order history, past references
+orders	Financial records, legal
+payments	Financial audit trail
+invoices	Tax compliance
+Hard Delete (prohibited for)
+Users
+Buyers
+Suppliers
+Orders
+Payments
+Invoices
+Shipments
+Returns
+Allowed Hard Delete
+Entity	Reason
+draft quotes	Temporary, not committed
+test data	Development only
+temp media	Unreferenced uploads
+failed job logs	After retention period
+Implementation
+All entities have:
+
+deleted_at TIMESTAMP NULL
+Queries must filter:
+
+WHERE deleted_at IS NULL
+Admin-only "include deleted" option.
+
+9. DATA RETENTION POLICY
+Data Type	Retention	Action After
+Order records	7 years	Archive
+Payment records	7 years	Archive
+Audit logs	3 years	Archive
+Search logs	2 years	Delete
+Session data	30 days	Delete
+OTP records	7 days	Delete
+Failed job logs	30 days	Delete
+Temp media	30 days	Delete
+Notification logs	1 year	Archive
+System logs	1 year	Archive
+Archive = Move to cold storage
+
+10. CONCURRENCY STRATEGY
+Critical for:
+
+Inventory
+Procurement
+Order processing
+Payment processing
+Optimistic Locking
+version INTEGER DEFAULT 1
+
+UPDATE products 
+SET quantity = quantity - 1, version = version + 1
+WHERE id = ? AND version = ?
+If version mismatch → retry or abort.
+
+Inventory Locking
+SELECT quantity FROM inventory WHERE id = ? FOR UPDATE
+Within transaction.
+
+Payment Locking
+SELECT status FROM payments WHERE id = ? FOR UPDATE
+Prevent double-processing.
+
+Rules
+Always use transactions for multi-table writes
+Always check version for optimistic locking
+Always release locks quickly
+Never hold locks across API boundaries
+Always retry with exponential backoff
+11. LOCKED MVP SCOPE
+Buyer PWA — Max 12 Screens
+Login (OTP)
+Segment Selection
+Home / Dashboard
+Category Browse
+Search Results
+Product Detail
+Request Quote / Direct Order
+Cart / Order Request
+My Orders
+Order Tracking
+Profile & Business Info
+Support / WhatsApp Help
+Supplier Lite Portal — Max 7 Screens
+Login
+My Assigned Orders
+Stock/Price Update
+Invoice Upload
+Dispatch Proof
+Payment Status
+Scorecard
+City Operator Dashboard — Max 6 Screens
+Today Tasks
+Stock Confirmation
+QC Upload
+Dispatch Proof Upload
+Supplier Visit Log
+Return/Investigation
+Admin Dashboard — Max 20 Modules
+Overview
+Buyers
+Suppliers
+Segments
+Categories
+Products
+Supplier Offers
+Orders
+Quotes
+Procurement Board
+QC Board
+Shipments
+Payments
+Returns
+Disputes
+Catalog Approval
+Supplier Scores
+Reports
+Audit Logs
+Settings / Config
+12. LOCKED WORKFLOW DEFINITIONS
+Order Lifecycle
+Draft/Request
+→ Availability Check
+→ Price Confirmation
+→ Buyer Confirmation
+→ Procurement Assigned
+→ Supplier Confirmed
+→ QC Pending
+→ Packed
+→ Dispatched
+→ In Transit
+→ Delivered
+→ Accepted
+→ Closed
+Exception States: Stock Not Available, Price Changed, Buyer Cancelled, Supplier Delayed, QC Failed, Delivery Failed
+
+Procurement Workflow
+Order confirmed
+→ Source selected (score-based)
+→ Procurement task created
+→ Supplier/operator confirms stock
+→ Price locked
+→ Goods collected/shipped
+→ QC evidence uploaded
+→ Dispatch
+Return / Dispute Workflow
+Issue raised within allowed window
+→ Evidence collected (photo/voice/video)
+→ Root cause assigned
+→ Decision: reject / replace / refund / credit-note
+→ Reverse logistics (if approved)
+→ Financial settlement
+→ Score update
+→ Case closed
+Quote / RFQ Workflow
+Buyer request (text/photo/voice/paper)
+→ Requirement clarification
+→ Supplier/source search
+→ Quote prepared
+→ Buyer approval
+→ Order conversion
+13. LOCKED DATABASE FOUNDATIONS
+Core Entities
+users, roles, permissions, user_roles
+segments, user_segment_access
+buyers, buyer_business_profiles
+suppliers, supplier_segment_access, supplier_verifications
+city_operators
+categories, category_trees
+products, product_attributes, product_variants, media_assets
+supplier_offers
+inventory_records, stock_updates, stock_confidence_logs
+orders, order_items, quotes, quote_items
+procurement_tasks, qc_tasks, shipments, delivery_events
+payments, payment_transactions, supplier_settlements
+buyer_ledgers, supplier_ledgers, invoices, credit_notes
+supplier_scores, buyer_scores
+disputes, returns, fraud_flags, feature_flags
+Mandatory Columns
+id, segment_id (where applicable), status
+created_at, updated_at, created_by, updated_by
+deleted_at (soft delete), metadata JSONB, version (optimistic locking)
+Indexing Strategy
+users.phone (UNIQUE)
+buyers.user_id, buyers.segment_id
+suppliers.gstin (UNIQUE)
+products.segment_id + products.category_id
+supplier_offers.product_id + supplier_offers.supplier_id
+supplier_offers.segment_id
+orders.buyer_id + orders.segment_id + orders.status + orders.created_at
+inventory_records.product_id + inventory_records.supplier_id
+shipments.order_id, payments.order_id
+audit_logs.entity_type + entity_id
+GIN index on JSONB attributes (future)
+Composite: segment + category + status
+14. ARCHITECTURE CONSTRAINTS
+#	Constraint
+1	No microservices
+2	No OpenSearch in MVP
+3	No GraphQL in MVP
+4	No gRPC in MVP
+5	No native mobile app in MVP
+6	No AI models in MVP
+7	No self-serve marketplace in MVP
+8	No fintech/lending in MVP
+9	No Kafka in MVP
+10	No data warehouse in MVP
+11	No complex BI in MVP
+12	No graph database in MVP
+13	No distributed event streaming in MVP
+14	No native iOS in MVP
+15	No autoscaling clusters in MVP
+15. NON-GOALS
+VyaparNet MVP explicitly does not solve:
+
+Cross-border trade
+Consumer e-commerce (B2C)
+Open marketplace with unverified sellers
+Social commerce
+Live commerce
+Advanced AI recommendations
+Automated lending / credit scoring
+Wallet / payments infrastructure
+Logistics route optimization AI
+Predictive analytics dashboards
+Supplier-to-buyer direct messaging bypass
+Consumer loyalty / gamification
+Complex ERP replacement
+Advanced supplier self-service
+16. FUTURE PLACEHOLDERS
+Future System	Placeholder Status
+OpenSearch/Elasticsearch	Schema supports migration
+Kafka/RabbitMQ	Event structure supports
+AI Catalog Assistant	Image/OCR data captured
+AI Voice Ordering	Voice data events ready
+AI Pricing Engine	Price history structure ready
+AI Procurement Intelligence	Sourcing decision data ready
+AI Fraud Detection	Behavior events captured
+Credit/khata system	Ledger structure ready
+BNPL	Ledger + risk data ready
+Curated marketplace	Seller panel + escrow ready
+Advanced logistics	Lane cost data ready
+Dark wholesale nodes	Fulfillment node schema ready
+Data warehouse	Analytics events ready
+Predictive analytics	Historical data captured
+17. FEATURE FLAG STRATEGY
+MVP Feature Flags
+Table: feature_flags
+
+id
+name
+enabled (boolean)
+environment
+segment_scope (nullable)
+description
+created_at
+updated_at
+Rules
+Feature flags = operational control tool
+NOT business logic system
+No complex rollout percentage in MVP
+No LaunchDarkly style A/B testing in MVP
+Simple on/off per environment
+Purpose
+Safe deployments
+Beta feature hiding
+Segment rollouts
+Rollback safety
+18. SEARCH EVOLUTION STRATEGY
+MVP (Now - Phase 1)
+PostgreSQL Full Text Search (Prisma)
+Segment-isolated search
+Category filters
+Attribute filters
+Synonym management (basic)
+Typo tolerance (basic)
+Popular search ranking
+Phase 2-3
+OpenSearch/Elasticsearch
+Segment-specific indexes
+Advanced synonyms
+Typo tolerance
+Filter analytics
+Search analytics
+Phase 4+
+Semantic search
+AI-assisted search
+Visual search (image-based)
+Voice search
+Natural language ordering
+19. EVENT-DRIVEN STRATEGY
+MVP Event Architecture
+Internal domain events
+event_log table
+BullMQ + Redis for async processing
+Event consumers decoupled
+Domain Events Captured
+OrderCreated
+OrderConfirmed
+StockReserved
+InventoryChanged
+SupplierAssigned
+PriceUpdated
+ProcurementStarted
+QCFailed
+ShipmentDispatched
+PaymentReceived
+ReturnRaised
+DisputeOpened
+SupplierScoreUpdated
+BuyerCreated
+SupplierAccessGranted
+Event Consumers (Async)
+Notifications, analytics, search indexing, fraud detection, audit logging, workflow automation
+
+20. SEGMENT ISOLATION PRINCIPLES
+Every product belongs to exactly one segment ID
+Every buyer workspace belongs to one segment
+One buyer account can have multiple segment business profiles
+Search results always filtered by segment_id
+Recommendations always segment-specific
+Admin sees all segments but filtered views
+Supplier can belong to multiple segments but segment access controlled separately
+Segment switching is explicit, not context-switching
+Catalog attributes defined per segment schema
+Pricing rules per segment
+Return rules per segment
+Compliance rules per segment
+21. SECURITY BASELINE
+Principles
+Least privilege access
+Segment isolation enforced at DB query layer
+Input validation on every endpoint
+Rate limiting per user/IP
+File upload: type/size validation, private buckets, signed URLs
+Password hashing: Argon2id
+Session: JWT + refresh rotation
+Device/session tracking
+Strict RBAC enforcement
+Audit trail for all admin actions
+Threat Prevention
+Threat	Prevention
+SQL Injection	Prisma parameterized queries
+XSS	Output encoding, CSP
+CSRF	SameSite cookies + CSRF tokens
+API Abuse	Rate limiting
+Account Hijacking	OTP + device tracking
+Segment Data Leakage	Row-level security, segment_id on every query
+Unauthorized Access	RBAC middleware
+Scraping	Rate limits + bot detection
+Malicious Uploads	File type validation, size limits
+Payment Abuse	Transaction limits + audit
+22. SCALABILITY PRINCIPLES
+Stateless API servers (no session stored on server)
+Docker containerized deployments
+Horizontal scaling possible (cloud)
+CDN for static assets
+Redis for caching + sessions
+Queue-based async processing
+Database query optimization (index strategy)
+Read replica ready (future, not required now)
+Media optimization (compression, thumbnails, CDN)
+Lazy loading for images and data
+Optimistic locking for inventory
+Database connection pooling
+23. DEPLOYMENT PRINCIPLES
+Docker for local/staging/production parity
+GitHub Actions for CI/CD
+Public cloud (AWS/Hetzner)
+Environment variables for configuration
+Environment separation: dev/staging/prod
+Secrets management (AWS Secrets Manager / .env)
+Database migrations automated (Prisma)
+Rollback plan for every deployment
+Feature flags for risky releases
+Staging testing mandatory before prod
+24. OPERATIONAL PHILOSOPHY
+Minimum manual work
+Maximum data capture
+AI-ready data from Day 1
+Workflow automation where possible
+But humans in loop for critical decisions initially
+No blind AI automation in MVP
+Trust before scale
+Profit before GMV
+Control before marketplace
+Data before AI
+Operations first, technology second
+25. CHANGE CONTROL POLICY — MANDATORY
+After PRDv2 freeze, any new feature or architecture change must pass:
+
+Step 1: Impact Analysis
+Document:
+
+Operational impact?
+UX impact?
+Database impact?
+Infra impact?
+Scalability impact?
+Workflow impact?
+Security impact?
+Cost impact?
+Step 2: Review Board
+At least 2 stakeholders must approve
+Approval documented
+Step 3: Integration Check
+Does it break existing workflows?
+Does it impact database schema?
+Does it require data migration?
+Does it conflict with architecture constraints?
+Step 4: UX Review
+Does it add cognitive load?
+Does it confuse existing users?
+Does it fit Bharat UX philosophy?
+Step 5: Operational Review
+Can operations team handle this?
+Does it require new training?
+Does it create manual work?
+Step 6: Security Review
+New threat surface?
+Data leakage risk?
+Permission escalation risk?
+Rule
+NO new feature approved without written impact analysis and stakeholder approval. No exceptions.
+
+26. CONCLUSION
+VyaparNet PRDv2 is now ARCHITECTURE FROZEN with minor improvements integrated.
+
+Locked items:
+
+Core foundation
+Architecture decisions
+Tech stack (including naming, error, idempotency, standards)
+MVP scope
+Domain boundaries
+Workflow definitions
+Database foundations (including soft delete, retention, locking)
+Architecture constraints
+Non-goals
+Future placeholders
+Feature flag strategy
+Search evolution strategy
+Event-driven strategy
+Segment isolation principles
+Security baseline
+Scalability principles
+Deployment principles
+Operational philosophy
+Change control policy
+Naming, error, idempotency, idempotency, API contracts, soft delete, retention, and concurrency — all added as minor improvements.
+
+Next steps:
+
+Save this file to specified path
+Share with internal team
+Begin information architecture phase
+Begin database schema planning
+After PRDv2 freeze:
+
+No uncontrolled brainstorming
+No random architecture changes
+No impulsive feature additions
+Structured execution only
+This document is the operating contract for building VyaparNet.

@@ -1,0 +1,48 @@
+# Node
+node_modules/
+
+# Logs
+logs
+*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build
+dist/
+build/
+.next/
+out/
+
+# Turbo
+.turbo/
+
+# Coverage
+coverage/
+
+# Cache
+.cache/
+
+# Prisma
+generated/
+
+# Mac
+.DS_Store
+
+# VSCode
+.vscode/
+
+# Antigravity
+.antigravity/
+
+# Temporary
+tmp/
+temp/
+
+# Docker
+docker-data/
+
+# OS
+Thumbs.db
