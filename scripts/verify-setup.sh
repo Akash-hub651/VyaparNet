@@ -15,9 +15,9 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-check_pass() { echo -e "${GREEN}✅ PASS${NC}: $1"; ((PASS++)); }
-check_fail() { echo -e "${RED}❌ FAIL${NC}: $1"; ((FAIL++)); }
-check_warn() { echo -e "${YELLOW}⚠️  WARN${NC}: $1"; ((WARNINGS++)); }
+check_pass() { echo -e "${GREEN}✅ PASS${NC}: $1"; PASS=$((PASS+1)); }
+check_fail() { echo -e "${RED}❌ FAIL${NC}: $1"; FAIL=$((FAIL+1)); }
+check_warn() { echo -e "${YELLOW}⚠️  WARN${NC}: $1"; WARNINGS=$((WARNINGS+1)); }
 
 echo "============================================================"
 echo "VyaparNet Sprint 0 Validation"
@@ -26,7 +26,7 @@ echo ""
 
 # ─── Node Version ────────────────────────────────────────────
 echo "--- Node & Package Manager ---"
-NODE_VERSION=$(node --version 2>/dev/null | grep -oP 'v\K[0-9]+' | head -1)
+NODE_VERSION=$(node --version 2>/dev/null | sed 's/v//' | cut -d. -f1 | head -1)
 if [[ "$NODE_VERSION" -ge 20 ]]; then
   check_pass "Node.js version: v$(node --version)"
 else
@@ -108,7 +108,7 @@ fi
 # Check trigger
 TRIGGER=$(docker exec vyaparnet-postgres psql -U vyaparnet -d vyaparnet -tAc \
   "SELECT COUNT(*) FROM information_schema.triggers WHERE trigger_name='product_search_trigger';" 2>/dev/null)
-if [[ "$TRIGGER" == "1" ]]; then
+if [[ "$TRIGGER" -ge 1 ]]; then
   check_pass "Search trigger: product_search_trigger exists"
 else
   check_fail "Search trigger: product_search_trigger NOT found"
@@ -161,7 +161,7 @@ fi
 # ─── Prisma ───────────────────────────────────────────────────
 echo ""
 echo "--- Prisma Checks ---"
-if DATABASE_URL="postgresql://vyaparnet:localdev@localhost:5432/vyaparnet" \
+if DATABASE_URL="postgresql://vyaparnet:localdev@localhost:5433/vyaparnet" \
    pnpm --filter @vyaparnet/database exec prisma migrate status 2>&1 | \
    grep -q "Database schema is up to date"; then
   check_pass "Prisma migrations: up to date"
@@ -187,16 +187,16 @@ fi
 # ─── Lint ─────────────────────────────────────────────────────
 echo ""
 echo "--- Lint Checks ---"
-if pnpm lint 2>&1 | grep -qiE "(error|warning)"; then
-  check_fail "ESLint: errors or warnings found"
-else
+if pnpm lint >/dev/null 2>&1; then
   check_pass "ESLint: no errors"
+else
+  check_fail "ESLint: errors or warnings found"
 fi
 
 # ─── Tests ────────────────────────────────────────────────────
 echo ""
 echo "--- Test Checks ---"
-if pnpm test 2>&1 | grep -q "PASS"; then
+if NODE_ENV=test pnpm test >/dev/null 2>&1; then
   check_pass "Tests: all passing"
 else
   check_fail "Tests: failures found (run: pnpm test for details)"

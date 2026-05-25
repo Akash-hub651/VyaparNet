@@ -45,13 +45,13 @@ import type { AppConfig } from '../config/config.schema';
     // Queue registrations — no workers yet (Sprint 0)
     // Workers are added in domain modules starting Sprint 3
     BullModule.registerQueue(
-      { name: 'payments' },      // Critical priority — Sprint 4
-      { name: 'inventory' },     // Critical priority — Sprint 3
-      { name: 'orders' },        // High priority — Sprint 4
+      { name: 'payments' }, // Critical priority — Sprint 4
+      { name: 'inventory' }, // Critical priority — Sprint 3
+      { name: 'orders' }, // High priority — Sprint 4
       { name: 'notifications' }, // Medium priority — Sprint 6
-      { name: 'search-reindex' },// Low priority — Sprint 2
-      { name: 'analytics' },     // Low priority — Sprint 4
-      { name: 'dead-letter' },   // DLQ — Sprint 3
+      { name: 'search-reindex' }, // Low priority — Sprint 2
+      { name: 'analytics' }, // Low priority — Sprint 4
+      { name: 'dead-letter' }, // DLQ — Sprint 3
     ),
   ],
   exports: [BullModule],

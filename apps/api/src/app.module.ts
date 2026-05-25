@@ -24,12 +24,12 @@ import { HealthModule } from './core/health/health.module';
  */
 @Module({
   imports: [
-    ConfigModule,     // Must be first
-    LoggerModule,     // Must be second
-    PrismaModule,     // Global — provides PrismaService to all modules
-    RedisModule,      // Global — provides RedisService to all modules
-    BullMQModule,     // Registers all queues
-    HealthModule,     // Health check endpoints
+    ConfigModule, // Must be first
+    LoggerModule, // Must be second
+    PrismaModule, // Global — provides PrismaService to all modules
+    RedisModule, // Global — provides RedisService to all modules
+    BullMQModule, // Registers all queues
+    HealthModule, // Health check endpoints
     // ─── Domain modules added Sprint 1+ ───
     // IdentityModule,    // Sprint 1
     // CatalogModule,     // Sprint 2

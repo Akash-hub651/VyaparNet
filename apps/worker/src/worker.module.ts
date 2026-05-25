@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module } from "@nestjs/common";
 // Workers added Sprint 3+
 // Currently: bare module to verify worker scaffold works
 

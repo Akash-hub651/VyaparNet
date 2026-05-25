@@ -36,7 +36,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
 
     const requestId =
-      (getContext<string>('requestId')) ??
+      getContext<string>('requestId') ??
       (request.headers['x-request-id'] as string | undefined) ??
       'unknown';
 
@@ -52,11 +52,16 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       if (typeof exceptionResponse === 'string') {
         message = exceptionResponse;
         code = this.statusToCode(statusCode);
-      } else if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
+      } else if (
+        typeof exceptionResponse === 'object' &&
+        exceptionResponse !== null
+      ) {
         const errObj = exceptionResponse as Record<string, unknown>;
-        code = (errObj['code'] as string | undefined) ?? this.statusToCode(statusCode);
+        code =
+          (errObj['code'] as string | undefined) ??
+          this.statusToCode(statusCode);
         message = (errObj['message'] as string | undefined) ?? message;
-        details = (errObj['details'] as Record<string, unknown> | undefined);
+        details = errObj['details'] as Record<string, unknown> | undefined;
       }
     } else if (exception instanceof Error) {
       // Unexpected errors — do not expose stack trace to client

@@ -1,4 +1,9 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import type { AppConfig } from '../config/config.schema';
@@ -18,7 +23,10 @@ import type { AppConfig } from '../config/config.schema';
  * Authority: LOCKED_DECISIONS.md (Redis, ioredis)
  */
 @Injectable()
-export class RedisService extends Redis implements OnModuleInit, OnModuleDestroy {
+export class RedisService
+  extends Redis
+  implements OnModuleInit, OnModuleDestroy
+{
   private readonly logger = new Logger(RedisService.name);
 
   constructor(configService: ConfigService<AppConfig, true>) {
@@ -59,7 +67,11 @@ export class RedisService extends Redis implements OnModuleInit, OnModuleDestroy
    * Convenience method: Set a key with TTL in seconds.
    * Standard pattern for all cache operations.
    */
-  async setWithTtl(key: string, value: string, ttlSeconds: number): Promise<void> {
+  async setWithTtl(
+    key: string,
+    value: string,
+    ttlSeconds: number,
+  ): Promise<void> {
     await this.setex(key, ttlSeconds, value);
   }
 

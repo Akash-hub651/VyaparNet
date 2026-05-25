@@ -69,20 +69,17 @@ async function bootstrap(): Promise<void> {
   await app.listen(port, host);
 
   const logger = app.get(Logger);
-  logger.log(
-    `🚀 VyaparNet API running on http://${host}:${port}`,
-    'Bootstrap',
-  );
-  logger.log(
-    `📡 Health: http://${host}:${port}/health`,
-    'Bootstrap',
-  );
+  logger.log(`🚀 VyaparNet API running on http://${host}:${port}`, 'Bootstrap');
+  logger.log(`📡 Health: http://${host}:${port}/health`, 'Bootstrap');
 
   // ─── Graceful Shutdown ───
   // Authority: VyaparNet_Deployment_Runtime_Architecture_v1.md Section 5.3
   // Authority: VyaparNet_Implementation_Architecture_Official_Freeze_v1.md Section 22.8
   const gracefulShutdown = async (signal: string): Promise<void> => {
-    logger.log(`${signal} received. Starting graceful shutdown...`, 'Bootstrap');
+    logger.log(
+      `${signal} received. Starting graceful shutdown...`,
+      'Bootstrap',
+    );
 
     // Stop accepting new requests
     await app.close();
@@ -100,7 +97,7 @@ async function bootstrap(): Promise<void> {
 
   // ─── Unhandled rejections ───
   process.on('unhandledRejection', (reason) => {
-    logger.error('Unhandled Rejection', reason as Error, 'Bootstrap');
+    logger.error('Unhandled Rejection', reason, 'Bootstrap');
   });
 
   process.on('uncaughtException', (error) => {

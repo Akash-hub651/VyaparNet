@@ -9,7 +9,8 @@ import { z } from 'zod';
  */
 export const configSchema = z.object({
   // Node
-  NODE_ENV: z.enum(['development', 'test', 'staging', 'production'])
+  NODE_ENV: z
+    .enum(['development', 'test', 'staging', 'production'])
     .default('development'),
 
   // Application

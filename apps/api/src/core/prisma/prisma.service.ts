@@ -1,4 +1,9 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from '@nestjs/common';
 import { PrismaClient } from '@vyaparnet/database';
 
 /**
@@ -12,18 +17,22 @@ import { PrismaClient } from '@vyaparnet/database';
  * Authority: VyaparNet_Deployment_Runtime_Architecture_v1.md Section 8
  */
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+export class PrismaService
+  extends PrismaClient
+  implements OnModuleInit, OnModuleDestroy
+{
   private readonly logger = new Logger(PrismaService.name);
 
   constructor() {
     super({
-      log: process.env['NODE_ENV'] === 'development'
-        ? [
-            { emit: 'event', level: 'query' },
-            { emit: 'stdout', level: 'error' },
-            { emit: 'stdout', level: 'warn' },
-          ]
-        : [{ emit: 'stdout', level: 'error' }],
+      log:
+        process.env['NODE_ENV'] === 'development'
+          ? [
+              { emit: 'event', level: 'query' },
+              { emit: 'stdout', level: 'error' },
+              { emit: 'stdout', level: 'warn' },
+            ]
+          : [{ emit: 'stdout', level: 'error' }],
     });
   }
 
@@ -33,12 +42,16 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     this.logger.log('Database connected successfully.');
 
     if (process.env['NODE_ENV'] === 'development') {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (this as any).$on('query', (event: { query: string; duration: number }) => {
-        if (event.duration > 100) {
-          this.logger.warn(`Slow query (${event.duration}ms): ${event.query}`);
-        }
-      });
+      (this as any).$on(
+        'query',
+        (event: { query: string; duration: number }) => {
+          if (event.duration > 100) {
+            this.logger.warn(
+              `Slow query (${event.duration}ms): ${event.query}`,
+            );
+          }
+        },
+      );
     }
   }
 
