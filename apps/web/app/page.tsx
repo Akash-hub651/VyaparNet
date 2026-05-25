@@ -1,14 +1,14 @@
+import React from "react";
+
 /**
  * VyaparNet Buyer PWA — Placeholder Homepage
  * Sprint 0: Placeholder only.
  * Sprint 2+: Real product discovery, search, categories.
  */
-export default function HomePage(): JSX.Element {
+export default function HomePage(): React.JSX.Element {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8">
-      <h1 className="text-3xl font-bold text-[#2563EB] mb-4">
-        VyaparNet
-      </h1>
+      <h1 className="text-3xl font-bold text-[#2563EB] mb-4">VyaparNet</h1>
       <p className="text-[#64748B] text-center max-w-md">
         Bharat ka B2B Marketplace — Coming Soon
       </p>

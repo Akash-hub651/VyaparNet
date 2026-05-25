@@ -1,38 +1,26 @@
-import type { Metadata } from 'next';
-import { Inter, Manrope } from 'next/font/google';
-import './globals.css';
-
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-  display: 'swap',
-});
-
-const manrope = Manrope({
-  subsets: ['latin'],
-  variable: '--font-manrope',
-  display: 'swap',
-});
+import type { Metadata, Viewport } from "next";
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: 'VyaparNet — Bharat ka B2B Marketplace',
-  description: 'Verified wholesale procurement network for Bharat retailers.',
-  manifest: '/manifest.json',
-  themeColor: '#2563EB',
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-  },
+  title: "VyaparNet — Bharat ka B2B Marketplace",
+  description: "Verified wholesale procurement network for Bharat retailers.",
+  manifest: "/manifest.json",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#2563EB",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
-}): JSX.Element {
+}): React.JSX.Element {
   return (
-    <html lang="hi" className={`${inter.variable} ${manrope.variable}`}>
+    <html lang="hi" className="font-sans antialiased">
       <body className="bg-[#F8FAFC] text-[#1E293B] font-sans antialiased">
         {children}
       </body>
