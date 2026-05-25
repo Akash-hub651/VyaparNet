@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: vyaparnet-postgres
+    environment:
+      POSTGRES_USER: vyaparnet
+      POSTGRES_PASSWORD: localdev
+      POSTGRES_DB: vyaparnet
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/docker/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    networks:
+      - vyaparnet-internal
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U vyaparnet -d vyaparnet']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: vyaparnet-redis
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --requirepass localdev
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    networks:
+      - vyaparnet-internal
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', 'localdev', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    restart: unless-stopped
+
+  adminer:
+    image: adminer:latest
+    container_name: vyaparnet-adminer
+    ports:
+      - '8080:8080'
+    networks:
+      - vyaparnet-internal
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DESIGN: flat
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    name: vyaparnet_postgres_data
+  redis_data:
+    name: vyaparnet_redis_data
+
+networks:
+  vyaparnet-internal:
+    name: vyaparnet-internal
+    driver: bridge
