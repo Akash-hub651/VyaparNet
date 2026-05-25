@@ -1,48 +1,45 @@
-# Node
-node_modules/
-
-# Logs
-logs
-*.log
-
-# Environment
+# Environment variables — NEVER commit
 .env
 .env.local
 .env.*.local
+!.env.example
 
-# Build
+# Node
+node_modules/
+.pnpm-store/
+
+# Build outputs
 dist/
 build/
 .next/
 out/
 
-# Turbo
-.turbo/
+# Prisma generated client
+node_modules/.prisma/
+# Note: Do NOT ignore prisma/migrations — those are committed
 
 # Coverage
 coverage/
+lcov.info
 
-# Cache
+# Turborepo
+.turbo/
 .cache/
 
-# Prisma
-generated/
-
-# Mac
+# IDE
+.idea/
+.vscode/
+*.sw?
 .DS_Store
 
-# VSCode
-.vscode/
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
 
-# Antigravity
-.antigravity/
+# TypeScript build info
+*.tsbuildinfo
 
-# Temporary
-tmp/
-temp/
-
-# Docker
-docker-data/
-
-# OS
-Thumbs.db
+# Docker override
+docker-compose.override.yml
+# Note: .override.yml.example IS committed — it's a template
