@@ -1,9 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { Logger } from 'nestjs-pino';
 import helmet from 'helmet';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './shared/filters/global-exception.filter';
 import { RequestIdInterceptor } from './shared/interceptors/request-id.interceptor';
+import type { AppConfig } from './core/config/config.schema';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, {
@@ -14,6 +16,8 @@ async function bootstrap(): Promise<void> {
   // ─── Use Pino logger globally ───
   app.useLogger(app.get(Logger));
   app.flushLogs();
+
+  const configService = app.get(ConfigService<AppConfig, true>);
 
   // ─── Security headers ───
   // Authority: VyaparNet_Implementation_Architecture_Official_Freeze_v1.md Section 17
@@ -35,9 +39,7 @@ async function bootstrap(): Promise<void> {
   );
 
   // ─── CORS ───
-  const corsOrigins = process.env['CORS_ORIGINS']?.split(',') ?? [
-    'http://localhost:3000',
-  ];
+  const corsOrigins = configService.get('CORS_ORIGINS').split(',');
   app.enableCors({
     origin: corsOrigins,
     credentials: true,
@@ -64,8 +66,8 @@ async function bootstrap(): Promise<void> {
   app.useGlobalInterceptors(new RequestIdInterceptor());
 
   // ─── Start server ───
-  const port = parseInt(process.env['API_PORT'] ?? '3000', 10);
-  const host = process.env['API_HOST'] ?? '0.0.0.0';
+  const port = configService.get('API_PORT');
+  const host = configService.get('API_HOST');
   await app.listen(port, host);
 
   const logger = app.get(Logger);

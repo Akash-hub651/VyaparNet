@@ -1,23 +1,11 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": [
-    "**/.env.*local",
-    ".env"
-  ],
-  "globalEnv": [
-    "NODE_ENV",
-    "DATABASE_URL",
-    "REDIS_URL"
-  ],
+  "globalDependencies": ["**/.env.*local", ".env"],
+  "globalEnv": ["NODE_ENV", "DATABASE_URL", "REDIS_URL"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [
-        ".next/**",
-        "!.next/cache/**",
-        "dist/**",
-        "generated/**"
-      ]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**", "generated/**"]
     },
     "dev": {
       "cache": false,
@@ -35,10 +23,7 @@
       "outputs": []
     },
     "typecheck": {
-      "dependsOn": [
-        "^build",
-        "packages/database#generate"
-      ],
+      "dependsOn": ["^build", "@vyaparnet/database#generate"],
       "outputs": []
     },
     "clean": {
