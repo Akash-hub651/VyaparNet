@@ -15,7 +15,8 @@
     "typecheck": "turbo run typecheck",
     "clean": "turbo run clean && rimraf node_modules",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\""
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "prepare": "husky"
   },
   "devDependencies": {
     "turbo": "^2.0.0",

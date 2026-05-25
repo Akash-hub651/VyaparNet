@@ -1,0 +1,21 @@
+[allowlist]
+description = "VyaparNet gitleaks allowlist"
+paths = [
+  ".env.example",      # Template file — allowed to have placeholder values
+  "*.md",              # Documentation — no real secrets expected
+]
+
+[[rules]]
+description = "Generic API Key"
+regex = '''(?i)(api[_-]?key|apikey|access[_-]?key)['":\s=]+['"a-zA-Z0-9/+]{16,}'''
+tags = ["key", "api"]
+
+[[rules]]
+description = "Generic Secret"
+regex = '''(?i)(secret|password|passwd|pwd)['":\s=]+['"a-zA-Z0-9/+!@#$%^&*]{8,}'''
+tags = ["secret"]
+
+[[rules]]
+description = "JWT Token"
+regex = '''eyJ[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+'''
+tags = ["jwt"]
