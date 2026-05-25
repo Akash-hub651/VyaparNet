@@ -1,0 +1,23 @@
+# Global ownership
+* @vyaparnet/architect
+
+# Module Owners (assigned as team grows)
+/apps/api/src/modules/identity/         @vyaparnet/backend-team
+/apps/api/src/modules/catalog/          @vyaparnet/backend-team
+/apps/api/src/modules/inventory/        @vyaparnet/backend-team
+/apps/api/src/modules/order/            @vyaparnet/backend-team
+/apps/api/src/modules/payment/          @vyaparnet/finance-team
+/apps/api/src/modules/notification/     @vyaparnet/backend-team
+/apps/api/src/modules/audit/            @vyaparnet/backend-team
+/apps/api/src/modules/trust-safety/     @vyaparnet/backend-team
+/apps/api/src/modules/procurement/      @vyaparnet/backend-team
+
+# Infrastructure
+/packages/database/                     @vyaparnet/architect
+/infra/                                 @vyaparnet/devops-team
+/.github/                               @vyaparnet/devops-team
+
+# Security-critical files — double review required
+/apps/api/src/shared/guards/            @vyaparnet/architect @vyaparnet/backend-team
+/apps/api/src/core/config/              @vyaparnet/architect
+/packages/database/prisma/migrations/   @vyaparnet/architect
