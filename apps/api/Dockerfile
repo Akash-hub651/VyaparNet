@@ -4,7 +4,7 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
 # Copy workspace manifests
 COPY pnpm-workspace.yaml turbo.json package.json pnpm-lock.yaml ./
@@ -22,10 +22,10 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
+# Copy everything from deps (includes all package.json files and complete node_modules structure)
+COPY --from=deps /app ./
 
 # Copy source
 COPY . .

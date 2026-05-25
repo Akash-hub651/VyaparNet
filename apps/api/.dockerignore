@@ -1,0 +1,30 @@
+# Node/npm
+node_modules
+.pnpm-store
+pnpm-debug.log*
+
+# Build outputs
+dist
+build
+*.tsbuildinfo
+
+# Cache
+.turbo
+.eslintcache
+.prettiercache
+.vitestcache
+coverage
+lcov.info
+
+# Environment variables / Secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# Git / IDEs
+.git
+.vscode
+.idea
+*.sw?
+.DS_Store

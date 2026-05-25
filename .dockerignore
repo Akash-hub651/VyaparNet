@@ -1,0 +1,59 @@
+# Node/npm
+node_modules
+**/node_modules
+.pnpm-store
+**/pnpm-debug.log*
+
+# Build outputs
+dist
+**/dist
+.next
+**/.next
+out
+**/out
+build
+**/build
+*.tsbuildinfo
+
+# Cache
+.turbo
+**/.turbo
+.eslintcache
+.prettiercache
+.vitestcache
+**/.vitestcache
+coverage
+lcov.info
+
+# Environment variables / Secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# Git
+.git
+.gitignore
+.github
+.husky
+
+# IDEs
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.gemini
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# System files
+.DS_Store
+Thumbs.db
