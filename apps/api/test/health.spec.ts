@@ -12,7 +12,7 @@ import { RequestIdInterceptor } from '../src/shared/interceptors/request-id.inte
  * Sprint 0 first test:
  * - /health → 200 with correct shape
  * - /health/ready → 200 when DB + Redis healthy
- * - /health/ready → 503 when DB is unavailable (manual test)
+ * - /health/ready → 503 when DB is unavailable
  *
  * Authority: VyaparNet_Deployment_Runtime_Architecture_v1.md Section 12.2
  */
@@ -82,6 +82,50 @@ describe('Health Endpoints', () => {
           redis: 'ok',
         },
       });
+    });
+
+    it('returns 503 with standard error envelope when a dependency is unhealthy', async () => {
+      // Create isolated module with a broken PrismaService
+      const { PrismaService } =
+        await import('../src/core/prisma/prisma.service');
+      const brokenModule: TestingModule = await Test.createTestingModule({
+        imports: [AppModule],
+      })
+        .overrideProvider(PrismaService)
+        .useValue({
+          $queryRaw: async () => {
+            throw new Error('DB connection refused');
+          },
+        })
+        .compile();
+
+      const brokenApp = brokenModule.createNestApplication();
+      brokenApp.setGlobalPrefix('api/v1', {
+        exclude: ['health', 'health/ready'],
+      });
+      brokenApp.useGlobalFilters(new GlobalExceptionFilter());
+      brokenApp.useGlobalInterceptors(new RequestIdInterceptor());
+      await brokenApp.init();
+
+      const response = await request(brokenApp.getHttpServer())
+        .get('/health/ready')
+        .expect(503);
+
+      expect(response.body).toMatchObject({
+        success: false,
+        error: {
+          code: 'SERVICE_UNAVAILABLE',
+          message: expect.any(String),
+          details: {
+            checks: {
+              database: 'error',
+            },
+          },
+        },
+        requestId: expect.any(String),
+      });
+
+      await brokenApp.close();
     });
   });
 

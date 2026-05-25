@@ -1,4 +1,10 @@
-import { Controller, Get, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpCode,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 
@@ -75,15 +81,16 @@ export class HealthController {
     const allHealthy = Object.values(checks).every((v) => v === 'ok');
 
     if (!allHealthy) {
-      // Return 503 — load balancer will route away from this instance
-      throw Object.assign(new Error('Service not ready'), {
-        statusCode: HttpStatus.SERVICE_UNAVAILABLE,
-        response: {
+      // Throw HttpException so GlobalExceptionFilter correctly returns 503.
+      // Authority: VyaparNet_Deployment_Runtime_Architecture_v1.md Section 12.2
+      throw new HttpException(
+        {
           code: 'SERVICE_UNAVAILABLE',
           message: 'One or more dependencies are unhealthy',
           details: { checks },
         },
-      });
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
     }
 
     return {
