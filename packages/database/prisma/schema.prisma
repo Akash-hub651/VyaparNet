@@ -1565,6 +1565,10 @@ model LoginSession {
   ipAddress    String?
   expiresAt    DateTime
   revoked      Boolean @default(false)
+  refreshTokenFamilyId String
+  refreshTokenVersion  Int       @default(1)
+  revokedAt            DateTime?
+  revokeReason         String?
 
   createdAt DateTime @default(now())
 

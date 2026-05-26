@@ -1838,6 +1838,17 @@ FILE: apps/api/src/modules/identity/auth/repositories/session.repository.ts
         data: { revoked: true },
       });
     }
+
+    async revokeFamily(familyId: string): Promise<void> {
+      await this.prisma.loginSession.updateMany({
+        where: { refreshTokenFamilyId: familyId },
+        data: {
+          revoked: true,
+          revokedAt: new Date(),
+          revokeReason: 'TOKEN_REUSE_DETECTED',
+        },
+      });
+    }
   }
 ```
 
@@ -2374,6 +2385,8 @@ FILE: apps/api/src/modules/identity/auth/auth.service.ts
               userAgent: userAgent.slice(0, 255),
               ipAddress: requestIp,
               expiresAt,
+              refreshTokenFamilyId: crypto.randomUUID(),
+              refreshTokenVersion: 1,
             },
           });
 
@@ -2458,15 +2471,17 @@ FILE: apps/api/src/modules/identity/auth/auth.service.ts
         });
       }
 
-      // Step 2: Load session from DB (full validation)
-      const session = await this.sessionRepository.findActiveById(sessionId);
+      // Step 2: Load session from DB (full validation including revoked sessions for reuse detection)
+      const session = await this.prisma.loginSession.findUnique({
+        where: { id: sessionId },
+      });
+
       if (!session) {
-        // Redis had the key but DB session is gone/revoked
-        // This could indicate token theft or race condition
+        // Redis had the key but DB session is completely gone
         await this.tokenService.revokeRefreshTokenInRedis(rawToken);
         this.logger.warn(
           { sessionId, requestIp },
-          'Redis/DB session mismatch — possible token theft',
+          'Redis/DB session mismatch — session not found in DB',
         );
         throw new UnauthorizedException({
           code: 'SESSION_INVALID',
@@ -2474,9 +2489,35 @@ FILE: apps/api/src/modules/identity/auth/auth.service.ts
         });
       }
 
+      // Replay Detection: Check if session is already revoked
+      if (session.revoked) {
+        // TOKEN REUSE / REPLAY DETECTED!
+        // 1. Revoke the entire token family
+        await this.sessionRepository.revokeFamily(session.refreshTokenFamilyId);
+
+        // 2. Clean up current reused token in Redis
+        await this.tokenService.revokeRefreshTokenInRedis(rawToken);
+
+        // 3. Log a security event
+        await this.authRepository.logSecurityEvent({
+          eventType: 'TOKEN_REUSE_DETECTED',
+          ipAddress: requestIp,
+          userId: session.userId,
+          userAgent: session.userAgent ?? undefined,
+          metadata: {
+            sessionId: session.id,
+            familyId: session.refreshTokenFamilyId,
+          },
+        });
+
+        // 4. Throw 401 Unauthorized
+        throw new UnauthorizedException({
+          code: 'TOKEN_REUSE_DETECTED',
+          message: 'Security warning: Refresh token reuse detected. All sessions invalidated.',
+        });
+      }
+
       // Step 3: Load user
-      const user = await this.authRepository.findByPhone('').catch(() => null);
-      // Note: findById needed — adding to AuthRepository
       const userById = await this.prisma.user.findFirst({
         where: { id: session.userId, isDeleted: false },
       });
@@ -2494,6 +2535,7 @@ FILE: apps/api/src/modules/identity/auth/auth.service.ts
         });
 
       // Step 5: Atomically rotate — revoke old, create new
+      let newSession;
       await this.prisma.$transaction(async (tx) => {
         // Revoke old session
         await tx.loginSession.update({
@@ -2503,18 +2545,19 @@ FILE: apps/api/src/modules/identity/auth/auth.service.ts
 
         // Create new session
         const expiresAt = new Date(Date.now() + TokenService.REFRESH_TOKEN_TTL_SECONDS * 1000);
-        const newSession = await tx.loginSession.create({
+        newSession = await tx.loginSession.create({
           data: {
             userId: userById.id,
             refreshToken: newHashedToken,
             userAgent: session.userAgent ?? undefined,
             ipAddress: requestIp,
             expiresAt,
+            refreshTokenFamilyId: session.refreshTokenFamilyId,
+            refreshTokenVersion: session.refreshTokenVersion + 1,
           },
         });
 
-        // Update Redis
-        await this.tokenService.revokeRefreshTokenInRedis(rawToken);
+        // Update Redis with the new session (keep old one mapped in Redis so we can detect its reuse!)
         await this.tokenService.storeRefreshTokenInRedis(newRawToken, newSession.id);
       });
 
