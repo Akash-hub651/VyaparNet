@@ -60,6 +60,7 @@ From `PROJECT_CONTEXT.md` + `LOCKED_DECISIONS.md`: Auth = OTP+JWT locked. Argon2
 14. **Zod schemas location:** All auth Zod schemas go in `packages/shared` (per Sprint 0 structure where `packages/shared` was referenced as the shared schemas package). Wait — Sprint 0 created `packages/types` not `packages/shared`. Re-checking... Sprint 0 pack created `packages/types`, `packages/utils`, `packages/ui`, `packages/config`. The Master Roadmap Sprint 1 says "DTOs — Zod-validated, in packages/shared." But Sprint 0 created `packages/types` not `packages/shared`. Resolution: Zod schemas for DTOs go in `packages/types` (which is where shared TypeScript types/interfaces live — Zod schemas are runtime type validators that also produce TypeScript types). This is consistent.
 
 **Module structure for Sprint 1:**
+
 ```
 apps/api/src/modules/
 └── identity/
@@ -74,22 +75,25 @@ Both are sub-modules of the Identity module, matching the Module Breakdown docum
 ---
 
 # VYAPARNET — SPRINT 1 DETAILED IMPLEMENTATION PACK
+
 ## Authentication & Identity Foundation
+
 ### Version: v1.0 | Authority: All Architecture Documents + Master Context Pack
+
 ### Date: 2025-05-25 | Preceded by: Sprint 0 (Foundation — COMPLETE)
 
 ---
 
 ## SECTION 1: SPRINT IDENTITY
 
-| Field | Value |
-|---|---|
-| Sprint Number | 1 |
-| Sprint Name | Authentication & Identity Foundation |
-| Duration | 2 weeks (10 working days) |
-| Status | READY TO EXECUTE (Sprint 0 gate must be passed) |
-| Preceded By | Sprint 0 — Foundation (ALL validation gates must pass) |
-| Followed By | Sprint 2 — Product Catalog & Search |
+| Field         | Value                                                                    |
+| ------------- | ------------------------------------------------------------------------ |
+| Sprint Number | 1                                                                        |
+| Sprint Name   | Authentication & Identity Foundation                                     |
+| Duration      | 2 weeks (10 working days)                                                |
+| Status        | READY TO EXECUTE (Sprint 0 gate must be passed)                          |
+| Preceded By   | Sprint 0 — Foundation (ALL validation gates must pass)                   |
+| Followed By   | Sprint 2 — Product Catalog & Search                                      |
 | Critical Path | Yes — every subsequent sprint depends on `@CurrentUser()` being reliable |
 
 ---
@@ -98,23 +102,23 @@ Both are sub-modules of the Identity module, matching the Module Breakdown docum
 
 Every AI agent and engineer executing Sprint 1 MUST read these files before writing a single line.
 
-| Context Type | Authoritative File | Why Required |
-|---|---|---|
-| Authentication Flow | `architecture/implementation/VyaparNet_Implementation_Architecture_Official_Freeze_v1.md` — Section 9 | OTP+JWT strategy, RBAC guards, permission model, token rotation |
-| Auth Workflow Diagrams | `architecture/workflows/VyaparNet_Workflow_Sequence_Diagrams_v1.md` — Sections 1.1, 1.2, 28, 28.1 | Exact OTP flow, refresh flow, lockout recovery, support ticket auto-creation |
-| API Contracts | `architecture/api/VyaparNet_API_Contracts_Backend_Scaffold_Blueprint.md` — Section 2 | Auth DTOs, route definitions, Zod schemas, RBAC permission matrix |
-| Database Schema | `architecture/database/VyaparNet_SCHEMA_v4_3_FINAL_FREEZE.md` | User, Business, Address, LoginSession, OtpAttempt, SecurityEvent, AuditLog models |
-| Database Indexing | `architecture/database/VyaparNet_Database_Indexing_Strategy_Official_Freeze_v1.md` | idx_user_phone, idx_ls_refresh, idx_otp_phone_date — Sprint 1 critical indexes |
-| DB Infra | `architecture/database/VyaparNet_DB_Infra_Architecture.md` | Connection pooling, session management, RBAC deep dive |
-| Runtime Security | `architecture/runtime/VyaparNet_Deployment_Runtime_Architecture_v1.md` — Section 14 | Rate limiting, session rules (max 3 concurrent), JWT TTL, TLS |
-| UX Auth Flow | `architecture/ux/VyaparNet_Product_UX_System_v1.md` — Section 9.1 | Login screen, OTP screen, onboarding flow, Bharat UX rules |
-| Information Architecture | `architecture/ux/VyaparNet_IA_Final_Master_Freeze_v3.docx` — Section 3 (Buyer) | Onboarding screens, segment selection, GST optional rule |
-| Governance | `context/LOCKED_DECISIONS.md` | OTP+JWT locked, Argon2id locked, Redis sessions locked, no OAuth Phase 1 |
-| Project Context | `context/PROJECT_CONTEXT.md` | AI rules, naming conventions, anti-patterns, security philosophy |
-| Sprint Authority | `implementation/master-roadmap/MASTER_IMPLEMENTATION_ROADMAP.md` — Sprint 1 | Deliverables, validation gate, failure conditions |
-| Sprint 0 | `implementation/sprints/SPRINT_0.md` | Package boundaries, module patterns, established infrastructure |
-| Current Phase | `context/CURRENT_PHASE.md` | Live coordination state |
-| PRD | `architecture/prd/VyaparNet_PRDv2_Final_Freeze.docx` — Sections 3, 4, 21 | Tech stack (Argon2id), naming, security baseline |
+| Context Type             | Authoritative File                                                                                    | Why Required                                                                      |
+| ------------------------ | ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Authentication Flow      | `architecture/implementation/VyaparNet_Implementation_Architecture_Official_Freeze_v1.md` — Section 9 | OTP+JWT strategy, RBAC guards, permission model, token rotation                   |
+| Auth Workflow Diagrams   | `architecture/workflows/VyaparNet_Workflow_Sequence_Diagrams_v1.md` — Sections 1.1, 1.2, 28, 28.1     | Exact OTP flow, refresh flow, lockout recovery, support ticket auto-creation      |
+| API Contracts            | `architecture/api/VyaparNet_API_Contracts_Backend_Scaffold_Blueprint.md` — Section 2                  | Auth DTOs, route definitions, Zod schemas, RBAC permission matrix                 |
+| Database Schema          | `architecture/database/VyaparNet_SCHEMA_v4_3_FINAL_FREEZE.md`                                         | User, Business, Address, LoginSession, OtpAttempt, SecurityEvent, AuditLog models |
+| Database Indexing        | `architecture/database/VyaparNet_Database_Indexing_Strategy_Official_Freeze_v1.md`                    | idx_user_phone, idx_ls_refresh, idx_otp_phone_date — Sprint 1 critical indexes    |
+| DB Infra                 | `architecture/database/VyaparNet_DB_Infra_Architecture.md`                                            | Connection pooling, session management, RBAC deep dive                            |
+| Runtime Security         | `architecture/runtime/VyaparNet_Deployment_Runtime_Architecture_v1.md` — Section 14                   | Rate limiting, session rules (max 3 concurrent), JWT TTL, TLS                     |
+| UX Auth Flow             | `architecture/ux/VyaparNet_Product_UX_System_v1.md` — Section 9.1                                     | Login screen, OTP screen, onboarding flow, Bharat UX rules                        |
+| Information Architecture | `architecture/ux/VyaparNet_IA_Final_Master_Freeze_v3.docx` — Section 3 (Buyer)                        | Onboarding screens, segment selection, GST optional rule                          |
+| Governance               | `context/LOCKED_DECISIONS.md`                                                                         | OTP+JWT locked, Argon2id locked, Redis sessions locked, no OAuth Phase 1          |
+| Project Context          | `context/PROJECT_CONTEXT.md`                                                                          | AI rules, naming conventions, anti-patterns, security philosophy                  |
+| Sprint Authority         | `implementation/master-roadmap/MASTER_IMPLEMENTATION_ROADMAP.md` — Sprint 1                           | Deliverables, validation gate, failure conditions                                 |
+| Sprint 0                 | `implementation/sprints/SPRINT_0.md`                                                                  | Package boundaries, module patterns, established infrastructure                   |
+| Current Phase            | `context/CURRENT_PHASE.md`                                                                            | Live coordination state                                                           |
+| PRD                      | `architecture/prd/VyaparNet_PRDv2_Final_Freeze.docx` — Sections 3, 4, 21                              | Tech stack (Argon2id), naming, security baseline                                  |
 
 ---
 
@@ -123,6 +127,7 @@ Every AI agent and engineer executing Sprint 1 MUST read these files before writ
 Establish the permanent, enterprise-grade identity and authentication backbone for VyaparNet. Every subsequent sprint's authorization model depends entirely on the correctness of what is built in Sprint 1.
 
 At the end of Sprint 1:
+
 - Any buyer, seller, or admin can authenticate via phone OTP
 - JWT access tokens are issued, validated, and rotated correctly
 - RBAC roles and permission decorators are ready for Sprint 2+ domain modules
@@ -133,6 +138,7 @@ At the end of Sprint 1:
 - The onboarding flow creates User + Business + Address atomically
 
 **Sprint 1 does NOT implement:**
+
 - Products, inventory, orders, payments, catalog
 - WhatsApp integration (Phase 2)
 - OAuth / SSO (Phase 2)
@@ -144,7 +150,7 @@ At the end of Sprint 1:
 
 ## SECTION 4: SPRINT PHILOSOPHY
 
-> *"Authentication is the root of trust. It is the first thing a user touches. It is the last thing that should be wrong. In B2B commerce, trust is the product. An authentication system that leaks tokens, doesn't audit failures, or fails under OTP abuse — is not just a security problem. It is a business problem that cannot be fixed after launch."*
+> _"Authentication is the root of trust. It is the first thing a user touches. It is the last thing that should be wrong. In B2B commerce, trust is the product. An authentication system that leaks tokens, doesn't audit failures, or fails under OTP abuse — is not just a security problem. It is a business problem that cannot be fixed after launch."_
 
 **Three absolute constraints for Sprint 1:**
 
@@ -173,12 +179,13 @@ Request arrives
 
 ### Token Architecture Philosophy
 
-| Token Type | Storage | TTL | Rotation | Revocation |
-|---|---|---|---|---|
-| Access token (JWT) | Client only (memory/header) | 15 minutes | On every refresh | Stateless — expires naturally |
-| Refresh token (UUID) | Redis (raw) + DB (hashed) | 7 days | On use (rotate) | Delete from Redis + update DB |
+| Token Type           | Storage                     | TTL        | Rotation         | Revocation                    |
+| -------------------- | --------------------------- | ---------- | ---------------- | ----------------------------- |
+| Access token (JWT)   | Client only (memory/header) | 15 minutes | On every refresh | Stateless — expires naturally |
+| Refresh token (UUID) | Redis (raw) + DB (hashed)   | 7 days     | On use (rotate)  | Delete from Redis + update DB |
 
 **Why stateless access tokens + stateful refresh tokens?**
+
 - Access tokens are stateless (fast validation, no DB query on every request)
 - Refresh tokens are stateful (allows forced logout, device tracking, session revocation)
 - This is the correct pattern for horizontal scaling — API servers share no session state
@@ -186,6 +193,7 @@ Request arrives
 ### Refresh Token Security
 
 The raw refresh token (UUID) is:
+
 - Generated with `crypto.randomUUID()` (cryptographically secure)
 - Stored in Redis as the key (for fast lookup) with TTL = 7 days
 - Stored in `LoginSession.refreshToken` as `argon2id(rawToken)` (for audit trail, not lookup)
@@ -206,6 +214,7 @@ OTP lifecycle:
 ```
 
 **India-scale OTP abuse scenarios considered:**
+
 - SIM swap attack: Cannot prevent at OTP level — mitigated by device binding and geo-check alerts
 - Mass OTP send abuse: Rate limit by IP (50 OTPs per IP per 5 minutes) prevents bulk abuse while allowing CGNAT sharing.
 - OTP enumeration: Constant-time comparison prevents timing attacks
@@ -223,6 +232,7 @@ Without Sprint 1, there is no VyaparNet product. A buyer cannot search for produ
 ### Technical Reasoning
 
 The `@CurrentUser()` decorator established in Sprint 1 is used in EVERY subsequent module:
+
 - `modules/catalog` (Sprint 2): `@CurrentUser() seller: User` for product creation
 - `modules/inventory` (Sprint 3): `seller.businessId` for inventory ownership
 - `modules/order` (Sprint 4): `buyer.id` for order creation
@@ -234,6 +244,7 @@ If `@CurrentUser()` is wrong, all of Sprint 2–9 is wrong.
 ### Dependency Reasoning
 
 Sprint 1 depends on Sprint 0:
+
 - `PrismaService` (established Sprint 0) — needed for User, LoginSession, AuditLog writes
 - `RedisService` (established Sprint 0) — needed for OTP storage, rate limiting, session cache
 - `LoggerModule` (established Sprint 0) — needed for structured auth event logging
@@ -250,6 +261,7 @@ Sprint 1 depends on Sprint 0:
 ### IN SCOPE — Sprint 1
 
 **packages/types (shared enums + Zod schemas):**
+
 - `UserRole` enum (BUYER, SELLER, SELLER_MANAGER, ADMIN)
 - `Segment` enum (TEXTILE, SPARE_PARTS)
 - `KycStatus` enum (UNVERIFIED, PENDING, VERIFIED, REJECTED)
@@ -259,6 +271,7 @@ Sprint 1 depends on Sprint 0:
 - All exported with TypeScript type inference
 
 **modules/identity/auth (NestJS):**
+
 - `AuthModule`, `AuthController`, `AuthService`
 - `OtpService` (generate, store, verify, rate-limit, lockout)
 - `TokenService` (JWT generation, verification, rotation)
@@ -267,11 +280,13 @@ Sprint 1 depends on Sprint 0:
 - `AuthRepository` (User upsert, LoginSession management)
 
 **modules/identity/users (NestJS):**
+
 - `UsersModule`, `UsersController`, `UsersService`
 - `UsersRepository` (all DB queries for User, Business, Address)
 - `OnboardingService` (User + Business + Address atomic creation)
 
 **Auth APIs:**
+
 - `POST /api/v1/auth/otp/send`
 - `POST /api/v1/auth/otp/verify`
 - `POST /api/v1/auth/refresh`
@@ -282,6 +297,7 @@ Sprint 1 depends on Sprint 0:
 - `POST /api/v1/users/onboard`
 
 **Security infrastructure:**
+
 - `JwtAuthGuard` (global, skipped with `@Public()`)
 - `RolesGuard` (role-based, applied per-endpoint)
 - `PermissionsGuard` (permission-based, applied per-endpoint)
@@ -294,6 +310,7 @@ Sprint 1 depends on Sprint 0:
 - Auto SupportTicket creation on lockout
 
 **Database models activated:**
+
 - `User` (upsert by phone)
 - `Business` (created during onboarding)
 - `Address` (created during onboarding)
@@ -304,6 +321,7 @@ Sprint 1 depends on Sprint 0:
 - `SupportTicket` (stub — created on lockout only, no support module yet)
 
 **Redis keys established:**
+
 - `otp:{phone}` → TTL 300s
 - `otp_fail:{phone}` → TTL 600s (counter)
 - `otp_fail:ip:{ip}` → TTL 300s (counter)
@@ -312,6 +330,7 @@ Sprint 1 depends on Sprint 0:
 - `ratelimit:api:{ip}` → TTL 60s (general API rate limit)
 
 **Frontend (apps/web):**
+
 - Login screen (phone input, OTP verification, resend countdown)
 - Onboarding screen (business name, type, segment selection, GST optional, city)
 - Auth context (React context for user state)
@@ -320,12 +339,14 @@ Sprint 1 depends on Sprint 0:
 - HTTP interceptor (attach Authorization header automatically)
 
 **Observability:**
+
 - Auth-specific Pino log fields: `userId`, `role`, `segment`, `traceId`
 - Prometheus counters: `auth_otp_sent_total`, `auth_otp_verified_total`, `auth_otp_failed_total{reason}`, `auth_login_total{role}`, `auth_lockout_total`
 - Grafana alert: OTP failure rate >20% in 5 min
 - Grafana alert: Lockout rate >10/min (possible attack)
 
 **Staging deployment:**
+
 - `apps/api` deployed to staging cloud (AWS/DigitalOcean)
 - Managed PostgreSQL provisioned on staging
 - Managed Redis provisioned on staging
@@ -335,23 +356,23 @@ Sprint 1 depends on Sprint 0:
 
 ### OUT OF SCOPE — Sprint 1
 
-| Item | Sprint |
-|---|---|
-| Products, categories, catalog | Sprint 2 |
-| Search | Sprint 2 |
-| Inventory management | Sprint 3 |
-| Cart, orders, payments | Sprint 4 |
-| Seller dashboard | Sprint 5 |
+| Item                                  | Sprint   |
+| ------------------------------------- | -------- |
+| Products, categories, catalog         | Sprint 2 |
+| Search                                | Sprint 2 |
+| Inventory management                  | Sprint 3 |
+| Cart, orders, payments                | Sprint 4 |
+| Seller dashboard                      | Sprint 5 |
 | Notifications (SMS beyond OTP, email) | Sprint 6 |
-| Admin dashboard | Sprint 7 |
-| KYC document upload | Sprint 7 |
-| Seller verification workflow | Sprint 7 |
-| RFQ / returns / disputes | Sprint 8 |
-| OAuth / SSO | Phase 2 |
-| Multi-business accounts | Phase 2 |
-| WhatsApp integration | Phase 2 |
-| Advanced fraud AI | Phase 2 |
-| Credit / BNPL | Phase 3 |
+| Admin dashboard                       | Sprint 7 |
+| KYC document upload                   | Sprint 7 |
+| Seller verification workflow          | Sprint 7 |
+| RFQ / returns / disputes              | Sprint 8 |
+| OAuth / SSO                           | Phase 2  |
+| Multi-business accounts               | Phase 2  |
+| WhatsApp integration                  | Phase 2  |
+| Advanced fraud AI                     | Phase 2  |
+| Credit / BNPL                         | Phase 3  |
 
 ---
 
@@ -448,6 +469,19 @@ OTP STORAGE (Redis only):
   TTL: 300 seconds (5 minutes)
   On verify success: DEL otp:{phone}
   On verify failure: DO NOT delete (allow retry within TTL)
+
+IDENTITY GOVERNANCE RULE:
+  ALL phone numbers MUST be normalized BEFORE:
+  - Redis usage
+  - database queries
+  - OTP generation
+  - OTP verification
+  - audit logging
+  - session creation
+
+  Canonical phone format: `+91XXXXXXXXXX`
+  Raw phone values are FORBIDDEN in internal systems.
+
 
 OTP RATE LIMITING (Redis counters):
   Per phone:
@@ -546,12 +580,12 @@ PERMISSION CHECK PHILOSOPHY:
 
 ### Required Context Files (Database)
 
-| Context Type | Authoritative File |
-|---|---|
-| Schema | `architecture/database/VyaparNet_SCHEMA_v4_3_FINAL_FREEZE.md` — User, Business, Address, LoginSession, OtpAttempt, SecurityEvent, AuditLog, SupportTicket models |
-| Indexing | `architecture/database/VyaparNet_Database_Indexing_Strategy_Official_Freeze_v1.md` — Tier 1 indexes for identity domain |
-| DB Infra | `architecture/database/VyaparNet_DB_Infra_Architecture.md` — Section 3.5 (Concurrency), 3.2 (conventions) |
-| Governance | `context/LOCKED_DECISIONS.md` — Section 9 (mandatory columns), Section 5 (naming) |
+| Context Type | Authoritative File                                                                                                                                               |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Schema       | `architecture/database/VyaparNet_SCHEMA_v4_3_FINAL_FREEZE.md` — User, Business, Address, LoginSession, OtpAttempt, SecurityEvent, AuditLog, SupportTicket models |
+| Indexing     | `architecture/database/VyaparNet_Database_Indexing_Strategy_Official_Freeze_v1.md` — Tier 1 indexes for identity domain                                          |
+| DB Infra     | `architecture/database/VyaparNet_DB_Infra_Architecture.md` — Section 3.5 (Concurrency), 3.2 (conventions)                                                        |
+| Governance   | `context/LOCKED_DECISIONS.md` — Section 9 (mandatory columns), Section 5 (naming)                                                                                |
 
 ### Models Activated in Sprint 1
 
@@ -639,11 +673,11 @@ User Onboarding (ATOMIC):
 
 ### Required Context Files (Redis)
 
-| Context Type | Authoritative File |
-|---|---|
-| Runtime | `architecture/runtime/VyaparNet_Deployment_Runtime_Architecture_v1.md` — Section 9 |
+| Context Type   | Authoritative File                                                                                     |
+| -------------- | ------------------------------------------------------------------------------------------------------ |
+| Runtime        | `architecture/runtime/VyaparNet_Deployment_Runtime_Architecture_v1.md` — Section 9                     |
 | Implementation | `architecture/implementation/VyaparNet_Implementation_Architecture_Official_Freeze_v1.md` — Section 13 |
-| Governance | `context/LOCKED_DECISIONS.md` — Redis 7, ioredis, session storage |
+| Governance     | `context/LOCKED_DECISIONS.md` — Redis 7, ioredis, session storage                                      |
 
 ### Complete Redis Key Registry (Sprint 1)
 
@@ -729,17 +763,18 @@ Eviction policy (from docker-compose.yml Sprint 0):
 ---
 
 ### PHASE 1: SHARED TYPES FOUNDATION
+
 **Estimated time: Day 1 morning**
 
 ---
 
 #### Required Context Files (Phase 1)
 
-| Context Type | File |
-|---|---|
-| Schema enums | `architecture/database/VyaparNet_SCHEMA_v4_3_FINAL_FREEZE.md` — all enum definitions |
+| Context Type  | File                                                                                 |
+| ------------- | ------------------------------------------------------------------------------------ |
+| Schema enums  | `architecture/database/VyaparNet_SCHEMA_v4_3_FINAL_FREEZE.md` — all enum definitions |
 | API Contracts | `architecture/api/VyaparNet_API_Contracts_Backend_Scaffold_Blueprint.md` — Section 2 |
-| Governance | `context/LOCKED_DECISIONS.md` — Section 5 (naming), Section 6 (naming conventions) |
+| Governance    | `context/LOCKED_DECISIONS.md` — Section 5 (naming), Section 6 (naming conventions)   |
 
 ---
 
@@ -1104,18 +1139,19 @@ Commit checkpoint: SPRINT1-CHECKPOINT-1
 ---
 
 ### PHASE 2: IDENTITY MODULE STRUCTURE
+
 **Estimated time: Day 1 afternoon**
 
 ---
 
 #### Required Context Files (Phase 2)
 
-| Context Type | File |
-|---|---|
+| Context Type        | File                                                                                                                              |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | Module Architecture | `architecture/implementation/VyaparNet_Implementation_Architecture_Official_Freeze_v1.md` — Section 2 (Module-First Architecture) |
-| Module Boundaries | `architecture/modules/VyaparNet_Module_Breakdown_Final_Enterprise_Freeze_v2.docx` — Module 1 (Identity & Access) |
-| Sprint 0 Pattern | `implementation/sprints/SPRINT_0.md` — Section 6 (NestJS scaffold patterns) |
-| Governance | `context/LOCKED_DECISIONS.md` — Section 7 (module boundary rules) |
+| Module Boundaries   | `architecture/modules/VyaparNet_Module_Breakdown_Final_Enterprise_Freeze_v2.docx` — Module 1 (Identity & Access)                  |
+| Sprint 0 Pattern    | `implementation/sprints/SPRINT_0.md` — Section 6 (NestJS scaffold patterns)                                                       |
+| Governance          | `context/LOCKED_DECISIONS.md` — Section 7 (module boundary rules)                                                                 |
 
 ---
 
@@ -1182,19 +1218,20 @@ Commit checkpoint: SPRINT1-CHECKPOINT-2
 ---
 
 ### PHASE 3: CORE AUTH SERVICES
+
 **Estimated time: Days 2–4**
 
 ---
 
 #### Required Context Files (Phase 3)
 
-| Context Type | File |
-|---|---|
-| Auth Flow | `architecture/workflows/VyaparNet_Workflow_Sequence_Diagrams_v1.md` — Section 1.1 (OTP flow) |
-| Redis Strategy | `architecture/runtime/VyaparNet_Deployment_Runtime_Architecture_v1.md` — Section 9 |
+| Context Type   | File                                                                                                  |
+| -------------- | ----------------------------------------------------------------------------------------------------- |
+| Auth Flow      | `architecture/workflows/VyaparNet_Workflow_Sequence_Diagrams_v1.md` — Section 1.1 (OTP flow)          |
+| Redis Strategy | `architecture/runtime/VyaparNet_Deployment_Runtime_Architecture_v1.md` — Section 9                    |
 | Implementation | `architecture/implementation/VyaparNet_Implementation_Architecture_Official_Freeze_v1.md` — Section 9 |
-| Security | `architecture/prd/VyaparNet_PRDv2_Final_Freeze.docx` — Section 21 (Security Baseline) |
-| API Contracts | `architecture/api/VyaparNet_API_Contracts_Backend_Scaffold_Blueprint.md` — Section 2 |
+| Security       | `architecture/prd/VyaparNet_PRDv2_Final_Freeze.docx` — Section 21 (Security Baseline)                 |
+| API Contracts  | `architecture/api/VyaparNet_API_Contracts_Backend_Scaffold_Blueprint.md` — Section 2                  |
 
 ---
 
@@ -1861,6 +1898,7 @@ FILE: apps/api/src/modules/identity/auth/repositories/auth.repository.ts
   import { PrismaService } from '../../../../core/prisma/prisma.service';
   import type { User, Prisma } from '@vyaparnet/database';
   import { UserRole, Segment } from '@vyaparnet/types';
+  import { normalizeIndianPhoneNumber } from '@vyaparnet/utils';
 
   /**
    * AuthRepository — User operations specific to auth flows.
@@ -1879,8 +1917,9 @@ FILE: apps/api/src/modules/identity/auth/repositories/auth.repository.ts
      * Always filters isDeleted=false.
      */
     async findByPhone(phone: string): Promise<User | null> {
+      const normalizedPhone = normalizeIndianPhoneNumber(phone);
       return this.prisma.user.findFirst({
-        where: { phone, isDeleted: false },
+        where: { phone: normalizedPhone, isDeleted: false },
       });
     }
 
@@ -1897,10 +1936,11 @@ FILE: apps/api/src/modules/identity/auth/repositories/auth.repository.ts
         language?: string;
       } = {},
     ): Promise<User> {
+      const normalizedPhone = normalizeIndianPhoneNumber(phone);
       return this.prisma.user.upsert({
-        where: { phone },
+        where: { phone: normalizedPhone },
         create: {
-          phone,
+          phone: normalizedPhone,
           role: defaults.role ?? UserRole.BUYER,
           segment: defaults.segment ?? Segment.SPARE_PARTS,
           language: defaults.language ?? 'hi',
@@ -2045,17 +2085,18 @@ Commit checkpoint: SPRINT1-CHECKPOINT-3
 ---
 
 ### PHASE 4: SMS SERVICE
+
 **Estimated time: Day 4**
 
 ---
 
 #### Required Context Files (Phase 4)
 
-| Context Type | File |
-|---|---|
-| Governance | `context/LOCKED_DECISIONS.md` — SMS provider (MSG91/Twilio) |
-| Sprint Roadmap | `implementation/master-roadmap/MASTER_IMPLEMENTATION_ROADMAP.md` — Sprint 1 SMS section |
-| Queue | `architecture/implementation/VyaparNet_Implementation_Architecture_Official_Freeze_v1.md` — Section 7 (Queue) |
+| Context Type   | File                                                                                                          |
+| -------------- | ------------------------------------------------------------------------------------------------------------- |
+| Governance     | `context/LOCKED_DECISIONS.md` — SMS provider (MSG91/Twilio)                                                   |
+| Sprint Roadmap | `implementation/master-roadmap/MASTER_IMPLEMENTATION_ROADMAP.md` — Sprint 1 SMS section                       |
+| Queue          | `architecture/implementation/VyaparNet_Implementation_Architecture_Official_Freeze_v1.md` — Section 7 (Queue) |
 
 ---
 
@@ -2182,17 +2223,18 @@ FILE: apps/api/src/modules/identity/auth/sms.service.ts
 ---
 
 ### PHASE 5: AUTH SERVICE (ORCHESTRATION LAYER)
+
 **Estimated time: Days 4–5**
 
 ---
 
 #### Required Context Files (Phase 5)
 
-| Context Type | File |
-|---|---|
-| Auth Flow | `architecture/workflows/VyaparNet_Workflow_Sequence_Diagrams_v1.md` — Sections 1.1, 1.2, 28 |
-| Transaction | `architecture/implementation/VyaparNet_Implementation_Architecture_Official_Freeze_v1.md` — Section 5 |
-| Lockout | `architecture/workflows/VyaparNet_Workflow_Sequence_Diagrams_v1.md` — Section 28.1 |
+| Context Type | File                                                                                                  |
+| ------------ | ----------------------------------------------------------------------------------------------------- |
+| Auth Flow    | `architecture/workflows/VyaparNet_Workflow_Sequence_Diagrams_v1.md` — Sections 1.1, 1.2, 28           |
+| Transaction  | `architecture/implementation/VyaparNet_Implementation_Architecture_Official_Freeze_v1.md` — Section 5 |
+| Lockout      | `architecture/workflows/VyaparNet_Workflow_Sequence_Diagrams_v1.md` — Section 28.1                    |
 
 ---
 
@@ -2224,6 +2266,7 @@ FILE: apps/api/src/modules/identity/auth/auth.service.ts
   import type { SendOtpDto, VerifyOtpDto, RefreshTokenDto, AuthTokensResponse } from '@vyaparnet/types';
   import { AuditAction, SystemActorType, UserRole, Segment } from '@vyaparnet/types';
   import type { User } from '@vyaparnet/database';
+  import { normalizeIndianPhoneNumber } from '@vyaparnet/utils';
 
   /**
    * AuthService — orchestrates the complete authentication flow.
@@ -2276,7 +2319,7 @@ FILE: apps/api/src/modules/identity/auth/auth.service.ts
       requestIp: string,
       userAgent: string,
     ): Promise<{ message: string; expiresIn: number }> {
-      const { phoneNumber } = dto;
+      const phoneNumber = normalizeIndianPhoneNumber(dto.phoneNumber);
 
       // Step 1: Enforce rate limits
       await this.otpService.checkAndEnforceSendRateLimits(phoneNumber, requestIp);
@@ -2342,7 +2385,8 @@ FILE: apps/api/src/modules/identity/auth/auth.service.ts
       requestIp: string,
       userAgent: string,
     ): Promise<AuthTokensResponse> {
-      const { phoneNumber, otp, deviceId } = dto;
+      const phoneNumber = normalizeIndianPhoneNumber(dto.phoneNumber);
+      const { otp, deviceId } = dto;
 
       // Step 1: Verify OTP (throws on failure, increments fail counter)
       let otpPayload;
@@ -2744,17 +2788,18 @@ Commit checkpoint: SPRINT1-CHECKPOINT-4
 ---
 
 ### PHASE 6: GUARDS, DECORATORS & RBAC INFRASTRUCTURE
+
 **Estimated time: Day 5**
 
 ---
 
 #### Required Context Files (Phase 6)
 
-| Context Type | File |
-|---|---|
-| RBAC Design | `architecture/implementation/VyaparNet_Implementation_Architecture_Official_Freeze_v1.md` — Section 9 |
-| Permission Model | `architecture/api/VyaparNet_API_Contracts_Backend_Scaffold_Blueprint.md` — Section 2 |
-| Governance | `context/LOCKED_DECISIONS.md` — Section 4 (API decisions) |
+| Context Type     | File                                                                                                  |
+| ---------------- | ----------------------------------------------------------------------------------------------------- |
+| RBAC Design      | `architecture/implementation/VyaparNet_Implementation_Architecture_Official_Freeze_v1.md` — Section 9 |
+| Permission Model | `architecture/api/VyaparNet_API_Contracts_Backend_Scaffold_Blueprint.md` — Section 2                  |
+| Governance       | `context/LOCKED_DECISIONS.md` — Section 4 (API decisions)                                             |
 
 ---
 
@@ -3049,17 +3094,18 @@ Commit checkpoint: SPRINT1-CHECKPOINT-5
 ---
 
 ### PHASE 7: AUTH CONTROLLER & MODULE WIRING
+
 **Estimated time: Day 6**
 
 ---
 
 #### Required Context Files (Phase 7)
 
-| Context Type | File |
-|---|---|
-| API Contracts | `architecture/api/VyaparNet_API_Contracts_Backend_Scaffold_Blueprint.md` — Section 2 |
-| Response Envelope | `architecture/prd/VyaparNet_PRDv2_Final_Freeze.docx` — Section 7 |
-| Rate Limiting | `architecture/runtime/VyaparNet_Deployment_Runtime_Architecture_v1.md` — Section 14 |
+| Context Type      | File                                                                                 |
+| ----------------- | ------------------------------------------------------------------------------------ |
+| API Contracts     | `architecture/api/VyaparNet_API_Contracts_Backend_Scaffold_Blueprint.md` — Section 2 |
+| Response Envelope | `architecture/prd/VyaparNet_PRDv2_Final_Freeze.docx` — Section 7                     |
+| Rate Limiting     | `architecture/runtime/VyaparNet_Deployment_Runtime_Architecture_v1.md` — Section 14  |
 
 ---
 
@@ -3260,18 +3306,19 @@ FILE: apps/api/src/modules/identity/auth/auth.module.ts
 ---
 
 ### PHASE 8: USERS MODULE
+
 **Estimated time: Days 6–7**
 
 ---
 
 #### Required Context Files (Phase 8)
 
-| Context Type | File |
-|---|---|
-| User Model | `architecture/database/VyaparNet_SCHEMA_v4_3_FINAL_FREEZE.md` — User, Business, Address models |
-| Onboarding IA | `architecture/ux/VyaparNet_IA_Final_Master_Freeze_v3.docx` — Section 3 (Buyer onboarding) |
-| API Contracts | `architecture/api/VyaparNet_API_Contracts_Backend_Scaffold_Blueprint.md` — Section 3 |
-| Transaction | `architecture/implementation/VyaparNet_Implementation_Architecture_Official_Freeze_v1.md` — Section 5 |
+| Context Type  | File                                                                                                  |
+| ------------- | ----------------------------------------------------------------------------------------------------- |
+| User Model    | `architecture/database/VyaparNet_SCHEMA_v4_3_FINAL_FREEZE.md` — User, Business, Address models        |
+| Onboarding IA | `architecture/ux/VyaparNet_IA_Final_Master_Freeze_v3.docx` — Section 3 (Buyer onboarding)             |
+| API Contracts | `architecture/api/VyaparNet_API_Contracts_Backend_Scaffold_Blueprint.md` — Section 3                  |
+| Transaction   | `architecture/implementation/VyaparNet_Implementation_Architecture_Official_Freeze_v1.md` — Section 5 |
 
 ---
 
@@ -3741,6 +3788,7 @@ Commit checkpoint: SPRINT1-CHECKPOINT-6
 ---
 
 ### PHASE 9: APPMODULE UPDATE & GLOBAL GUARD REGISTRATION
+
 **Estimated time: Day 7**
 
 ---
@@ -3847,17 +3895,18 @@ Commit checkpoint: SPRINT1-CHECKPOINT-7
 ---
 
 ### PHASE 10: OBSERVABILITY & METRICS
+
 **Estimated time: Day 7**
 
 ---
 
 #### Required Context Files (Phase 10)
 
-| Context Type | File |
-|---|---|
-| Observability | `architecture/implementation/VyaparNet_Implementation_Architecture_Official_Freeze_v1.md` — Section 12 |
-| Runtime | `architecture/runtime/VyaparNet_Deployment_Runtime_Architecture_v1.md` — Section 12 |
-| Sprint Roadmap | `implementation/master-roadmap/MASTER_IMPLEMENTATION_ROADMAP.md` — Sprint 1 Observability |
+| Context Type   | File                                                                                                   |
+| -------------- | ------------------------------------------------------------------------------------------------------ |
+| Observability  | `architecture/implementation/VyaparNet_Implementation_Architecture_Official_Freeze_v1.md` — Section 12 |
+| Runtime        | `architecture/runtime/VyaparNet_Deployment_Runtime_Architecture_v1.md` — Section 12                    |
+| Sprint Roadmap | `implementation/master-roadmap/MASTER_IMPLEMENTATION_ROADMAP.md` — Sprint 1 Observability              |
 
 ---
 
@@ -3917,18 +3966,19 @@ FILE: apps/api/src/modules/identity/auth/auth.metrics.ts
 ---
 
 ### PHASE 11: FRONTEND AUTH SCREENS
+
 **Estimated time: Days 7–8**
 
 ---
 
 #### Required Context Files (Phase 11)
 
-| Context Type | File |
-|---|---|
-| UX Auth Flow | `architecture/ux/VyaparNet_Product_UX_System_v1.md` — Section 9.1 (Authentication Flow) |
-| Onboarding IA | `architecture/ux/VyaparNet_IA_Final_Master_Freeze_v3.docx` — Section 3 (Buyer onboarding) |
-| Design Tokens | `architecture/ux/VyaparNet_Product_UX_System_v1.md` — Section 29 |
-| Bharat UX | `architecture/ux/VyaparNet_Product_UX_System_v1.md` — Section 1.1 (Bharat-first principles) |
+| Context Type  | File                                                                                        |
+| ------------- | ------------------------------------------------------------------------------------------- |
+| UX Auth Flow  | `architecture/ux/VyaparNet_Product_UX_System_v1.md` — Section 9.1 (Authentication Flow)     |
+| Onboarding IA | `architecture/ux/VyaparNet_IA_Final_Master_Freeze_v3.docx` — Section 3 (Buyer onboarding)   |
+| Design Tokens | `architecture/ux/VyaparNet_Product_UX_System_v1.md` — Section 29                            |
+| Bharat UX     | `architecture/ux/VyaparNet_Product_UX_System_v1.md` — Section 1.1 (Bharat-first principles) |
 
 ---
 
@@ -4193,7 +4243,7 @@ FILE: apps/web/app/(auth)/login/page.tsx
               <div className="text-h1 font-bold text-error mb-lg">
                 {Math.floor(lockoutSeconds / 60)}:{String(lockoutSeconds % 60).padStart(2, '0')}
               </div>
-              
+
                 href="https://wa.me/919999999999"
                 className="text-primary underline text-body"
                 target="_blank"
@@ -4332,16 +4382,17 @@ Commit checkpoint: SPRINT1-CHECKPOINT-8
 ---
 
 ### PHASE 12: TESTING
+
 **Estimated time: Days 8–9**
 
 ---
 
 #### Required Context Files (Phase 12)
 
-| Context Type | File |
-|---|---|
-| Testing Strategy | `architecture/implementation/VyaparNet_Implementation_Architecture_Official_Freeze_v1.md` — Section 21 |
-| Sprint Roadmap Tests | `implementation/master-roadmap/MASTER_IMPLEMENTATION_ROADMAP.md` — Sprint 1 Testing |
+| Context Type         | File                                                                                                   |
+| -------------------- | ------------------------------------------------------------------------------------------------------ |
+| Testing Strategy     | `architecture/implementation/VyaparNet_Implementation_Architecture_Official_Freeze_v1.md` — Section 21 |
+| Sprint Roadmap Tests | `implementation/master-roadmap/MASTER_IMPLEMENTATION_ROADMAP.md` — Sprint 1 Testing                    |
 
 ---
 
@@ -4761,6 +4812,7 @@ Commit checkpoint: SPRINT1-CHECKPOINT-9
 ---
 
 ### PHASE 13: OPENAPI CONTRACT & STAGING DEPLOYMENT
+
 **Estimated time: Day 9**
 
 ---
@@ -5147,28 +5199,28 @@ TYPES PACKAGE
 
 Sprint 1 is considered FAILED and must not proceed to Sprint 2 if ANY of the following occur:
 
-| Failure | Severity |
-|---|---|
-| OTP verification succeeds without correct OTP (timing attack possible) | BLOCKING — CRITICAL |
-| Raw OTP stored in database (not Redis only) | BLOCKING — CRITICAL |
-| Phone number in plaintext in any log | BLOCKING — CRITICAL |
-| JWT_SECRET visible in any log or error response | BLOCKING — CRITICAL |
-| Argon2id NOT used for refresh token hashing (bcrypt substituted) | BLOCKING |
-| Raw refresh token stored in LoginSession DB (not hash) | BLOCKING |
-| Max concurrent session rule not enforced (4th session created without eviction) | BLOCKING |
-| AuditLog can be updated or deleted via any code path | BLOCKING |
-| @Public() decorator not working (auth endpoints inaccessible) | BLOCKING |
-| RBAC guard allows BUYER to access ADMIN role routes | BLOCKING |
-| `pnpm test` has any failing test | BLOCKING |
-| TypeScript errors in any file | BLOCKING |
-| Staging deployment fails health check | BLOCKING |
-| OTP lockout not triggering after 5 failures | BLOCKING |
-| Rate limiting not enforced (100+ OTP sends from same phone in 5 min allowed) | BLOCKING |
-| SupportTicket NOT created on lockout | HIGH |
-| AuditLog NOT created on login/logout | HIGH |
-| `@CurrentUser()` returns undefined in any authenticated handler | BLOCKING |
-| Refresh token rotation not atomic (old token not revoked) | BLOCKING |
-| Response envelope missing `requestId` on any response | HIGH |
+| Failure                                                                         | Severity            |
+| ------------------------------------------------------------------------------- | ------------------- |
+| OTP verification succeeds without correct OTP (timing attack possible)          | BLOCKING — CRITICAL |
+| Raw OTP stored in database (not Redis only)                                     | BLOCKING — CRITICAL |
+| Phone number in plaintext in any log                                            | BLOCKING — CRITICAL |
+| JWT_SECRET visible in any log or error response                                 | BLOCKING — CRITICAL |
+| Argon2id NOT used for refresh token hashing (bcrypt substituted)                | BLOCKING            |
+| Raw refresh token stored in LoginSession DB (not hash)                          | BLOCKING            |
+| Max concurrent session rule not enforced (4th session created without eviction) | BLOCKING            |
+| AuditLog can be updated or deleted via any code path                            | BLOCKING            |
+| @Public() decorator not working (auth endpoints inaccessible)                   | BLOCKING            |
+| RBAC guard allows BUYER to access ADMIN role routes                             | BLOCKING            |
+| `pnpm test` has any failing test                                                | BLOCKING            |
+| TypeScript errors in any file                                                   | BLOCKING            |
+| Staging deployment fails health check                                           | BLOCKING            |
+| OTP lockout not triggering after 5 failures                                     | BLOCKING            |
+| Rate limiting not enforced (100+ OTP sends from same phone in 5 min allowed)    | BLOCKING            |
+| SupportTicket NOT created on lockout                                            | HIGH                |
+| AuditLog NOT created on login/logout                                            | HIGH                |
+| `@CurrentUser()` returns undefined in any authenticated handler                 | BLOCKING            |
+| Refresh token rotation not atomic (old token not revoked)                       | BLOCKING            |
+| Response envelope missing `requestId` on any response                           | HIGH                |
 
 ---
 
@@ -5176,18 +5228,18 @@ Sprint 1 is considered FAILED and must not proceed to Sprint 2 if ANY of the fol
 
 ### Checkpoint Rollback Guide
 
-| Checkpoint | What to Rollback | How |
-|---|---|---|
-| SPRINT1-CHECKPOINT-1 | packages/types changes | `git revert` the types changes |
-| SPRINT1-CHECKPOINT-2 | Module folder structure | Delete `modules/identity/` and recreate |
-| SPRINT1-CHECKPOINT-3 | Services (OtpService, TokenService, etc.) | Delete and regenerate from spec |
-| SPRINT1-CHECKPOINT-4 | AuthService | Debug transaction issue, fix, recommit |
-| SPRINT1-CHECKPOINT-5 | Guards and decorators | Rollback to Sprint 0 stubs |
-| SPRINT1-CHECKPOINT-6 | UsersModule | Delete and regenerate |
-| SPRINT1-CHECKPOINT-7 | AppModule update | Revert to Sprint 0 AppModule |
-| SPRINT1-CHECKPOINT-8 | Frontend screens | Revert to placeholder page |
-| SPRINT1-CHECKPOINT-9 | Tests | Fix failing tests before proceeding |
-| SPRINT1-CHECKPOINT-10 | Staging deployment | Tear down staging, fix, redeploy |
+| Checkpoint            | What to Rollback                          | How                                     |
+| --------------------- | ----------------------------------------- | --------------------------------------- |
+| SPRINT1-CHECKPOINT-1  | packages/types changes                    | `git revert` the types changes          |
+| SPRINT1-CHECKPOINT-2  | Module folder structure                   | Delete `modules/identity/` and recreate |
+| SPRINT1-CHECKPOINT-3  | Services (OtpService, TokenService, etc.) | Delete and regenerate from spec         |
+| SPRINT1-CHECKPOINT-4  | AuthService                               | Debug transaction issue, fix, recommit  |
+| SPRINT1-CHECKPOINT-5  | Guards and decorators                     | Rollback to Sprint 0 stubs              |
+| SPRINT1-CHECKPOINT-6  | UsersModule                               | Delete and regenerate                   |
+| SPRINT1-CHECKPOINT-7  | AppModule update                          | Revert to Sprint 0 AppModule            |
+| SPRINT1-CHECKPOINT-8  | Frontend screens                          | Revert to placeholder page              |
+| SPRINT1-CHECKPOINT-9  | Tests                                     | Fix failing tests before proceeding     |
+| SPRINT1-CHECKPOINT-10 | Staging deployment                        | Tear down staging, fix, redeploy        |
 
 ### Database Rollback (Staging)
 
@@ -5214,48 +5266,48 @@ docker run -p 3000:3000 --env-file staging.env {registry}/vyaparnet-api:sprint0
 
 ### What AI Agents MAY Do in Sprint 1
 
-| Task | Permission |
-|---|---|
-| Generate NestJS service boilerplate (constructor, DI) | ✅ With human review |
-| Generate Zod schema validation for DTOs | ✅ Human verifies field rules |
-| Generate Vitest test structure and mock setup | ✅ Human reviews assertions |
-| Generate React login form structure | ✅ Human reviews UX compliance |
-| Generate TypeScript interfaces for responses | ✅ Human verifies field types |
-| Generate repository CRUD methods | ✅ Human audits all queries |
+| Task                                                  | Permission                     |
+| ----------------------------------------------------- | ------------------------------ |
+| Generate NestJS service boilerplate (constructor, DI) | ✅ With human review           |
+| Generate Zod schema validation for DTOs               | ✅ Human verifies field rules  |
+| Generate Vitest test structure and mock setup         | ✅ Human reviews assertions    |
+| Generate React login form structure                   | ✅ Human reviews UX compliance |
+| Generate TypeScript interfaces for responses          | ✅ Human verifies field types  |
+| Generate repository CRUD methods                      | ✅ Human audits all queries    |
 
 ### What AI Agents MUST NEVER Do
 
-| Task | Prohibition | Reason |
-|---|---|---|
-| Generate OTP using Math.random() | ❌ ABSOLUTE | Not cryptographically secure — use crypto.randomInt |
-| Store OTP in database | ❌ ABSOLUTE | OTP lives in Redis only |
-| Hash refresh tokens with bcrypt | ❌ ABSOLUTE | LOCKED_DECISIONS.md: Argon2id mandatory |
-| Add update() or delete() to AuditRepository | ❌ ABSOLUTE | Audit logs are immutable |
-| Skip AuditLog write on login/logout | ❌ ABSOLUTE | Compliance requirement |
-| Log raw phone numbers | ❌ ABSOLUTE | Privacy violation — always mask |
-| Log raw OTP values | ❌ ABSOLUTE | Security violation |
-| Log JWT secrets | ❌ ABSOLUTE | Security violation |
-| Use string comparison for OTP (timing attack) | ❌ ABSOLUTE | Use crypto.timingSafeEqual |
-| Create new PrismaClient() in any module | ❌ NEVER | Use PrismaService from Sprint 0 |
-| Import from @prisma/client directly | ❌ NEVER | Import from @vyaparnet/database |
-| Add `any` TypeScript types | ❌ NEVER | TypeScript strict mode |
-| Use console.log | ❌ NEVER | Use NestJS Logger |
-| Bypass rate limiting for "testing convenience" | ❌ NEVER | Security non-negotiable |
-| Return raw Prisma entity from controller | ❌ NEVER | Always map to response DTO |
+| Task                                           | Prohibition | Reason                                              |
+| ---------------------------------------------- | ----------- | --------------------------------------------------- |
+| Generate OTP using Math.random()               | ❌ ABSOLUTE | Not cryptographically secure — use crypto.randomInt |
+| Store OTP in database                          | ❌ ABSOLUTE | OTP lives in Redis only                             |
+| Hash refresh tokens with bcrypt                | ❌ ABSOLUTE | LOCKED_DECISIONS.md: Argon2id mandatory             |
+| Add update() or delete() to AuditRepository    | ❌ ABSOLUTE | Audit logs are immutable                            |
+| Skip AuditLog write on login/logout            | ❌ ABSOLUTE | Compliance requirement                              |
+| Log raw phone numbers                          | ❌ ABSOLUTE | Privacy violation — always mask                     |
+| Log raw OTP values                             | ❌ ABSOLUTE | Security violation                                  |
+| Log JWT secrets                                | ❌ ABSOLUTE | Security violation                                  |
+| Use string comparison for OTP (timing attack)  | ❌ ABSOLUTE | Use crypto.timingSafeEqual                          |
+| Create new PrismaClient() in any module        | ❌ NEVER    | Use PrismaService from Sprint 0                     |
+| Import from @prisma/client directly            | ❌ NEVER    | Import from @vyaparnet/database                     |
+| Add `any` TypeScript types                     | ❌ NEVER    | TypeScript strict mode                              |
+| Use console.log                                | ❌ NEVER    | Use NestJS Logger                                   |
+| Bypass rate limiting for "testing convenience" | ❌ NEVER    | Security non-negotiable                             |
+| Return raw Prisma entity from controller       | ❌ NEVER    | Always map to response DTO                          |
 
 ### Mandatory Human Review Points
 
-| Point | Review Type |
-|---|---|
-| OTP generation method | Security audit — must use crypto.randomInt |
-| OTP verification comparison | Security audit — must use crypto.timingSafeEqual |
-| AuditRepository methods | Architecture audit — no mutation methods |
-| Refresh token hashing | Security audit — must be argon2id |
-| Session max-3 logic | Logic audit — must evict oldest, not newest |
-| Transaction boundaries | Architecture audit — AuditLog must be in transaction |
-| JWT payload claims | Security audit — no PII, minimal claims only |
-| Rate limiting Redis keys | Security audit — IP must be hashed, not raw |
-| Lockout auto-ticket creation | Logic audit — must fire on 5th failure |
+| Point                        | Review Type                                          |
+| ---------------------------- | ---------------------------------------------------- |
+| OTP generation method        | Security audit — must use crypto.randomInt           |
+| OTP verification comparison  | Security audit — must use crypto.timingSafeEqual     |
+| AuditRepository methods      | Architecture audit — no mutation methods             |
+| Refresh token hashing        | Security audit — must be argon2id                    |
+| Session max-3 logic          | Logic audit — must evict oldest, not newest          |
+| Transaction boundaries       | Architecture audit — AuditLog must be in transaction |
+| JWT payload claims           | Security audit — no PII, minimal claims only         |
+| Rate limiting Redis keys     | Security audit — IP must be hashed, not raw          |
+| Lockout auto-ticket creation | Logic audit — must fire on 5th failure               |
 
 ---
 
@@ -5269,6 +5321,7 @@ When Sprint 1 validation gate is fully passed:
    - Sprint 2 tasks: all NOT STARTED
 
 2. Commit and push:
+
    ```
    git add context/CURRENT_PHASE.md contracts/auth.yaml
    git commit -m "docs(auth): complete sprint 1, auth system live on staging"
@@ -5289,6 +5342,6 @@ When Sprint 1 validation gate is fully passed:
 
 **END OF SPRINT 1 DETAILED IMPLEMENTATION PACK**
 
-*This document is the complete, execution-grade implementation authority for VyaparNet Sprint 1.*
-*No Sprint 2 implementation begins until Sprint 1 validation gate passes with zero failures.*
-*All auth-related decisions made in Sprint 1 are permanent — changes require a DDR and CTO approval.*
+_This document is the complete, execution-grade implementation authority for VyaparNet Sprint 1._
+_No Sprint 2 implementation begins until Sprint 1 validation gate passes with zero failures._
+_All auth-related decisions made in Sprint 1 are permanent — changes require a DDR and CTO approval._

@@ -5,4 +5,4 @@
  * Business utilities are added from Sprint 1 onward.
  */
 
-export {};
+export * from "./phone/normalize-indian-phone";
