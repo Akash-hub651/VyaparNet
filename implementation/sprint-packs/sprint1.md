@@ -526,6 +526,138 @@ OTP PROVIDER ARCHITECTURE:
   - Specific AuthErrorCode (e.g. OTP_PROVIDER_TIMEOUT, OTP_PROVIDER_UNAVAILABLE) MUST be returned to caller when appropriate.
 ```
 
+### OTP Abuse Hardening Strategy
+
+The OTP system MUST implement multi-layered abuse prevention.
+
+Single-layer rate limiting is NOT sufficient.
+
+The system MUST support:
+
+#### Layer 1 — Global IP Rate Limits
+
+Purpose:
+prevent mass OTP flooding attacks.
+
+Example:
+
+- 100 requests/minute/IP
+
+---
+
+#### Layer 2 — OTP Send Limits Per Phone Number
+
+Purpose:
+prevent SMS bombing of individual users.
+
+Example:
+
+- max 3 OTP sends / 5 minutes / phone number
+
+---
+
+#### Layer 3 — OTP Verification Attempt Limits
+
+Purpose:
+prevent brute-force OTP guessing.
+
+Example:
+
+- max 5 verification attempts / 10 minutes
+
+Exceeded limits MUST temporarily lock verification.
+
+---
+
+#### Layer 4 — Device Fingerprint Limits
+
+Purpose:
+prevent automated abuse from rotating phone numbers.
+
+Future implementation MUST support:
+
+- device fingerprint rate limiting
+- suspicious device scoring
+- emulator detection hooks
+
+---
+
+#### Layer 5 — Proxy / ASN / VPN Detection (Future Hook)
+
+The architecture MUST support future integration with:
+
+- proxy detection
+- ASN reputation
+- VPN heuristics
+- fraud scoring systems
+
+Sprint 1 does NOT implement full fraud intelligence,
+but MUST preserve architectural compatibility.
+
+---
+
+#### Layer 6 — OTP Cooldown Windows
+
+OTP resend cooldown MUST exist.
+
+Example:
+
+- resend allowed only after 30 seconds
+
+Purpose:
+prevent OTP resend abuse and provider flooding.
+
+---
+
+#### Layer 7 — Redis Abuse Isolation
+
+Rate-limit counters MUST remain isolated by:
+
+- IP
+- normalized phone number
+- device fingerprint
+
+Counters MUST NEVER share generic keys.
+
+---
+
+#### Layer 8 — Abuse Event Logging
+
+The system MUST create SecurityEvents for:
+
+- repeated OTP failures
+- excessive resend attempts
+- rate-limit violations
+- suspicious IP behavior
+- suspicious device behavior
+
+These events MUST support future fraud analytics.
+
+---
+
+#### Layer 9 — Fail CLOSED Philosophy
+
+If abuse protection infrastructure becomes unavailable:
+
+- OTP send MUST fail
+- OTP verify MUST fail
+
+The system MUST NEVER silently bypass abuse controls.
+
+---
+
+#### Layer 10 — Future Risk Engine Compatibility
+
+OTP architecture MUST remain compatible with future:
+
+- IdentityRiskService
+- fraud scoring
+- behavioral analytics
+- impossible-travel detection
+- SIM-swap heuristics
+
+Sprint 1 defines foundational compatibility only.
+
 ### 8.4 RBAC Design
 
 ```
