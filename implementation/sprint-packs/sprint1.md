@@ -2275,8 +2275,8 @@ FILE: apps/api/src/modules/identity/auth/auth.service.ts
   import { TokenService } from './token.service';
   import { SessionService } from './session.service';
   import { AuthRepository } from './repositories/auth.repository';
-  import { AuditRepository } from '../users/repositories/audit.repository';
   import { SessionRepository } from './repositories/session.repository';
+  import { AuditSafeWriterService } from '../../security/audit/audit-safe-writer.service';
   import { Inject } from '@nestjs/common';
   import { SMS_SERVICE } from './sms.service.interface';
   import type { SmsService } from './sms.service.interface';
@@ -2292,7 +2292,7 @@ FILE: apps/api/src/modules/identity/auth/auth.service.ts
    * AuthService — orchestrates the complete authentication flow.
    *
    * Coordinates: OtpService + TokenService + SessionService +
-   *              AuthRepository + AuditRepository + SmsService
+   *              AuthRepository + AuditSafeWriterService + SmsService
    *
    * All operations follow the workflow defined in:
    * VyaparNet_Workflow_Sequence_Diagrams_v1.md Sections 1.1 and 1.2
@@ -2313,7 +2313,7 @@ FILE: apps/api/src/modules/identity/auth/auth.service.ts
       private readonly tokenService: TokenService,
       private readonly sessionService: SessionService,
       private readonly authRepository: AuthRepository,
-      private readonly auditRepository: AuditRepository,
+      private readonly auditSafeWriterService: AuditSafeWriterService,
       private readonly sessionRepository: SessionRepository,
       @Inject(SMS_SERVICE) private readonly smsService: SmsService,
       private readonly redisHealthService: RedisHealthService,
@@ -2668,14 +2668,12 @@ FILE: apps/api/src/modules/identity/auth/auth.service.ts
       }
 
       // Log audit
-      void this.auditRepository.create({
+      void this.auditSafeWriterService.safeWrite({
         actorId: userId,
         action: AuditAction.LOGOUT,
         entityType: 'User',
         entityId: userId,
         sessionId,
-      }).catch((err: Error) => {
-        this.logger.error({ error: err.message }, 'Failed to write logout audit log');
       });
 
       this.logger.log({ userId, sessionId }, 'User logged out');
@@ -2687,14 +2685,12 @@ FILE: apps/api/src/modules/identity/auth/auth.service.ts
     async logoutAll(userId: string, currentSessionId?: string): Promise<void> {
       await this.sessionRepository.revokeAllForUser(userId, currentSessionId);
 
-      void this.auditRepository.create({
+      void this.auditSafeWriterService.safeWrite({
         actorId: userId,
         action: AuditAction.LOGOUT,
         entityType: 'User',
         entityId: userId,
         entityName: 'logout-all',
-      }).catch((err: Error) => {
-        this.logger.error({ error: err.message }, 'Failed to write logout-all audit log');
       });
 
       this.logger.warn({ userId }, 'All sessions revoked (logout-all)');
@@ -2742,7 +2738,7 @@ FILE: apps/api/src/modules/identity/auth/auth.service.ts
 
       // AuditLog for lockout
       if (user) {
-        void this.auditRepository.create({
+        void this.auditSafeWriterService.safeWrite({
           actorId: user.id,
           action: AuditAction.FAILED_LOGIN,
           entityType: 'User',
@@ -2750,8 +2746,6 @@ FILE: apps/api/src/modules/identity/auth/auth.service.ts
           ipAddress: requestIp,
           userAgent,
           newValue: { event: 'ACCOUNT_LOCKED', phone: maskedPhone },
-        }).catch((err: Error) => {
-          this.logger.error({ error: err.message }, 'Failed to write lockout audit log');
         });
       }
 
@@ -3297,6 +3291,7 @@ FILE: apps/api/src/modules/identity/auth/auth.module.ts
   import { AuthRepository } from './repositories/auth.repository';
   import { SessionRepository } from './repositories/session.repository';
   import { AuditRepository } from '../users/repositories/audit.repository';
+  import { AuditSafeWriterService } from '../../security/audit/audit-safe-writer.service';
   import { SMS_SERVICE } from './sms.service.interface';
   import type { AppConfig } from '../../../core/config/config.schema';
 
@@ -3323,6 +3318,7 @@ FILE: apps/api/src/modules/identity/auth/auth.module.ts
       AuthRepository,
       SessionRepository,
       AuditRepository,
+      AuditSafeWriterService,
       // SMS Service — swap implementation via DI
       // In production: use real Msg91SmsService
       // In test: provide StubSmsService
@@ -3589,7 +3585,7 @@ FILE: apps/api/src/modules/identity/users/users.service.ts
 
   import { Injectable, NotFoundException } from '@nestjs/common';
   import { UsersRepository } from './repositories/users.repository';
-  import { AuditRepository } from './repositories/audit.repository';
+  import { AuditSafeWriterService } from '../../security/audit/audit-safe-writer.service';
   import { AuditAction } from '@vyaparnet/types';
   import type {
     UpdateUserDto,
@@ -3611,7 +3607,7 @@ FILE: apps/api/src/modules/identity/users/users.service.ts
   export class UsersService {
     constructor(
       private readonly usersRepository: UsersRepository,
-      private readonly auditRepository: AuditRepository,
+      private readonly auditSafeWriterService: AuditSafeWriterService,
     ) {}
 
     /**
@@ -3648,7 +3644,7 @@ FILE: apps/api/src/modules/identity/users/users.service.ts
       });
 
       // Log profile update (async)
-      void this.auditRepository.create({
+      void this.auditSafeWriterService.safeWrite({
         actorId: userId,
         action: AuditAction.UPDATE,
         entityType: 'User',
@@ -3656,7 +3652,7 @@ FILE: apps/api/src/modules/identity/users/users.service.ts
         oldValue: { name: user.name, email: user.email, language: user.language },
         newValue: { name: dto.name, email: dto.email, language: dto.language },
         ipAddress,
-      }).catch(() => {/* non-critical */});
+      });
 
       const withBusinesses = await this.usersRepository.findByIdWithBusinesses(updatedUser.id);
       return this.mapUserToResponse(updatedUser, withBusinesses?.ownedBusinesses ?? []);
@@ -3780,6 +3776,7 @@ FILE: apps/api/src/modules/identity/users/users.module.ts
   import { OnboardingService } from './onboarding.service';
   import { UsersRepository } from './repositories/users.repository';
   import { AuditRepository } from './repositories/audit.repository';
+  import { AuditSafeWriterService } from '../../security/audit/audit-safe-writer.service';
 
   @Module({
     controllers: [UsersController],
@@ -3788,8 +3785,9 @@ FILE: apps/api/src/modules/identity/users/users.module.ts
       OnboardingService,
       UsersRepository,
       AuditRepository,
+      AuditSafeWriterService,
     ],
-    exports: [UsersService, UsersRepository],
+    exports: [UsersService, UsersRepository, AuditSafeWriterService],
   })
   export class UsersModule {}
 ```
@@ -3933,6 +3931,22 @@ Commit checkpoint: SPRINT1-CHECKPOINT-7
 ### PHASE 10: OBSERVABILITY & METRICS
 
 **Estimated time: Day 7**
+
+---
+
+#### Audit Failure Governance
+
+Audit logging failures MUST NOT block authentication flows.
+
+If audit persistence fails:
+
+- Authentication and user profile updates may continue
+- A `SecurityEvent` with type `AUDIT_LOG_WRITE_FAILED` MUST be created
+- The metric `audit.write.failure` MUST be emitted
+- The retry pipeline MUST eventually persist missing audit entries
+
+Reason:
+Audit infrastructure degradation must not cause total platform authentication outage.
 
 ---
 
