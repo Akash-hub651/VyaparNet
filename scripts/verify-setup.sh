@@ -169,7 +169,7 @@ else
   check_fail "Prisma migrations: not up to date or failed"
 fi
 
-if pnpm --filter @vyaparnet/database exec prisma validate 2>&1 | grep -q "validated"; then
+if pnpm --filter @vyaparnet/database exec prisma validate 2>&1 | grep -q "is valid"; then
   check_pass "Prisma schema: valid"
 else
   check_warn "Could not validate Prisma schema automatically"
@@ -214,7 +214,7 @@ fi
 # ─── Security ─────────────────────────────────────────────────
 echo ""
 echo "--- Security Checks ---"
-if pnpm audit --audit-level=high 2>&1 | grep -q "found 0 vulnerabilities"; then
+if pnpm audit --audit-level=high >/dev/null 2>&1; then
   check_pass "Dependency audit: no high/critical vulnerabilities"
 else
   check_warn "Dependency audit: vulnerabilities found (run: pnpm audit for details)"

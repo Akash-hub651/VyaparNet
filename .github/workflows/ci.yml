@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main, develop]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   NODE_VERSION: '20'
   PNPM_VERSION: '9'
@@ -60,6 +64,14 @@ jobs:
         env:
           DATABASE_URL: 'postgresql://fake:fake@localhost:5432/fake'
 
+      - name: Cache turbo build setup
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
+
       - name: TypeScript type check (all packages)
         run: pnpm typecheck
 
@@ -107,6 +119,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Cache turbo build setup
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
+
       - name: Generate Prisma client
         run: pnpm --filter @vyaparnet/database exec prisma generate
         env:
@@ -124,6 +144,7 @@ jobs:
           DATABASE_URL: 'postgresql://vyaparnet_test:testpassword@localhost:5432/vyaparnet_test'
           REDIS_HOST: localhost
           REDIS_PORT: 6379
+          CI: true
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
@@ -151,6 +172,25 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Cache turbo build setup
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
+
+      - name: Cache Next.js
+        uses: actions/cache@v4
+        with:
+          path: |
+            apps/web/.next/cache
+            apps/admin/.next/cache
+            apps/seller-dashboard/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-
+
       - name: Generate Prisma client
         run: pnpm --filter @vyaparnet/database exec prisma generate
         env:
@@ -158,6 +198,8 @@ jobs:
 
       - name: Build all packages and apps (Turborepo)
         run: pnpm build
+        env:
+          CI: true
 
       - name: Verify API Docker build
         run: docker build -f apps/api/Dockerfile -t vyaparnet-api:ci .

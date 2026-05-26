@@ -8,6 +8,9 @@ export default defineConfig({
     setupFiles: ['./test/setup.ts'],
     include: ['src/**/*.spec.ts', 'test/**/*.spec.ts'],
     exclude: ['node_modules', 'dist'],
+    // NestJS integration tests bootstrap a full app including DB + Redis.
+    // 30 seconds prevents silent hangs during slow CI provisioning.
+    testTimeout: 30000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -15,6 +18,7 @@ export default defineConfig({
       exclude: [
         'src/**/*.module.ts',
         'src/**/*.spec.ts',
+        'src/**/*.d.ts',
         'src/main.ts',
       ],
       thresholds: {
