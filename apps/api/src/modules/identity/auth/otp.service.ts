@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { RedisService } from '../../../core/redis/redis.service';
+import { RedisUnavailableException } from '../../../shared/exceptions/redis-unavailable.exception';
 
 /**
  * OtpService — manages OTP generation, storage, verification,
@@ -55,6 +56,23 @@ export class OtpService {
   constructor(private readonly redis: RedisService) {}
 
   /**
+   * Wrap raw Redis calls to prevent generic 500s on Redis failure.
+   */
+  private async safeRedisCall<T>(fn: () => Promise<T>): Promise<T> {
+    try {
+      return await fn();
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      this.logger.error('Redis operation failed in OtpService', error);
+      throw new RedisUnavailableException(
+        'Authentication service temporarily unavailable.',
+      );
+    }
+  }
+
+  /**
    * Generate a cryptographically secure 6-digit OTP.
    * Uses crypto.randomInt for CSPRNG — NOT Math.random.
    */
@@ -84,11 +102,13 @@ export class OtpService {
 
   /**
    * Check if phone is locked out.
-   * @returns lockout remaining TTL in seconds, or 0 if not locked
+   * Returns remaining TTL in seconds. 0 if not locked.
    */
   async getLockoutTtl(phone: string): Promise<number> {
-    const ttl = await this.redis.ttl(OtpKeys.lock(phone));
-    return ttl > 0 ? ttl : 0;
+    return this.safeRedisCall(async () => {
+      const ttl = await this.redis.ttl(OtpKeys.lock(phone));
+      return Math.max(0, ttl);
+    });
   }
 
   /**
@@ -99,65 +119,67 @@ export class OtpService {
     phone: string,
     ip: string,
   ): Promise<void> {
-    const hashedIp = this.hashIp(ip);
+    return this.safeRedisCall(async () => {
+      const hashedIp = this.hashIp(ip);
 
-    // Check lockout
-    const lockTtl = await this.getLockoutTtl(phone);
-    if (lockTtl > 0) {
-      throw new HttpException(
-        {
-          code: 'ACCOUNT_LOCKED',
-          message: `Account temporarily locked. Retry after ${Math.ceil(lockTtl / 60)} minutes.`,
-          details: { retryAfterSeconds: lockTtl },
-        },
-        HttpStatus.TOO_MANY_REQUESTS,
-      );
-    }
+      // Check lockout
+      const lockTtl = await this.getLockoutTtl(phone);
+      if (lockTtl > 0) {
+        throw new HttpException(
+          {
+            code: 'ACCOUNT_LOCKED',
+            message: `Account temporarily locked. Retry after ${Math.ceil(lockTtl / 60)} minutes.`,
+            details: { retryAfterSeconds: lockTtl },
+          },
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
 
-    // Check resend cooldown
-    const cooldownExists = await this.redis.exists(
-      OtpKeys.resendCooldown(phone),
-    );
-    if (cooldownExists) {
-      const cooldownTtl = await this.redis.ttl(OtpKeys.resendCooldown(phone));
-      throw new HttpException(
-        {
-          code: 'RESEND_COOLDOWN',
-          message: `Wait ${cooldownTtl} seconds before requesting another OTP.`,
-          details: { retryAfterSeconds: cooldownTtl },
-        },
-        HttpStatus.TOO_MANY_REQUESTS,
+      // Check resend cooldown
+      const cooldownExists = await this.redis.exists(
+        OtpKeys.resendCooldown(phone),
       );
-    }
+      if (cooldownExists) {
+        const cooldownTtl = await this.redis.ttl(OtpKeys.resendCooldown(phone));
+        throw new HttpException(
+          {
+            code: 'RESEND_COOLDOWN',
+            message: `Wait ${cooldownTtl} seconds before requesting another OTP.`,
+            details: { retryAfterSeconds: cooldownTtl },
+          },
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
 
-    // Check per-phone send rate
-    const phoneSendCount = await this.redis.get(OtpKeys.sendCount(phone));
-    if (
-      phoneSendCount &&
-      parseInt(phoneSendCount) >= OtpService.MAX_SENDS_PER_PHONE
-    ) {
-      throw new HttpException(
-        {
-          code: 'RATE_LIMIT_PHONE',
-          message: 'Too many OTP requests. Try again in 5 minutes.',
-          details: { retryAfterSeconds: OtpService.OTP_TTL_SECONDS },
-        },
-        HttpStatus.TOO_MANY_REQUESTS,
-      );
-    }
+      // Check per-phone send rate
+      const phoneSendCount = await this.redis.get(OtpKeys.sendCount(phone));
+      if (
+        phoneSendCount &&
+        parseInt(phoneSendCount) >= OtpService.MAX_SENDS_PER_PHONE
+      ) {
+        throw new HttpException(
+          {
+            code: 'RATE_LIMIT_PHONE',
+            message: 'Too many OTP requests. Try again in 5 minutes.',
+            details: { retryAfterSeconds: OtpService.OTP_TTL_SECONDS },
+          },
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
 
-    // Check per-IP send rate
-    const ipSendCount = await this.redis.get(OtpKeys.sendCountIp(hashedIp));
-    if (ipSendCount && parseInt(ipSendCount) >= OtpService.MAX_SENDS_PER_IP) {
-      throw new HttpException(
-        {
-          code: 'RATE_LIMIT_IP',
-          message: 'Too many requests from this location.',
-          details: { retryAfterSeconds: OtpService.OTP_TTL_SECONDS },
-        },
-        HttpStatus.TOO_MANY_REQUESTS,
-      );
-    }
+      // Check per-IP send rate
+      const ipSendCount = await this.redis.get(OtpKeys.sendCountIp(hashedIp));
+      if (ipSendCount && parseInt(ipSendCount) >= OtpService.MAX_SENDS_PER_IP) {
+        throw new HttpException(
+          {
+            code: 'RATE_LIMIT_IP',
+            message: 'Too many requests from this location.',
+            details: { retryAfterSeconds: OtpService.OTP_TTL_SECONDS },
+          },
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+    });
   }
 
   /**

@@ -18,8 +18,10 @@ export class SessionRepository {
 
   async create(
     data: Prisma.LoginSessionUncheckedCreateInput,
+    tx?: Prisma.TransactionClient,
   ): Promise<LoginSession> {
-    return this.prisma.loginSession.create({ data });
+    const client = tx ?? this.prisma;
+    return client.loginSession.create({ data });
   }
 
   async findActiveById(id: string): Promise<LoginSession | null> {
@@ -53,8 +55,9 @@ export class SessionRepository {
     });
   }
 
-  async revokeById(id: string): Promise<void> {
-    await this.prisma.loginSession.update({
+  async revokeById(id: string, tx?: Prisma.TransactionClient): Promise<void> {
+    const client = tx ?? this.prisma;
+    await client.loginSession.update({
       where: { id },
       data: { revoked: true },
     });

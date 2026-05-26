@@ -8,7 +8,7 @@ import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { TokenService } from '../../modules/identity/auth/token.service';
-import { PrismaService } from '../../core/prisma/prisma.service';
+import { AuthRepository } from '../../modules/identity/auth/repositories/auth.repository';
 import { setContext } from '../context/async-local-storage';
 import type { JwtPayload } from '../../modules/identity/auth/token.service';
 
@@ -21,7 +21,7 @@ import type { JwtPayload } from '../../modules/identity/auth/token.service';
  * On success: attaches JwtPayload to request.user AND AsyncLocalStorage.
  * On failure: throws 401 UnauthorizedException.
  *
- * SECURITY: This guard is stateful — queries DB to check token version.
+ * SECURITY: This guard caches tokenVersion in Redis. DB fallback on cache miss.
  *
  * Authority: VyaparNet_Implementation_Architecture_Official_Freeze_v1.md Section 9
  */
@@ -30,7 +30,7 @@ export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly tokenService: TokenService,
-    private readonly prisma: PrismaService,
+    private readonly authRepository: AuthRepository,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -60,20 +60,27 @@ export class JwtAuthGuard implements CanActivate {
     // Verify token (throws if invalid/expired)
     const payload = this.tokenService.verifyAccessToken(token);
 
-    // Verify tokenVersion matches database
-    const user = await this.prisma.user.findFirst({
-      where: { id: payload.sub, isDeleted: false },
-      select: { tokenVersion: true },
-    });
+    // Verify tokenVersion via Redis Cache (Hot-path optimization)
+    let tokenVersion = await this.tokenService.getCachedTokenVersion(
+      payload.sub,
+    );
 
-    if (!user) {
-      throw new UnauthorizedException({
-        code: 'USER_NOT_FOUND',
-        message: 'User not found.',
-      });
+    // Cache miss -> fallback to Database and cache it
+    if (tokenVersion === null) {
+      tokenVersion = await this.authRepository.findTokenVersionById(
+        payload.sub,
+      );
+      if (tokenVersion === null) {
+        throw new UnauthorizedException({
+          code: 'USER_NOT_FOUND',
+          message: 'User not found.',
+        });
+      }
+      // Cache it for subsequent requests
+      await this.tokenService.cacheTokenVersion(payload.sub, tokenVersion);
     }
 
-    if (user.tokenVersion !== payload.tokenVersion) {
+    if (tokenVersion !== payload.tokenVersion) {
       throw new UnauthorizedException({
         code: 'TOKEN_VERSION_MISMATCH',
         message: 'Session expired. Please login again.',

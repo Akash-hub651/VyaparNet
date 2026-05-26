@@ -41,19 +41,23 @@ export class AuditRepository {
    * CRITICAL: auditMonth must be set to YYYY-MM format.
    * This is the partition key for the AuditLog table.
    */
-  async create(input: CreateAuditLogInput): Promise<void> {
+  async create(
+    input: CreateAuditLogInput,
+    tx?: import('@vyaparnet/database').Prisma.TransactionClient,
+  ): Promise<void> {
     const now = new Date();
     const auditMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const client = tx ?? this.prisma;
 
-    await this.prisma.auditLog.create({
+    await client.auditLog.create({
       data: {
         actorId: input.actorId,
         action: input.action,
         entityType: input.entityType,
         entityId: input.entityId,
         entityName: input.entityName ?? undefined,
-        oldValue: (input.oldValue as any) ?? undefined,
-        newValue: (input.newValue as any) ?? undefined,
+        oldValue: input.oldValue ? (input.oldValue as object) : undefined,
+        newValue: input.newValue ? (input.newValue as object) : undefined,
         ipAddress: input.ipAddress ?? undefined,
         userAgent: input.userAgent ?? undefined,
         sessionId: input.sessionId ?? undefined,

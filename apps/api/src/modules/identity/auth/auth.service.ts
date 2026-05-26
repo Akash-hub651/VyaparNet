@@ -8,6 +8,7 @@ import * as crypto from 'crypto';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { OtpService } from './otp.service';
 import { TokenService } from './token.service';
+import { SessionService } from './session.service';
 import { AuthRepository } from './repositories/auth.repository';
 import { SessionRepository } from './repositories/session.repository';
 import { AuditSafeWriterService } from '../../security/audit/audit-safe-writer.service';
@@ -25,6 +26,8 @@ import { normalizeIndianPhoneNumber } from '@vyaparnet/utils';
 import { RedisHealthService } from '../../../shared/redis/redis-health.service';
 import { RedisUnavailableException } from '../../../shared/exceptions/redis-unavailable.exception';
 import { SessionServiceUnavailableException } from '../../../shared/exceptions/session-service-unavailable.exception';
+import { AuditRepository } from '../users/repositories/audit.repository';
+import { TicketRepository } from '../users/repositories/ticket.repository';
 
 /**
  * AuthService — orchestrates the complete authentication flow.
@@ -52,6 +55,8 @@ export class AuthService {
     private readonly authRepository: AuthRepository,
     private readonly auditSafeWriterService: AuditSafeWriterService,
     private readonly sessionRepository: SessionRepository,
+    private readonly auditRepository: AuditRepository,
+    private readonly ticketRepository: TicketRepository,
     @Inject(SMS_SERVICE) private readonly smsService: SmsService,
     private readonly redisHealthService: RedisHealthService,
   ) {}
@@ -211,8 +216,8 @@ export class AuthService {
         const expiresAt = new Date(
           Date.now() + TokenService.REFRESH_TOKEN_TTL_SECONDS * 1000,
         );
-        const session = await tx.loginSession.create({
-          data: {
+        const session = await this.sessionRepository.create(
+          {
             userId: userPreview.id,
             refreshToken: hashedRefreshToken,
             userAgent: userAgent.slice(0, 255),
@@ -221,23 +226,23 @@ export class AuthService {
             refreshTokenFamilyId: crypto.randomUUID(),
             refreshTokenVersion: 1,
           },
-        });
+          tx,
+        );
 
         // Write AuditLog (immutable — must succeed)
-        const auditMonth = this.currentAuditMonth();
-        await tx.auditLog.create({
-          data: {
+        await this.auditRepository.create(
+          {
             actorId: userPreview.id,
-            action: 'LOGIN',
+            action: AuditAction.LOGIN,
             entityType: 'User',
             entityId: userPreview.id,
             entityName: 'login',
             ipAddress: requestIp,
             userAgent: userAgent.slice(0, 255),
             sessionId: session.id,
-            auditMonth,
           },
-        });
+          tx,
+        );
 
         return session;
       });
@@ -255,6 +260,8 @@ export class AuthService {
       phoneNumber,
       rawRefreshToken,
       newSession.id,
+      userPreview.id,
+      userPreview.tokenVersion,
     );
 
     // Step 5: Enforce max session limit (evict oldest if needed)
@@ -386,17 +393,14 @@ export class AuthService {
     let newSession;
     await this.prisma.$transaction(async (tx) => {
       // Revoke old session
-      await tx.loginSession.update({
-        where: { id: session.id },
-        data: { revoked: true },
-      });
+      await this.sessionRepository.revokeById(session.id, tx);
 
       // Create new session
       const expiresAt = new Date(
         Date.now() + TokenService.REFRESH_TOKEN_TTL_SECONDS * 1000,
       );
-      newSession = await tx.loginSession.create({
-        data: {
+      newSession = await this.sessionRepository.create(
+        {
           userId: userById.id,
           refreshToken: newHashedToken,
           userAgent: session.userAgent ?? undefined,
@@ -405,12 +409,17 @@ export class AuthService {
           refreshTokenFamilyId: session.refreshTokenFamilyId,
           refreshTokenVersion: session.refreshTokenVersion + 1,
         },
-      });
+        tx,
+      );
 
       // Update Redis with the new session (keep old one mapped in Redis so we can detect its reuse!)
       await this.tokenService.storeRefreshTokenInRedis(
         newRawToken,
         newSession.id,
+      );
+      await this.tokenService.cacheTokenVersion(
+        userById.id,
+        userById.tokenVersion,
       );
     });
 
@@ -441,16 +450,17 @@ export class AuthService {
   ): Promise<void> {
     let sessionId = fallbackSessionId;
     if (rawToken) {
-      const redisSessionId = await this.tokenService.getSessionIdFromRefreshToken(rawToken);
+      const redisSessionId =
+        await this.tokenService.getSessionIdFromRefreshToken(rawToken);
       if (redisSessionId) {
         sessionId = redisSessionId;
       }
       await this.tokenService.revokeRefreshTokenInRedis(rawToken);
     }
-    
+
     try {
       await this.sessionRepository.revokeById(sessionId);
-    } catch (e) {
+    } catch {
       this.logger.warn({ sessionId }, 'Session not found in DB during logout');
     }
 
@@ -517,15 +527,10 @@ export class AuthService {
 
     // Create support ticket (auto-ticket per Workflow diagrams Section 28.1)
     if (user) {
-      void this.prisma.supportTicket
-        .create({
-          data: {
-            userId: user.id,
-            subject: 'Account Lockout - OTP Failed 5 Times',
-            description: `Account locked due to 5 failed OTP attempts. IP: ${requestIp}. User may need assistance unlocking.`,
-            priority: 'HIGH',
-            status: 'OPEN',
-          },
+      void this.ticketRepository
+        .createLockoutTicket({
+          userId: user.id,
+          requestIp,
         })
         .catch((err: Error) => {
           this.logger.error(
@@ -558,12 +563,15 @@ export class AuthService {
     phone: string,
     rawRefreshToken: string,
     sessionId: string,
+    userId: string,
+    tokenVersion: number,
   ): Promise<void> {
     try {
       await this.tokenService.storeRefreshTokenInRedis(
         rawRefreshToken,
         sessionId,
       );
+      await this.tokenService.cacheTokenVersion(userId, tokenVersion);
       await this.otpService.cleanupAfterSuccess(phone);
     } catch (error) {
       const err = error as Error;
@@ -582,8 +590,7 @@ export class AuthService {
     try {
       const activeCount =
         await this.sessionRepository.countActiveForUser(userId);
-      if (activeCount > 3) {
-        // Hardcoded 3 to replace SessionService.MAX_CONCURRENT_SESSIONS
+      if (activeCount > SessionService.MAX_CONCURRENT_SESSIONS) {
         // Find sessions to revoke (oldest first, excluding new session)
         const oldest = await this.prisma.loginSession.findFirst({
           where: {
@@ -610,10 +617,5 @@ export class AuthService {
         'Failed to enforce max sessions — non-critical',
       );
     }
-  }
-
-  private currentAuditMonth(): string {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   }
 }

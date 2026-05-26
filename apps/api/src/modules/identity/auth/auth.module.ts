@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { BullModule } from '@nestjs/bull';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { OtpService } from './otp.service';
@@ -10,6 +11,7 @@ import { Msg91SmsService } from './sms.service';
 import { AuthRepository } from './repositories/auth.repository';
 import { SessionRepository } from './repositories/session.repository';
 import { AuditRepository } from '../users/repositories/audit.repository';
+import { TicketRepository } from '../users/repositories/ticket.repository';
 import { AuditSafeWriterService } from '../../security/audit/audit-safe-writer.service';
 import { AuthMetrics } from './auth.metrics';
 import { Msg91Provider } from './providers/msg91.provider';
@@ -19,6 +21,7 @@ import type { AppConfig } from '../../../core/config/config.schema';
 
 @Module({
   imports: [
+    BullModule.registerQueue({ name: 'dead-letter' }),
     JwtModule.registerAsync({
       useFactory: (config: ConfigService<AppConfig, true>) => ({
         secret: config.get('JWT_SECRET'),
@@ -40,6 +43,7 @@ import type { AppConfig } from '../../../core/config/config.schema';
     AuthRepository,
     SessionRepository,
     AuditRepository,
+    TicketRepository,
     AuditSafeWriterService,
     AuthMetrics,
     Msg91Provider,
@@ -55,6 +59,7 @@ import type { AppConfig } from '../../../core/config/config.schema';
   exports: [
     TokenService, // Exported for JwtAuthGuard
     AuthService, // Exported for future auth-related modules
+    AuthRepository, // Exported for JwtAuthGuard
     AuditRepository,
     AuditSafeWriterService,
     AuthMetrics,

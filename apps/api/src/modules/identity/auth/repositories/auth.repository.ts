@@ -28,6 +28,17 @@ export class AuthRepository {
   }
 
   /**
+   * Fetch tokenVersion for JWT validation fallback.
+   */
+  async findTokenVersionById(id: string): Promise<number | null> {
+    const user = await this.prisma.user.findFirst({
+      where: { id, isDeleted: false },
+      select: { tokenVersion: true },
+    });
+    return user ? user.tokenVersion : null;
+  }
+
+  /**
    * Upsert a user by phone number.
    * Creates if new, updates lastActiveAt if existing.
    * Used on every successful OTP verification.
@@ -99,7 +110,7 @@ export class AuthRepository {
         ipAddress: data.ipAddress,
         userId: data.userId ?? undefined,
         userAgent: data.userAgent ?? undefined,
-        metadata: (data.metadata as any) ?? undefined,
+        metadata: data.metadata ? (data.metadata as object) : undefined,
       },
     });
   }

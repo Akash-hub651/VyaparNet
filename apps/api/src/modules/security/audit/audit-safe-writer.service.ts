@@ -1,4 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 import {
   AuditRepository,
   CreateAuditLogInput,
@@ -14,6 +16,7 @@ export class AuditSafeWriterService {
     private readonly auditRepository: AuditRepository,
     private readonly authRepository: AuthRepository,
     private readonly metricsService: AuthMetrics,
+    @InjectQueue('dead-letter') private readonly deadLetterQueue: Queue,
   ) {}
 
   async safeWrite(payload: CreateAuditLogInput): Promise<void> {
@@ -24,9 +27,15 @@ export class AuditSafeWriterService {
 
       this.metricsService.increment('audit.write.failure');
 
-      // TODO:
-      // enqueue retry job once BullMQ retry
-      // infrastructure is enabled in later sprint
+      // Enqueue to Dead Letter Queue for retry
+      await this.deadLetterQueue
+        .add('audit-log-failed', payload)
+        .catch((err: Error) => {
+          this.logger.error(
+            'Failed to enqueue audit log to dead letter queue',
+            err,
+          );
+        });
 
       await this.authRepository
         .logSecurityEvent({

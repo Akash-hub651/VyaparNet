@@ -34,6 +34,7 @@ export interface SessionContext {
 // ─── Redis key builders for sessions ─────────────────────────
 export const SessionKeys = {
   raw: (rawToken: string) => `session:raw:${rawToken}`,
+  tokenVersion: (userId: string) => `session:token_version:${userId}`,
 } as const;
 
 @Injectable()
@@ -149,5 +150,28 @@ export class TokenService {
     const hashedRefreshToken = await this.hashRefreshToken(rawRefreshToken);
 
     return { accessToken, rawRefreshToken, hashedRefreshToken };
+  }
+
+  /**
+   * Cache the user's token version in Redis.
+   */
+  async cacheTokenVersion(userId: string, version: number): Promise<void> {
+    await this.redis.set(
+      SessionKeys.tokenVersion(userId),
+      version.toString(),
+      'EX',
+      TokenService.ACCESS_TOKEN_TTL_SECONDS,
+    );
+  }
+
+  /**
+   * Get the user's token version from Redis.
+   */
+  async getCachedTokenVersion(userId: string): Promise<number | null> {
+    const versionStr = await this.redis.get(SessionKeys.tokenVersion(userId));
+    if (versionStr) {
+      return parseInt(versionStr, 10);
+    }
+    return null;
   }
 }
