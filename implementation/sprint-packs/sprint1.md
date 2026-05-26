@@ -158,7 +158,19 @@ At the end of Sprint 1:
 
 2. **OTP is never stored in the database.** It lives in Redis only, with a strict TTL. The database stores only masked attempt logs for audit purposes.
 
-3. **Every auth event — login, logout, failure, lockout — creates an immutable AuditLog entry.** There are no exceptions. If the AuditLog write fails, the auth operation is considered failed.
+3. **Every auth event — login, logout, failure — MUST attempt to create an immutable AuditLog entry.**
+
+Audit logging failures MUST trigger:
+
+- SecurityEvent creation
+- operational alerts
+- metrics emission
+- retry pipeline integration
+
+Authentication flows themselves SHOULD remain operational during temporary audit infrastructure degradation.
+
+Reason:
+audit infrastructure failure must not cause total authentication outage.
 
 ---
 
@@ -456,6 +468,130 @@ SESSION LOOKUP PATTERN:
   Never: DB lookup for every API request (too slow — use JWT for that)
 ```
 
+---
+
+### Geo + Device Session Metadata Strategy
+
+Authentication sessions MUST support structured device and geo metadata.
+
+Sessions are NOT merely refresh token containers.
+
+They represent:
+security-aware identity contexts.
+
+---
+
+### Mandatory Session Metadata Fields
+
+Sprint 1 session architecture MUST support nullable metadata fields for:
+
+#### Device Information
+
+- deviceType
+- browser
+- browserVersion
+- operatingSystem
+- operatingSystemVersion
+- platform
+
+---
+
+#### Network Information
+
+- ipAddress
+- forwardedIpPlaceholder
+- ASNPlaceholder
+- vpnProxyPlaceholder
+
+---
+
+#### Geographic Information (Future-Compatible)
+
+- countryCode
+- region
+- city
+- timezonePlaceholder
+
+Sprint 1 does NOT require precise geo intelligence,
+but the schema MUST remain compatible with future enrichment.
+
+---
+
+#### Session Intelligence Metadata
+
+- deviceFingerprint
+- firstSeenAt
+- lastSeenAt
+- lastActivityAt
+- suspiciousActivityFlag
+
+---
+
+### Metadata Governance
+
+Session metadata MUST:
+
+- remain queryable
+- support future fraud analytics
+- support future admin dashboards
+- support future device trust scoring
+- support future anomaly detection
+
+---
+
+### Privacy + Compliance Philosophy
+
+Sensitive metadata collection MUST remain:
+
+- minimal
+- purpose-bound
+- security-focused
+
+The platform MUST avoid:
+unnecessary invasive fingerprinting.
+
+---
+
+### Future Fraud Compatibility
+
+Session architecture MUST remain compatible with future:
+
+- impossible-travel detection
+- suspicious-device detection
+- geo-anomaly scoring
+- behavioral analytics
+- trusted-device systems
+- adaptive MFA systems
+
+Sprint 1 establishes compatibility only.
+
+---
+
+### Session Investigation Support
+
+The architecture MUST support future admin tooling for:
+
+- active session review
+- suspicious session review
+- forced device logout
+- geo visibility
+- device visibility
+
+---
+
+### Device Fingerprint Governance
+
+Device fingerprints MUST NEVER become:
+
+- primary identity
+- sole authorization factor
+- permanent tracking identifier
+
+They exist only for:
+security intelligence and abuse prevention.
+
+---
+
 ### 8.3 OTP System Design
 
 ```
@@ -504,7 +640,17 @@ OTP LOCKOUT:
     5. Return 429 with lockout message and countdown
 
 OTP DB AUDIT (OtpAttempt):
-  Record: { phone_masked, otp_hash (SHA-256), ipAddress_hash, isValid }
+  Record:
+{
+  phone_masked,
+  ipAddress_hash,
+  isValid,
+  failureReason,
+  createdAt
+}
+
+OTP values themselves MUST NEVER be stored,
+even in hashed form.
   Note: OTP hashed = SHA-256 hash (argon2id is too slow and causes CPU DoS for 6-digit OTPs)
   Retention: 7 days (per PRD data retention policy)
 
@@ -635,6 +781,140 @@ These events MUST support future fraud analytics.
 
 ---
 
+### Security Event Expansion Strategy
+
+Authentication and identity systems MUST emit structured security events.
+
+Security events are NOT generic logs.
+
+They represent:
+security-relevant operational signals.
+
+These events MUST support:
+
+- future SIEM integration
+- fraud analytics
+- anomaly detection
+- incident investigations
+- security dashboards
+- automated threat detection
+
+---
+
+### Mandatory Security Event Categories
+
+Sprint 1 MUST support structured event categories for:
+
+#### Authentication Events
+
+- LOGIN_SUCCESS
+- LOGIN_FAILED
+- LOGOUT_SUCCESS
+- SESSION_REFRESHED
+- SESSION_REVOKED
+
+---
+
+#### OTP Events
+
+- OTP_SENT
+- OTP_VERIFIED
+- OTP_EXPIRED
+- OTP_RATE_LIMITED
+- OTP_BRUTE_FORCE_DETECTED
+
+---
+
+#### Session Security Events
+
+- TOKEN_REUSE_DETECTED
+- SESSION_EXPIRED
+- SESSION_FORCED_LOGOUT
+- CONCURRENT_SESSION_LIMIT_REACHED
+
+---
+
+#### Suspicious Activity Events
+
+- SUSPICIOUS_DEVICE
+- SUSPICIOUS_IP
+- IMPOSSIBLE_TRAVEL_PLACEHOLDER
+- EXCESSIVE_AUTH_FAILURES
+- ACCOUNT_LOCKED
+- ACCOUNT_UNLOCKED
+
+---
+
+#### Infrastructure Security Events
+
+- REDIS_UNAVAILABLE
+- OTP_PROVIDER_UNAVAILABLE
+- AUDIT_LOG_WRITE_FAILED
+- AUTH_SERVICE_DEGRADED
+
+---
+
+### Mandatory Event Metadata
+
+Security events MUST support structured metadata.
+
+Example metadata fields:
+
+- userId
+- sessionId
+- normalizedPhone
+- ipAddress
+- userAgent
+- deviceFingerprint
+- requestId
+- timestamp
+- providerName
+- geoPlaceholder
+- failureReason
+
+---
+
+### Severity Levels
+
+Security events MUST support severity classification:
+
+- LOW
+- MEDIUM
+- HIGH
+- CRITICAL
+
+Severity MUST remain standardized platform-wide.
+
+---
+
+### Security Event Governance
+
+Security events MUST:
+
+- use centralized enums/constants
+- NEVER use ad-hoc string event names
+- remain queryable
+- remain machine-readable
+- support future analytics pipelines
+
+---
+
+### Future Compatibility Requirements
+
+Security event architecture MUST remain compatible with future:
+
+- SIEM systems
+- Kafka pipelines
+- fraud engines
+- IdentityRiskService
+- behavioral analytics
+- real-time threat detection
+- admin security dashboards
+
+Sprint 1 establishes foundational compatibility only.
+
+---
+
 #### Layer 9 — Fail CLOSED Philosophy
 
 If abuse protection infrastructure becomes unavailable:
@@ -657,6 +937,117 @@ OTP architecture MUST remain compatible with future:
 - SIM-swap heuristics
 
 Sprint 1 defines foundational compatibility only.
+
+---
+
+### IdentityRiskService Architecture Placeholder
+
+Sprint 1 MUST reserve architectural compatibility for a future centralized:
+
+`IdentityRiskService`
+
+This service will eventually become responsible for:
+
+- identity risk scoring
+- fraud heuristics
+- suspicious behavior detection
+- adaptive authentication decisions
+- anomaly detection
+- abuse intelligence
+
+Sprint 1 does NOT implement full fraud intelligence,
+but MUST preserve architectural compatibility.
+
+---
+
+### Future Responsibilities of IdentityRiskService
+
+The future risk engine MAY evaluate:
+
+#### Device Signals
+
+- suspicious devices
+- emulator detection
+- rooted/jailbroken device hooks
+- device reputation
+- abnormal device switching
+
+---
+
+#### Network Signals
+
+- suspicious IPs
+- VPN/proxy detection
+- ASN reputation
+- TOR exit node detection
+- geo anomalies
+
+---
+
+#### Behavioral Signals
+
+- impossible travel
+- unusual login timing
+- abnormal OTP patterns
+- unusual session activity
+- automated behavior indicators
+
+---
+
+#### Account Signals
+
+- excessive login failures
+- token replay attacks
+- OTP abuse
+- account takeover indicators
+- suspicious password reset flows
+
+---
+
+### Future Adaptive Security Compatibility
+
+The architecture MUST remain compatible with future:
+
+- adaptive MFA
+- risk-based OTP requirements
+- step-up authentication
+- trusted-device systems
+- temporary account locks
+- real-time risk scoring
+
+---
+
+### Architectural Governance
+
+Business logic MUST NEVER directly implement fraud heuristics.
+
+Future risk analysis MUST remain centralized inside:
+
+`IdentityRiskService`
+
+Reason:
+centralized risk intelligence prevents:
+
+- duplicated heuristics
+- inconsistent risk decisions
+- fragmented security logic
+
+---
+
+### Sprint 1 Compatibility Requirement
+
+Sprint 1 MUST ensure:
+
+- security events remain structured
+- session metadata remains extensible
+- auth flows support future risk hooks
+- request context remains traceable
+- device metadata remains compatible
+- geo metadata remains compatible
+
+without requiring future architectural rewrites.
+
+---
 
 ### 8.4 RBAC Design
 
@@ -719,6 +1110,124 @@ PERMISSION CHECK PHILOSOPHY:
 
 ---
 
+### Multi-Tenant / Organization Compatibility Strategy
+
+Sprint 1 MUST preserve architectural compatibility for future:
+
+- organization accounts
+- B2B team systems
+- delegated access
+- employee management
+- branch-level operations
+- multi-user vendor accounts
+
+Sprint 1 does NOT implement full tenancy,
+but MUST avoid architectural decisions that block future expansion.
+
+---
+
+### Future Organization Compatibility
+
+The identity system MUST remain compatible with future:
+
+- organization entities
+- organization membership
+- branch hierarchy
+- role delegation
+- department-level permissions
+- team invitations
+- employee onboarding
+- vendor staff access
+
+---
+
+### User Identity Philosophy
+
+A User represents:
+an identity principal.
+
+Future organization membership MUST remain separate from:
+core user identity.
+
+Reason:
+users may eventually belong to:
+
+- multiple organizations
+- multiple branches
+- multiple teams
+- multiple roles
+
+without identity duplication.
+
+---
+
+### Future Membership Architecture
+
+Future-compatible architecture SHOULD support concepts such as:
+
+- Organization
+- OrganizationMembership
+- Branch
+- TeamRole
+- PermissionScope
+
+Sprint 1 defines compatibility only.
+
+---
+
+### RBAC Compatibility Requirement
+
+Role systems MUST avoid assumptions such as:
+
+- one user = one role forever
+- one user = one organization forever
+- hardcoded role ownership
+
+Authorization architecture MUST remain extensible.
+
+---
+
+### Future Tenant Isolation Compatibility
+
+The architecture MUST remain compatible with future:
+
+- tenant-level isolation
+- organization-scoped permissions
+- branch-scoped permissions
+- organization audit logs
+- organization analytics
+- tenant-specific configuration
+
+without major authentication rewrites.
+
+---
+
+### Database Compatibility Placeholder
+
+Future-compatible identity schemas MAY eventually support:
+
+- organizationId
+- membershipId
+- branchId
+
+Sprint 1 does NOT require full implementation,
+but MUST avoid schema assumptions that prevent future migration.
+
+---
+
+### Governance Requirement
+
+Business logic MUST NEVER hardcode:
+
+- single-organization assumptions
+- permanent role ownership
+- static identity hierarchy
+
+Reason:
+future B2B scaling requires flexible identity relationships.
+
+---
+
 ## SECTION 9: DATABASE FOUNDATION
 
 ### Required Context Files (Database)
@@ -778,8 +1287,183 @@ LoginSessionRepository:
 AuditLogRepository:
   - create(data: CreateAuditLogInput): Promise<void>
   - NEVER exposes update() or delete() methods
+  Audit logs are IMMUTABLE security records.
+
+Post-creation mutation is STRICTLY FORBIDDEN.
+
+Corrections MUST occur through:
+- compensating audit entries
+- linked correction records
+- admin investigation workflows
+
+Direct mutation or deletion of historical audit records is prohibited.
   - Append-only — read methods only for admin queries (Sprint 7)
 ```
+
+---
+
+### Package Boundary Enforcement Strategy
+
+Sprint 1 MUST enforce strict package and dependency boundaries.
+
+The monorepo is NOT a shared global code pool.
+
+Architectural isolation is mandatory.
+
+---
+
+### Core Governance Principle
+
+Each module/package MUST expose only:
+
+- intentional public APIs
+- stable contracts
+- controlled exports
+
+Internal implementation details MUST remain private.
+
+---
+
+### Forbidden Architecture Patterns
+
+The following patterns are STRICTLY FORBIDDEN:
+
+#### Controllers Accessing Prisma Directly
+
+Controllers MUST NEVER:
+
+- import PrismaClient
+- execute queries
+- access repositories bypassing services
+
+Controllers may interact ONLY with:
+
+- DTOs
+- guards
+- services
+- request context abstractions
+
+---
+
+#### Cross-Module Internal Imports
+
+Modules MUST NOT import:
+
+- internal files from other modules
+- deep internal paths
+- private repository implementations
+
+Example of FORBIDDEN import style:
+
+```ts
+import { X } from "modules/auth/internal/private-file";
+```
+
+Only public module exports are allowed.
+
+---
+
+#### Business Logic Inside Controllers
+
+Controllers MUST remain orchestration-only.
+
+Business logic MUST exist only inside:
+
+- services
+- domain layers
+- policy layers
+- repositories
+
+---
+
+#### Shared Package Abuse
+
+Shared packages MUST NOT become:
+"miscellaneous dumping grounds."
+
+Each shared package MUST have:
+
+- explicit ownership
+- explicit responsibility
+- explicit export boundaries
+
+---
+
+### Repository Governance
+
+Repositories MUST become the ONLY layer allowed to:
+
+- access Prisma
+- execute DB queries
+- perform transaction coordination
+
+Services MUST NOT execute raw Prisma directly.
+
+---
+
+### Import Direction Governance
+
+Allowed dependency direction:
+
+```text
+Controller
+→ Service
+→ Repository
+→ Prisma
+```
+
+Reverse imports are STRICTLY FORBIDDEN.
+
+---
+
+### Shared Type Governance
+
+Shared DTOs/types MUST exist only inside approved shared packages.
+
+Ad-hoc duplicated types are FORBIDDEN.
+
+---
+
+### Circular Dependency Prevention
+
+Architecture MUST actively prevent:
+
+- circular imports
+- service dependency loops
+- bidirectional module coupling
+
+Future CI validation SHOULD detect dependency cycles automatically.
+
+---
+
+### AI-Agent Governance
+
+AI-assisted implementation MUST preserve package boundaries.
+
+AI agents MUST NEVER:
+
+- bypass repositories
+- introduce direct Prisma access in controllers
+- create deep internal imports
+- collapse module separation
+
+Architecture governance overrides generated convenience code.
+
+---
+
+### Future Monorepo Scalability
+
+The architecture MUST remain compatible with future:
+
+- microservice extraction
+- worker isolation
+- package publishing
+- domain isolation
+- independently deployable services
+
+without major rewrites.
+
+---
 
 ### Transaction Boundaries
 
@@ -893,9 +1577,12 @@ Total Redis memory for auth (estimated per 10K active users):
   Total:            ~3MB — well within limits
 
 Eviction policy (from docker-compose.yml Sprint 0):
-  maxmemory-policy: allkeys-lru
-  → Least recently used auth keys evicted first under memory pressure
-  → AUTH RISK: session keys may be evicted under extreme pressure
+maxmemory-policy: volatile-ttl
+  → Only TTL-based volatile keys may be evicted under memory pressure.
+
+Persistent/non-expiring auth governance keys MUST NEVER be evicted.
+ Under extreme memory pressure,
+TTL-based auth keys MAY be evicted.
   → MITIGATION: If session:raw:{token} not found (due to eviction or minor TTL mismatch between Redis and DB), require re-login (safe failure)
 ```
 
