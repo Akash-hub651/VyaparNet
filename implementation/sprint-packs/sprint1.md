@@ -513,6 +513,17 @@ RESEND STRATEGY:
   key: otp_resend_cooldown:{phone} → TTL 30s
   If key exists: 429 "Resend ke liye 30 second wait karein"
   If otp_send:{phone} >= 3: 429 "Daily limit reached"
+
+OTP PROVIDER ARCHITECTURE:
+  The authentication system MUST use the SmsProviderStrategy pattern to deliver SMS.
+  Direct dependency injection of concrete SMS APIs (like MSG91, Twilio) in AuthService is FORBIDDEN.
+  - Interface: SmsProvider
+  - Resolver: SmsProviderStrategy
+  - Supported: Msg91Provider (default)
+
+  If SMS delivery fails:
+  - Error MUST be caught, categorized, and logged.
+  - Specific AuthErrorCode (e.g. OTP_PROVIDER_TIMEOUT, OTP_PROVIDER_UNAVAILABLE) MUST be returned to caller when appropriate.
 ```
 
 ### 8.4 RBAC Design
@@ -1101,6 +1112,21 @@ FILE: packages/types/src/auth/schemas.ts
     segment: Segment;
     kycStatus: string;
     isVerified: boolean;
+  }
+```
+
+#### Step 1.3b — Auth Error Codes
+
+```
+FILE: packages/types/src/auth/auth-error-codes.ts
+
+  export enum AuthErrorCode {
+    REDIS_UNAVAILABLE = 'REDIS_UNAVAILABLE',
+    SESSION_SERVICE_UNAVAILABLE = 'SESSION_SERVICE_UNAVAILABLE',
+    OTP_PROVIDER_TIMEOUT = 'OTP_PROVIDER_TIMEOUT',
+    OTP_PROVIDER_RATE_LIMITED = 'OTP_PROVIDER_RATE_LIMITED',
+    OTP_PROVIDER_UNAVAILABLE = 'OTP_PROVIDER_UNAVAILABLE',
+    OTP_PROVIDER_REJECTED = 'OTP_PROVIDER_REJECTED',
   }
 ```
 
@@ -2149,90 +2175,31 @@ FILE: apps/api/src/modules/identity/auth/sms.service.interface.ts
 
 FILE: apps/api/src/modules/identity/auth/sms.service.ts
 
-  import { Injectable, Logger } from '@nestjs/common';
+  import { Injectable } from '@nestjs/common';
   import type { SmsService, SmsResult } from './sms.service.interface';
-  import { ConfigService } from '@nestjs/config';
-  import type { AppConfig } from '../../../core/config/config.schema';
+  import { SmsProviderStrategy } from './providers/sms-provider.strategy';
 
   /**
    * MSG91 SMS Service — concrete implementation for production.
-   *
-   * For local development: set SMS_PROVIDER=stub in .env.local
-   * to use StubSmsService (logs OTP to console, no real SMS sent).
-   *
-   * NOTE: In Sprint 1, SMS sending is synchronous for simplicity.
-   * Sprint 6 (Notifications) moves ALL SMS to async BullMQ queue.
-   * OTP SMS remains synchronous because it's time-critical.
+   * Delegates the actual delivery to SmsProviderStrategy.
    */
   @Injectable()
   export class Msg91SmsService implements SmsService {
-    private readonly logger = new Logger(Msg91SmsService.name);
-
-    constructor(private readonly config: ConfigService<AppConfig, true>) {}
+    constructor(
+      private readonly smsProviderStrategy: SmsProviderStrategy,
+    ) {}
 
     async sendOtp(phoneNumber: string, otp: string): Promise<SmsResult> {
-      // In production: use MSG91 API
-      // For MVP staging: implement actual MSG91 HTTP call
-      // Reference: https://docs.msg91.com/reference/send-sms
-
-      const authKey = this.config.get('MSG91_AUTH_KEY', { infer: true });
-      const templateId = this.config.get('MSG91_TEMPLATE_ID', { infer: true });
-
-      if (!authKey || !templateId) {
-        this.logger.warn('MSG91 config missing — using stub mode');
-        return this.stubSend(phoneNumber, otp);
-      }
-
       try {
-        // MSG91 OTP API call
-        const response = await fetch('https://api.msg91.com/api/v5/otp', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            authkey: authKey,
-          },
-          body: JSON.stringify({
-            template_id: templateId,
-            mobile: phoneNumber.replace('+', ''),
-            otp,
-          }),
+        const provider = this.smsProviderStrategy.getProvider();
+        await provider.sendOtp({
+          phone: phoneNumber,
+          message: otp,
         });
-
-        const data = await response.json() as { type: string; message: string };
-
-        if (data.type === 'success') {
-          this.logger.log(
-            { phoneHash: this.hashPhone(phoneNumber), messageId: data.message },
-            'OTP SMS sent via MSG91',
-          );
-          return { success: true, messageId: data.message };
-        }
-
-        this.logger.error({ phoneHash: this.hashPhone(phoneNumber), error: data.message }, 'MSG91 error');
-        return { success: false, error: data.message };
+        return { success: true };
       } catch (error) {
-        const err = error as Error;
-        this.logger.error({ error: err.message }, 'MSG91 API call failed');
-        return { success: false, error: err.message };
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
       }
-    }
-
-    private async stubSend(phoneNumber: string, otp: string): Promise<SmsResult> {
-      // DEVELOPMENT ONLY: Print OTP to log (never in production)
-      if (process.env['NODE_ENV'] === 'production') {
-        this.logger.error('StubSmsService used in production — CRITICAL configuration error');
-        return { success: false, error: 'SMS provider not configured' };
-      }
-      this.logger.log(
-        { phone: phoneNumber, otp },
-        '🔐 [DEV STUB] OTP SMS — NOT sent (development mode)',
-      );
-      return { success: true, messageId: 'stub-' + Date.now() };
-    }
-
-    private hashPhone(phone: string): string {
-      // Never log raw phone numbers
-      return phone.slice(0, 3) + 'XXXXXX' + phone.slice(-4);
     }
   }
 ```
@@ -3292,6 +3259,8 @@ FILE: apps/api/src/modules/identity/auth/auth.module.ts
   import { SessionRepository } from './repositories/session.repository';
   import { AuditRepository } from '../users/repositories/audit.repository';
   import { AuditSafeWriterService } from '../../security/audit/audit-safe-writer.service';
+  import { Msg91Provider } from './providers/msg91.provider';
+  import { SmsProviderStrategy } from './providers/sms-provider.strategy';
   import { SMS_SERVICE } from './sms.service.interface';
   import type { AppConfig } from '../../../core/config/config.schema';
 
@@ -3319,6 +3288,8 @@ FILE: apps/api/src/modules/identity/auth/auth.module.ts
       SessionRepository,
       AuditRepository,
       AuditSafeWriterService,
+      Msg91Provider,
+      SmsProviderStrategy,
       // SMS Service — swap implementation via DI
       // In production: use real Msg91SmsService
       // In test: provide StubSmsService

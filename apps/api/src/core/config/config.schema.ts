@@ -34,6 +34,10 @@ export const configSchema = z.object({
 
   // BullMQ
   BULLMQ_CONCURRENCY: z.string().default('5').transform(Number),
+
+  // MSG91
+  MSG91_AUTH_KEY: z.string().optional(),
+  MSG91_TEMPLATE_ID: z.string().optional(),
 });
 
 export type AppConfig = z.infer<typeof configSchema>;
