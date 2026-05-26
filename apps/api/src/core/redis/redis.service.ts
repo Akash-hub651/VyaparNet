@@ -37,6 +37,16 @@ export class RedisService
       maxRetriesPerRequest: 3,
       enableReadyCheck: true,
       lazyConnect: true,
+      retryStrategy(times) {
+        return Math.min(times * 100, 3000);
+      },
+      reconnectOnError(err) {
+        const targetError = 'READONLY';
+        if (err.message.slice(0, targetError.length) === targetError) {
+          return true;
+        }
+        return false;
+      },
     });
 
     this.on('error', (err: Error) => {

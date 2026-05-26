@@ -78,8 +78,8 @@ describe('Health Endpoints', () => {
         status: 'ready',
         timestamp: expect.any(String),
         checks: {
-          database: 'ok',
-          redis: 'ok',
+          database: 'healthy',
+          redis: 'healthy',
         },
       });
     });
@@ -118,7 +118,7 @@ describe('Health Endpoints', () => {
           message: expect.any(String),
           details: {
             checks: {
-              database: 'error',
+              database: 'unhealthy',
             },
           },
         },

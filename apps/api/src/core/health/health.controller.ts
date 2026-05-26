@@ -57,28 +57,28 @@ export class HealthController {
     checks: { database: string; redis: string };
   }> {
     const checks = {
-      database: 'ok',
-      redis: 'ok',
+      database: 'healthy',
+      redis: 'healthy',
     };
 
     // Check PostgreSQL
     try {
       await this.prisma.$queryRaw`SELECT 1`;
     } catch {
-      checks.database = 'error';
+      checks.database = 'unhealthy';
     }
 
     // Check Redis
     try {
       const pong = await this.redis.ping();
       if (pong !== 'PONG') {
-        checks.redis = 'error';
+        checks.redis = 'unhealthy';
       }
     } catch {
-      checks.redis = 'error';
+      checks.redis = 'unhealthy';
     }
 
-    const allHealthy = Object.values(checks).every((v) => v === 'ok');
+    const allHealthy = Object.values(checks).every((v) => v === 'healthy');
 
     if (!allHealthy) {
       // Throw HttpException so GlobalExceptionFilter correctly returns 503.

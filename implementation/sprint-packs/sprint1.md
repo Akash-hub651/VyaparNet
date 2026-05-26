@@ -756,6 +756,22 @@ Eviction policy (from docker-compose.yml Sprint 0):
   → MITIGATION: If session:raw:{token} not found (due to eviction or minor TTL mismatch between Redis and DB), require re-login (safe failure)
 ```
 
+### Redis Failure Governance
+
+Redis outage behavior MUST fail CLOSED.
+
+If Redis becomes unavailable:
+
+- OTP send disabled
+- OTP verification disabled
+- Refresh token rotation disabled
+- New auth sessions blocked
+
+Existing JWT access tokens MAY continue until expiry.
+
+Reason:
+Authentication consistency is more important than partial degraded auth behavior.
+
 ---
 
 ## SECTION 11: STEP-BY-STEP IMPLEMENTATION SEQUENCE
@@ -1104,6 +1120,7 @@ FILE: packages/types/src/index.ts
   // Auth
   export * from './auth/schemas';
   export * from './auth/permissions';
+  export * from './auth/auth-error-codes';
 
   // Note: Import UserRole in permissions.ts file top
 ```
@@ -2267,6 +2284,9 @@ FILE: apps/api/src/modules/identity/auth/auth.service.ts
   import { AuditAction, SystemActorType, UserRole, Segment } from '@vyaparnet/types';
   import type { User } from '@vyaparnet/database';
   import { normalizeIndianPhoneNumber } from '@vyaparnet/utils';
+  import { RedisHealthService } from '../../../shared/redis/redis-health.service';
+  import { RedisUnavailableException } from '../../../shared/exceptions/redis-unavailable.exception';
+  import { SessionServiceUnavailableException } from '../../../shared/exceptions/session-service-unavailable.exception';
 
   /**
    * AuthService — orchestrates the complete authentication flow.
@@ -2296,6 +2316,7 @@ FILE: apps/api/src/modules/identity/auth/auth.service.ts
       private readonly auditRepository: AuditRepository,
       private readonly sessionRepository: SessionRepository,
       @Inject(SMS_SERVICE) private readonly smsService: SmsService,
+      private readonly redisHealthService: RedisHealthService,
     ) {}
 
     // ─────────────────────────────────────────────────────────────
@@ -2319,6 +2340,11 @@ FILE: apps/api/src/modules/identity/auth/auth.service.ts
       requestIp: string,
       userAgent: string,
     ): Promise<{ message: string; expiresIn: number }> {
+      const redisHealthy = await this.redisHealthService.isHealthy();
+      if (!redisHealthy) {
+        throw new RedisUnavailableException('OTP service temporarily unavailable.');
+      }
+
       const phoneNumber = normalizeIndianPhoneNumber(dto.phoneNumber);
 
       // Step 1: Enforce rate limits
@@ -2385,6 +2411,11 @@ FILE: apps/api/src/modules/identity/auth/auth.service.ts
       requestIp: string,
       userAgent: string,
     ): Promise<AuthTokensResponse> {
+      const redisHealthy = await this.redisHealthService.isHealthy();
+      if (!redisHealthy) {
+        throw new RedisUnavailableException('OTP verification temporarily unavailable.');
+      }
+
       const phoneNumber = normalizeIndianPhoneNumber(dto.phoneNumber);
       const { otp, deviceId } = dto;
 
@@ -2504,6 +2535,11 @@ FILE: apps/api/src/modules/identity/auth/auth.service.ts
       dto: RefreshTokenDto,
       requestIp: string,
     ): Promise<AuthTokensResponse> {
+      const redisHealthy = await this.redisHealthService.isHealthy();
+      if (!redisHealthy) {
+        throw new SessionServiceUnavailableException('Session refresh temporarily unavailable.');
+      }
+
       const { refreshToken: rawToken } = dto;
 
       // Step 1: Look up session from Redis (fast path)

@@ -5,4 +5,4 @@
  * Do NOT add runtime code to this package.
  */
 
-export {};
+export * from "./auth/auth-error-codes";
