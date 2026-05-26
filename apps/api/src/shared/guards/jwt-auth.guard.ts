@@ -1,0 +1,103 @@
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import type { Request } from 'express';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+import { TokenService } from '../../modules/identity/auth/token.service';
+import { PrismaService } from '../../core/prisma/prisma.service';
+import { setContext } from '../context/async-local-storage';
+import type { JwtPayload } from '../../modules/identity/auth/token.service';
+
+/**
+ * JwtAuthGuard — global guard that validates JWT access tokens.
+ *
+ * Applied globally in AppModule.
+ * Skipped for routes decorated with @Public().
+ *
+ * On success: attaches JwtPayload to request.user AND AsyncLocalStorage.
+ * On failure: throws 401 UnauthorizedException.
+ *
+ * SECURITY: This guard is stateful — queries DB to check token version.
+ *
+ * Authority: VyaparNet_Implementation_Architecture_Official_Freeze_v1.md Section 9
+ */
+@Injectable()
+export class JwtAuthGuard implements CanActivate {
+  constructor(
+    private readonly reflector: Reflector,
+    private readonly tokenService: TokenService,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    // Check if route is marked public
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (isPublic) {
+      return true;
+    }
+
+    const request = context
+      .switchToHttp()
+      .getRequest<Request & { user: JwtPayload }>();
+
+    // Extract token from Authorization header
+    const token = this.extractToken(request);
+    if (!token) {
+      throw new UnauthorizedException({
+        code: 'TOKEN_MISSING',
+        message: 'Authentication token required.',
+      });
+    }
+
+    // Verify token (throws if invalid/expired)
+    const payload = this.tokenService.verifyAccessToken(token);
+
+    // Verify tokenVersion matches database
+    const user = await this.prisma.user.findFirst({
+      where: { id: payload.sub, isDeleted: false },
+      select: { tokenVersion: true },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException({
+        code: 'USER_NOT_FOUND',
+        message: 'User not found.',
+      });
+    }
+
+    if (user.tokenVersion !== payload.tokenVersion) {
+      throw new UnauthorizedException({
+        code: 'TOKEN_VERSION_MISMATCH',
+        message: 'Session expired. Please login again.',
+      });
+    }
+
+    // Attach user to request for downstream use
+    request.user = payload;
+
+    // Also store in AsyncLocalStorage for service layer access
+    setContext('userId', payload.sub);
+    setContext('userRole', payload.role);
+    setContext('userSegment', payload.segment);
+
+    return true;
+  }
+
+  private extractToken(request: Request): string | null {
+    const authHeader = request.headers.authorization;
+    if (!authHeader) return null;
+
+    const [type, token] = authHeader.split(' ');
+    if (type !== 'Bearer' || !token) return null;
+
+    return token;
+  }
+}

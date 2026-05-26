@@ -1,16 +1,16 @@
 # VyaparNet — Current Phase
 ## Version: v1.0 | Status: LIVE (update each sprint)
-## Updated: 2025-05-24
+## Updated: 2026-05-26
 
 ---
 
-## CURRENT PHASE: IMPLEMENTATION — SPRINT 0
+## CURRENT PHASE: IMPLEMENTATION — SPRINT 2
 
 **Phase:** Implementation Phase 1 (MVP)
-**Sprint:** Sprint 0 — Foundation
+**Sprint:** Sprint 2 — Product Catalog & Search
 **Sprint Duration:** 2 weeks
-**Sprint Goal:** Local development environment working.
-              CI/CD green. Team onboarded. Infra skeleton ready.
+**Sprint Goal:** Seller lists products → Buyer searches.
+              Build robust product management with GIN indexing for fast search.
 
 ---
 
@@ -37,23 +37,35 @@
 
 ---
 
-## SPRINT 0 TASKS (IN PROGRESS)
+## SPRINT 1 TASKS (COMPLETED)
 
 | Task | Points | Status |
 |---|---|---|
-| Monorepo setup (Turborepo + pnpm) | 3 | NOT STARTED |
-| Docker Compose (PostgreSQL + Redis) | 3 | NOT STARTED |
-| Next.js scaffold (apps/web) | 3 | NOT STARTED |
-| NestJS scaffold (apps/api) | 5 | NOT STARTED |
-| Prisma schema apply (packages/database) | 3 | NOT STARTED |
-| Core infra modules (Prisma, Redis, BullMQ, Logger) | 3 | NOT STARTED |
-| GitHub Actions CI/CD pipeline | 3 | NOT STARTED |
-| Env management (.env.example, staging config) | 2 | NOT STARTED |
-| Health check endpoints (/health, /ready) | 2 | NOT STARTED |
-| Team onboarding (docs read, local setup) | 2 | NOT STARTED |
+| OTP Service & Rate Limiting | 5 | DONE |
+| Token & Session Management (JWT, Redis) | 5 | DONE |
+| Authentication Workflow | 5 | DONE |
+| Auth Controllers & OpenAPI Specs | 3 | DONE |
+| User Onboarding Module | 3 | DONE |
+| Unit & Integration Testing | 4 | DONE |
+| Staging Deployment (Docker, DB, Redis) | 4 | DONE |
 
-**Sprint 0 Done Criteria:** `docker-compose up` starts all services.
-`/health` returns 200. CI pipeline green. `pnpm build` passes.
+**Sprint 1 Done Criteria:** Login works end-to-end on Staging container with simulated limits, OTP logs, token rotations, and proper environment configuration. ✅ PASSED
+
+---
+
+## SPRINT 2 TASKS (NOT STARTED)
+
+| Task | Points | Status |
+|---|---|---|
+| Category & Tag Models | 3 | NOT STARTED |
+| Product Catalog Management | 5 | NOT STARTED |
+| SearchProductDocument Pipeline | 5 | NOT STARTED |
+| GIN Search Query Optimizer | 5 | NOT STARTED |
+| Media / Image upload stubs | 3 | NOT STARTED |
+| Seller Product Dashboard API | 3 | NOT STARTED |
+| Buyer Search API | 3 | NOT STARTED |
+
+**Sprint 2 Done Criteria:** A seller can create a product. A buyer can successfully search and filter products using the fast GIN indexed search endpoints.
 
 ---
 
@@ -97,22 +109,17 @@ Advanced analytics dashboard, Native mobile app, Multi-region.
 
 ## CURRENT BLOCKERS
 
-None. Architecture phase complete. Implementation can begin immediately.
+None. Sprint 1 completed successfully. Sprint 2 ready for detailed planning pack generation.
 
 ---
 
 ## IMMEDIATE NEXT ACTIONS (THIS WEEK)
 
-1. Initialize Git repository (`vyaparnet`)
-2. Set up Turborepo + pnpm workspace
-3. Scaffold `apps/web` (Next.js 14)
-4. Scaffold `apps/api` (NestJS 10)
-5. Create `packages/database` (Prisma init)
-6. Create `packages/types`, `packages/ui`, `packages/config`
-7. Create `docker-compose.yml` (PostgreSQL 15 + Redis 7)
-8. Apply Prisma schema (from Schema v4.3 frozen document)
-9. Set up GitHub Actions CI (lint → typecheck → test → build)
-10. Verify: `docker-compose up` → all healthy → `/health` returns 200
+1. Generate Sprint 2 Detailed Implementation Pack (`sprint2.md`).
+2. Review Product, Category, and SearchProductDocument Prisma schema rules.
+3. Review Database Indexing Strategy (GIN search hot path).
+4. Review Product APIs contracts.
+5. Review Search-First UX and Module Boundary Rules.
 
 ---
 

@@ -651,7 +651,7 @@ OTP DB AUDIT (OtpAttempt):
 
 OTP values themselves MUST NEVER be stored,
 even in hashed form.
-  Note: OTP hashed = SHA-256 hash (argon2id is too slow and causes CPU DoS for 6-digit OTPs)
+  
   Retention: 7 days (per PRD data retention policy)
 
 RESEND STRATEGY:

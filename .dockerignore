@@ -13,6 +13,8 @@ out
 **/out
 build
 **/build
+deploy
+**/deploy
 *.tsbuildinfo
 
 # Cache

@@ -1,0 +1,1667 @@
+// =============================================================================
+// VYAPARNET - PRODUCTION-HARDENED PRISMA SCHEMA v4.3 (ABSOLUTE FINAL FREEZE)
+// Status: ENTERPRISE FREEZE
+// Date: 2025-05-22
+// =============================================================================
+//
+// NAMING CONVENTIONS (Immutable):
+// - Model: SINGULAR PascalCase (e.g. Order, not Orders)
+// - Field: camelCase (e.g. createdAt, isDeleted)
+// - Enum: PascalCase
+// - FK: <modelName>Id (e.g. buyerId, orderId)
+// - Index: idx_<table>_<field1>_<field2> (explicitly mapped in @@index)
+// - Partition Key: <entity>Month (e.g. orderMonth, eventMonth)
+// - System Actor: SystemActorType enum USER | ADMIN | SYSTEM | CRON | WORKFLOW
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// CORE ENUMERATIONS (Zero Duplicates, All Normalized)
+// =============================================================================
+
+enum Segment {
+  TEXTILE
+  SPARE_PARTS
+}
+
+enum UserRole {
+  BUYER
+  SELLER
+  ADMIN
+  SELLER_MANAGER
+}
+
+enum KycStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum QuotationStatus {
+  DRAFT
+  SENT
+  VIEWED
+  NEGOTIATING
+  ACCEPTED_BY_BUYER
+  FINALIZED
+  REJECTED
+  EXPIRED
+  CONVERTED_TO_ORDER
+}
+
+enum OrderStatus {
+  DRAFT
+  QUOTATION_REQUESTED
+  PLACED
+  CONFIRMED
+  PROCESSING
+  READY_TO_SHIP
+  SHIPPED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  COMPLETED
+  CANCELLED
+  RETURN_INITIATED
+  REFUND_INITIATED
+  DISPUTE_OPEN
+  DISPUTE_RESOLVED
+}
+
+enum FulfillmentStatus {
+  PENDING_PICKUP
+  PICKED_UP
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  RETURN_PICKED
+  RETURNED
+}
+
+enum ReturnStatus {
+  PENDING
+  APPROVED_FOR_PICKUP
+  PICKED_UP
+  RECEIVED_AT_QC
+  QC_APPROVED
+  QC_REJECTED
+  REFUND_INITIATED
+  REFUNDED
+  REPLACEMENT_SENT
+  CLOSED
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  ESCALATED
+  RESOLVED_BUYER
+  RESOLVED_SELLER
+  CLOSED
+}
+
+enum PaymentStatus {
+  PENDING
+  AUTHORIZED
+  CAPTURED
+  PARTIALLY_CAPTURED
+  FAILED
+  REFUND_INITIATED
+  PARTIALLY_REFUNDED
+  FULLY_REFUNDED
+  DISPUTED
+  CHARGEBACK
+}
+
+enum PaymentMethod {
+  ONLINE_UPI
+  ONLINE_CARD
+  NET_BANKING
+  WALLET
+  COD
+  CREDIT
+  BANK_TRANSFER
+  CHEQUE
+}
+
+enum ReturnReason {
+  DAMAGED
+  WRONG_ITEM
+  QUALITY_ISSUE
+  NOT_AS_DESCRIBED
+  EXPIRED
+  MISSING_PARTS
+  OTHER
+}
+
+enum InventoryMovementType {
+  STOCK_ADDED
+  STOCK_REMOVED
+  RESERVATION_HELD
+  RESERVATION_RELEASED
+  ORDER_FULFILLED
+  RETURN_RECEIVED
+  ADJUSTMENT
+  DAMAGED
+  TRANSFER_IN
+  TRANSFER_OUT
+}
+
+enum ReservationStatus {
+  ACTIVE
+  CONSUMED
+  EXPIRED
+  CANCELLED
+  RELEASED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  STATUS_CHANGE
+  LOGIN
+  LOGOUT
+  FAILED_LOGIN
+  PASSWORD_RESET
+  PERMISSION_CHANGE
+}
+
+enum EventStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  RETRYING
+  DEAD_LETTER
+}
+
+enum NotificationType {
+  ORDER
+  PAYMENT
+  INVENTORY
+  MARKETING
+  SYSTEM
+  KYC
+  RETURN
+  DISPUTE
+  PROMOTION
+}
+
+enum NotificationChannel {
+  PUSH
+  SMS
+  WHATSAPP
+  EMAIL
+  IN_APP
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+  AUDIO
+  PDF
+  THREED_MODEL
+}
+
+enum CartStatus {
+  ACTIVE
+  CHECKED_OUT
+  ABANDONED
+  EXPIRED
+}
+
+enum SupportTicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING
+  RESOLVED
+  CLOSED
+}
+
+enum SupportTicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// FIX #2: Enum for FieldVisit status
+enum FieldVisitStatus {
+  SCHEDULED
+  IN_TRANSIT
+  ARRIVED
+  COMPLETED
+  CANCELLED
+}
+
+// FIX #2: Enum for FieldVisit type
+enum FieldVisitType {
+  DELIVERY_VERIFICATION
+  QC_INSPECTION
+  ADDRESS_VERIFICATION
+}
+
+// FIX #13: Formal System Actor Enum
+enum SystemActorType {
+  USER
+  ADMIN
+  SYSTEM
+  CRON
+  WORKFLOW
+}
+
+// FIX #5: Enum for SellerPayout status
+enum PayoutStatus {
+  PENDING
+  INITIATED
+  TRANSFERRED
+  FAILED
+}
+
+// FIX #6: Enum for Coupon discount type
+enum DiscountType {
+  PERCENTAGE
+  FLAT
+}
+
+// FIX #4: Enum for BuyerLedger transaction type
+enum BuyerLedgerType {
+  CREDIT
+  DEBIT
+  REFUND
+  ADJUSTMENT
+}
+
+// =============================================================================
+// DOMAIN: 1. USER & IDENTITY
+// =============================================================================
+
+model User {
+  id        String    @id @default(cuid())
+  phone     String    @unique
+  email     String?   @unique
+  password  String?
+  name      String?
+  language  String    @default("hi")
+  role      UserRole  @default(BUYER)
+  segment   Segment
+  kycStatus KycStatus @default(UNVERIFIED)
+
+  otp             String?
+  otpExpiresAt    DateTime?
+  isPhoneVerified Boolean   @default(false)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  tokenVersion Int       @default(1)
+  createdBy String?
+  updatedBy String?
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
+  version   Int       @default(0)
+
+  ownedBusinesses Business[]       @relation("BusinessOwner")
+  addresses       Address[]
+  carts           Cart[]
+  orders          Order[]
+  notifications   Notification[]
+  loginSessions   LoginSession[]
+  auditLogs       AuditLog[]
+  kycDocuments    KycDocument[]    @relation("VerifiedKyc")
+  assignedTickets SupportTicket[]  @relation("TicketAssignee")
+  raisedTickets   SupportTicket[]  @relation("TicketRaiser")
+
+  // Reverse relations for named relations
+  verifiedKycDocs   KycDocument[]    @relation("KycVerifier")
+  approvedProducts  Product[]        @relation("ProductApprover")
+  uploadedMedia     Media[]          @relation("MediaUploader")
+  inspectedReturns  ReturnRequest[]  @relation("ReturnInspector")
+  resolvedDisputes  Dispute[]        @relation("DisputeResolver")
+  productReviews    ProductReview[]
+  sellerRatingsGiven  SellerRating[] @relation("RatingReviewer")
+  sellerRatingsReceived SellerRating[] @relation("RatingSeller")
+  buyerLedgers      BuyerLedger[]
+  sellerPayouts     SellerPayout[]
+
+  @@index([phone], map: "idx_user_phone")
+  @@index([segment, role, isDeleted], map: "idx_user_seg_role_del")
+}
+
+model Business {
+  id          String  @id @default(cuid())
+  ownerId     String
+  name        String
+  displayName String?
+  slug        String  @unique
+  gstNumber   String? @unique
+  panNumber   String? @unique
+  segment     Segment
+
+  kycStatus       KycStatus @default(UNVERIFIED)
+  trustScore      Int       @default(0)
+  establishedYear Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?
+  updatedBy String?
+  isDeleted Boolean  @default(false)
+  deletedAt DateTime?
+  version   Int      @default(0)
+
+  owner    User      @relation("BusinessOwner", fields: [ownerId], references: [id])
+  products Product[]
+  orders   Order[]
+  kycDocs  KycDocument[]
+
+  @@index([ownerId], map: "idx_biz_owner")
+  @@index([segment, isDeleted], map: "idx_biz_seg_del")
+  @@index([slug], map: "idx_biz_slug")
+}
+
+model KycDocument {
+  id              String    @id @default(cuid())
+  userId          String?
+  businessId      String?
+  type            String
+  url             String
+  publicUrl       String?
+  status          KycStatus @default(PENDING)
+  verifiedBy      String?
+  verifiedAt      DateTime?
+  rejectionReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User?     @relation("VerifiedKyc", fields: [userId], references: [id])
+  business Business? @relation(fields: [businessId], references: [id])
+  // FIX #9: Active relation to verifier
+  verifier User?     @relation("KycVerifier", fields: [verifiedBy], references: [id])
+
+  @@index([userId], map: "idx_kyc_user")
+  @@index([businessId, status], map: "idx_kyc_biz_status")
+  @@index([verifiedBy], map: "idx_kyc_verifier")
+}
+
+model Address {
+  id        String  @id @default(cuid())
+  userId    String
+  name      String
+  line1     String
+  line2     String?
+  city      String
+  state     String
+  pincode   String
+  landmark  String?
+  country   String  @default("India")
+  latitude  Float?
+  longitude Float?
+  isDefault Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
+  deletedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "idx_addr_user")
+}
+
+// =============================================================================
+// DOMAIN: 2. PRODUCT & CATALOG
+// =============================================================================
+
+model Category {
+  id           String @id @default(cuid())
+  name         String
+  slug         String  @unique
+  description  String?
+  segment      Segment
+  parentId     String?
+  imageUrl     String?
+  displayOrder Int     @default(0)
+  isActive     Boolean @default(true)
+
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+  products Product[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?
+  updatedBy String?
+  isDeleted Boolean  @default(false)
+  deletedAt DateTime?
+
+  @@index([segment, isActive], map: "idx_cat_seg_active")
+  @@index([parentId], map: "idx_cat_parent")
+}
+
+model Product {
+  id          String @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String?
+  segment     Segment
+  categoryId  String
+  businessId  String
+
+  basePrice Decimal  @db.Decimal(18, 2)
+  mrp       Decimal? @db.Decimal(18, 2)
+  moq       Int      @default(1)
+  unit      String
+
+  hsnCode    String?
+  gstPercent Decimal? @db.Decimal(5, 2)
+
+  // FIX #1: Native tsvector via Prisma unsupported type
+  searchVector Unsupported("tsvector")? @map("search_vector")
+  metaTitle    String?
+  metaDesc     String?
+  tags         String[]
+
+  isActive   Boolean @default(true)
+  isDraft    Boolean @default(true)
+  approvedBy String?
+  approvedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?
+  updatedBy String?
+  isDeleted Boolean  @default(false)
+  deletedAt DateTime?
+  version   Int      @default(0)
+
+  category   Category     @relation(fields: [categoryId], references: [id])
+  business   Business     @relation(fields: [businessId], references: [id])
+  // FIX #10: Active relation to approver
+  approver   User?        @relation("ProductApprover", fields: [approvedBy], references: [id])
+  inventory  Inventory?
+  media      ProductMedia[]
+  variants   ProductVariant[]
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+  reviews    ProductReview[]
+
+  @@index([segment, categoryId, isActive], map: "idx_prod_seg_cat_act")
+  @@index([businessId, isActive], map: "idx_prod_biz_act")
+  @@index([slug], map: "idx_prod_slug")
+  @@index([hsnCode], map: "idx_prod_hsn")
+  // FIX #5: GIN index must be applied via raw SQL migration
+  // CREATE INDEX idx_prod_search_vector ON "Product" USING GIN ("search_vector");
+}
+
+model ProductVariant {
+  id          String @id @default(cuid())
+  productId   String
+  variantName String
+  sku         String @unique
+  price       Decimal? @db.Decimal(18, 2)
+  quantity    Int    @default(0)
+  reservedQty Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
+  deletedAt DateTime?
+
+  product Product @relation(fields: [productId], references: [id])
+  media   Media[]
+
+  @@index([productId], map: "idx_pvar_prod")
+}
+
+model ProductMedia {
+  id        String @id @default(cuid())
+  productId String
+  mediaId   String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
+
+  product Product @relation(fields: [productId], references: [id])
+  media   Media   @relation(fields: [mediaId], references: [id])
+}
+
+// FIX #20, #21: Added ownership and hashing for security
+model Media {
+  id          String    @id @default(cuid())
+  type        MediaType
+  url         String
+  thumbnailUrl String?
+  name        String
+  size        Int
+  mimeType    String
+  isProcessed Boolean   @default(false)
+  uploadedBy  String?
+  checksum    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
+  deletedAt DateTime?
+
+  productMedia ProductMedia[]
+  variant      ProductVariant? @relation(fields: [variantId], references: [id])
+  variantId    String?
+  // FIX #8: Active relation to uploader
+  uploader     User?        @relation("MediaUploader", fields: [uploadedBy], references: [id])
+
+  @@index([uploadedBy], map: "idx_media_uploader")
+}
+
+// =============================================================================
+// DOMAIN: 3. INVENTORY
+// =============================================================================
+
+model Inventory {
+  id              String  @id @default(cuid())
+  productId       String  @unique
+  productVariantId String?
+  businessId      String
+  segment         Segment
+
+  quantity        Int @default(0)
+  reservedQty     Int @default(0)
+  damagedQty      Int @default(0)
+  incomingQty     Int @default(0)
+  lowStockThreshold Int @default(10)
+  isLowStock      Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?
+  updatedBy String?
+  version   Int      @default(0)
+
+  product Product @relation(fields: [productId], references: [id])
+  movements InventoryMovement[]
+  reservations InventoryReservation[]
+
+  @@index([productId], map: "idx_inv_prod")
+  @@index([businessId, isLowStock], map: "idx_inv_biz_low")
+  @@index([segment], map: "idx_inv_seg")
+}
+
+model InventoryMovement {
+  id        String @id @default(cuid())
+  inventoryId String
+  type      InventoryMovementType
+  quantity  Int
+  orderId   String?
+  returnId  String?
+  reason    String?
+
+  createdAt DateTime @default(now())
+  createdBy String?
+
+  inventory Inventory @relation(fields: [inventoryId], references: [id])
+
+  @@index([inventoryId, createdAt], map: "idx_invmov_inv_date")
+  @@index([orderId], map: "idx_invmov_order")
+}
+
+model InventoryReservation {
+  id        String   @id @default(cuid())
+  inventoryId String
+  cartId      String?
+  orderId     String?
+  quantity    Int
+  status      ReservationStatus @default(ACTIVE)
+  expiresAt   DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  inventory Inventory @relation(fields: [inventoryId], references: [id])
+
+  @@index([inventoryId, status, expiresAt], map: "idx_invres_inv_stat_exp")
+  @@index([cartId], map: "idx_invres_cart")
+  @@index([orderId], map: "idx_invres_order")
+}
+
+// =============================================================================
+// DOMAIN: 4. CART
+// =============================================================================
+
+// FIX #9: Relaxed unique constraint to support multi-segment carts
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String
+  segment   Segment
+  status    CartStatus @default(ACTIVE)
+
+  subtotal  Decimal @db.Decimal(18, 2) @default(0)
+  taxAmount Decimal @db.Decimal(18, 2) @default(0)
+  discount  Decimal @db.Decimal(18, 2) @default(0)
+  total     Decimal @db.Decimal(18, 2) @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User     @relation(fields: [userId], references: [id])
+  items CartItem[]
+
+  // FIX #9: Composite unique for multi-cart support per user/segment
+  @@unique([userId, segment, status], map: "idx_cart_user_seg_stat")
+  @@index([userId], map: "idx_cart_user")
+}
+
+model CartItem {
+  id          String @id @default(cuid())
+  cartId      String
+  productId   String
+  quantity    Int
+  unitPrice   Decimal @db.Decimal(18, 2)
+  totalPrice  Decimal @db.Decimal(18, 2)
+  discountAmount Decimal @db.Decimal(18, 2) @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cart    Cart    @relation(fields: [cartId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([cartId, productId], map: "idx_ci_cart_prod")
+}
+
+// =============================================================================
+// DOMAIN: 5. ORDER & FULFILLMENT (Partition-ready)
+// =============================================================================
+
+model Order {
+  id            String @id @default(cuid())
+  orderNumber   String @unique
+  segment       Segment
+  status        OrderStatus @default(DRAFT)
+
+  buyerId     String
+  sellerId    String
+  cartId      String?
+
+  shippingAddressSnapshot Json
+  billingAddressSnapshot  Json
+
+  subtotal     Decimal @db.Decimal(18, 2)
+  taxAmount    Decimal @db.Decimal(18, 2)
+  shippingCost Decimal @db.Decimal(18, 2) @default(0)
+  discount     Decimal @db.Decimal(18, 2) @default(0)
+  grandTotal   Decimal @db.Decimal(18, 2)
+
+  placedAt      DateTime?
+  confirmedAt   DateTime?
+  processingAt  DateTime?
+  readyToShipAt DateTime?
+  shippedAt     DateTime?
+  outForDeliveryAt DateTime?
+  deliveredAt   DateTime?
+  completedAt   DateTime?
+  cancelledAt   DateTime?
+
+  cancellationReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?
+  updatedBy String?
+  isDeleted Boolean  @default(false)
+  deletedAt DateTime?
+  version   Int      @default(0)
+
+  // FIX #6: Partition-ready key
+  orderMonth String
+
+  buyer    User      @relation(fields: [buyerId], references: [id])
+  seller   Business  @relation(fields: [sellerId], references: [id])
+  items    OrderItem[]
+  payments Payment[]
+  returns  ReturnRequest[]
+  tracking OrderTracking[]
+  disputes Dispute[]
+
+  @@index([segment, status, createdAt], map: "idx_order_seg_stat_date")
+  @@index([buyerId, status], map: "idx_order_buyer_stat")
+  @@index([sellerId, status], map: "idx_order_seller_stat")
+  @@index([orderNumber], map: "idx_order_num")
+  @@index([orderMonth], map: "idx_order_month")
+}
+
+model OrderItem {
+  id            String @id @default(cuid())
+  orderId       String
+  productId     String
+
+  productName   String
+  productSlug   String
+  productImage  String?
+
+  quantity Int
+  unitPrice Decimal @db.Decimal(18, 2)
+  discount  Decimal @db.Decimal(18, 2) @default(0)
+  totalPrice Decimal @db.Decimal(18, 2)
+
+  hsnCode    String?
+  gstPercent Decimal @db.Decimal(5, 2) @default(0)
+  gstAmount  Decimal @db.Decimal(18, 2) @default(0)
+
+  createdAt DateTime @default(now())
+
+  order   Order   @relation(fields: [orderId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId], map: "idx_oi_order")
+  @@index([productId], map: "idx_oi_product")
+}
+
+model OrderTracking {
+  id               String @id @default(cuid())
+  orderId          String
+  status           String
+  trackingNumber   String?
+  carrier          String?
+  carrierUrl       String?
+  estimatedDelivery DateTime?
+  locationLat      Float?
+  locationLng      Float?
+  locationCity     String?
+
+  createdAt DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId, createdAt], map: "idx_ot_order_date")
+}
+
+// =============================================================================
+// DOMAIN: 6. PAYMENT (Idempotency Hardened)
+// =============================================================================
+
+model Payment {
+  id         String @id @default(cuid())
+  orderId    String
+  amount     Decimal @db.Decimal(18, 2)
+
+  method      PaymentMethod
+  gateway     String
+  gatewayRef  String?
+  // FIX #8: Idempotency key for duplicate prevention
+  idempotencyKey String? @unique
+
+  status     PaymentStatus @default(PENDING)
+  capturedAt DateTime?
+  failedAt   DateTime?
+  refundedAt DateTime?
+
+  gatewayResponse Json?
+  failureReason   String?
+
+  createdAt DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId, status], map: "idx_pay_order_stat")
+  @@index([gatewayRef], map: "idx_pay_gate_ref")
+  @@index([createdAt], map: "idx_pay_date")
+  @@index([idempotencyKey], map: "idx_pay_idem_key")
+}
+
+// =============================================================================
+// DOMAIN: 7. RETURNS & REFUNDS (SLA Hardened)
+// =============================================================================
+
+model ReturnRequest {
+  id             String @id @default(cuid())
+  orderId        String
+  itemId         String
+
+  reason          ReturnReason
+  description     String?
+  images          String[]
+
+  status          ReturnStatus @default(PENDING)
+  requestedRefundAmount Decimal @db.Decimal(18, 2)
+  approvedRefundAmount  Decimal @db.Decimal(18, 2) @default(0)
+
+  qcNotes       String?
+  qcImageUrl    String?
+  inspectedBy   String?
+  inspectedAt   DateTime?
+
+  resolution    String?
+  resolvedAt    DateTime?
+
+  // FIX #15: SLA tracking
+  slaBreachedAt DateTime?
+  escalatedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id])
+  // FIX #12: Active relation to inspector
+  inspector User? @relation("ReturnInspector", fields: [inspectedBy], references: [id])
+
+  @@index([orderId, status], map: "idx_ret_order_stat")
+  @@index([createdAt], map: "idx_ret_date")
+}
+
+// =============================================================================
+// DOMAIN: 8. NOTIFICATION SYSTEM (Partition-ready)
+// =============================================================================
+
+model Notification {
+  id       String @id @default(cuid())
+  userId   String
+  type     NotificationType
+  title    String
+  body     String
+  channels NotificationChannel[]
+  metadata Json?
+
+  isRead Boolean @default(false)
+  readAt DateTime?
+
+  createdAt DateTime @default(now())
+  isDeleted Boolean  @default(false)
+
+  // FIX #22: Partition-ready key
+  notificationMonth String
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead, createdAt], map: "idx_notif_user_read_date")
+}
+
+model NotificationTemplate {
+  id        String @id @default(cuid())
+  name      String @unique
+  type      NotificationType
+  channels  NotificationChannel[]
+  titleHi   String
+  bodyHi    String
+  titleEn   String
+  bodyEn    String
+  isActive  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// =============================================================================
+// DOMAIN: 9. AUDIT & COMPLIANCE (Partition-ready)
+// =============================================================================
+
+model AuditLog {
+  id         String @id @default(cuid())
+  actorId    String
+  action     AuditAction
+
+  entityType String
+  entityId   String
+  entityName String?
+
+  oldValue Json?
+  newValue Json?
+
+  ipAddress   String?
+  userAgent   String?
+  sessionId   String?
+
+  createdAt DateTime @default(now())
+
+  // FIX #22: Partition-ready key
+  auditMonth String
+
+  actor User @relation(fields: [actorId], references: [id])
+
+  @@index([entityType, entityId, createdAt], map: "idx_al_entity_date")
+  @@index([actorId, createdAt], map: "idx_al_actor_date")
+}
+
+// =============================================================================
+// DOMAIN: 10. EVENT OUTBOX (Async + Deduplication)
+// =============================================================================
+
+model EventOutbox {
+  id            String @id @default(cuid())
+  eventType     String
+  payload       Json
+  eventVersion  String @default("1.0")
+  schemaVersion String @default("4.3")
+
+  status      EventStatus @default(PENDING)
+  retryCount  Int         @default(0)
+  lastError   String?
+
+  // FIX #25: Deduplication key for exactly-once processing
+  deduplicationKey String? @unique
+
+  createdAt   DateTime @default(now())
+  processedAt DateTime?
+  eventMonth  String
+
+  @@index([status, retryCount, createdAt], map: "idx_eob_stat_retry_date")
+  @@index([eventType, status], map: "idx_eob_type_stat")
+}
+
+// =============================================================================
+// DOMAIN: 11. SUPPORT & DISPUTE (SLA Hardened)
+// =============================================================================
+
+model SupportTicket {
+  id         String @id @default(cuid())
+  userId     String
+  orderId    String?
+  assignedTo String?
+
+  subject     String
+  description String
+  priority    SupportTicketPriority @default(MEDIUM)
+  status      SupportTicketStatus @default(OPEN)
+
+  // FIX #15: SLA tracking
+  firstResponseAt DateTime?
+  escalatedAt     DateTime?
+  slaBreachedAt   DateTime?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  resolvedAt DateTime?
+
+  user     User  @relation("TicketRaiser", fields: [userId], references: [id])
+  assigned User? @relation("TicketAssignee", fields: [assignedTo], references: [id])
+
+  @@index([userId, status], map: "idx_st_user_stat")
+  @@index([assignedTo, status], map: "idx_st_assign_stat")
+}
+
+model Dispute {
+  id          String @id @default(cuid())
+  orderId     String
+  raisedBy    String
+  reason      String
+  description String?
+  status      DisputeStatus @default(OPEN)
+
+  resolvedBy  String?
+  resolution  String?
+  resolvedAt  DateTime?
+
+  // FIX #15: SLA tracking
+  firstResponseAt DateTime?
+  escalatedAt     DateTime?
+  slaBreachedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id])
+  // FIX #11: Active relation to resolver
+  resolver User? @relation("DisputeResolver", fields: [resolvedBy], references: [id])
+
+  @@index([orderId, status], map: "idx_dsp_order_stat")
+  @@index([raisedBy, status], map: "idx_dsp_raised_stat")
+}
+
+// =============================================================================
+// DOMAIN: 12. CONFIGURATION & FEATURE FLAGS
+// =============================================================================
+
+model AppConfig {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+  env   String @default("production")
+
+  // FIX #18: Versioning for config safety
+  version   Int      @default(1)
+  updatedBy String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FeatureFlag {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String?
+  enabled     Boolean @default(false)
+  rolloutPercent Int  @default(0)
+  segment     Segment?
+  env         String @default("production")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// =============================================================================
+// DOMAIN: 13. B2B QUOTATION & NEGOTIATION
+// =============================================================================
+
+model Quotation {
+  id          String          @id @default(cuid())
+  orderId     String?         @unique
+  status      QuotationStatus @default(DRAFT)
+  buyerId     String
+  sellerId    String
+  segment     Segment
+
+  subtotal   Decimal? @db.Decimal(18, 2)
+  taxAmount  Decimal? @db.Decimal(18, 2)
+  discount   Decimal? @db.Decimal(18, 2) @default(0)
+  grandTotal Decimal? @db.Decimal(18, 2)
+
+  validUntil        DateTime
+  negotiationDeadline DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?
+  updatedBy String?
+  isDeleted Boolean @default(false)
+  deletedAt DateTime?
+  version   Int     @default(0)
+
+  quoteMonth String
+
+  items        QuotationItem[]
+  negotiations PriceNegotiation[]
+
+  @@index([buyerId, status, createdAt], map: "idx_quot_buyer_stat_date")
+  @@index([sellerId, status, createdAt], map: "idx_quot_seller_stat_date")
+  @@index([quoteMonth], map: "idx_quot_month")
+}
+
+model QuotationItem {
+  id           String @id @default(cuid())
+  quotationId  String
+  productId    String
+
+  productName    String
+  productSlug    String
+
+  quantity       Int
+  unitPrice      Decimal  @db.Decimal(18, 2)
+  totalPrice     Decimal  @db.Decimal(18, 2)
+  requestedPrice Decimal? @db.Decimal(18, 2)
+
+  createdAt DateTime @default(now())
+
+  quotation Quotation @relation(fields: [quotationId], references: [id])
+
+  @@index([quotationId, productId], map: "idx_qi_quot_prod")
+}
+
+model PriceNegotiation {
+  id          String @id @default(cuid())
+  quotationId String
+
+  proposedPrice Decimal @db.Decimal(18, 2)
+  proposedBy    String
+  message       String?
+  counterPrice  Decimal? @db.Decimal(18, 2)
+  isAccepted    Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  quotation Quotation @relation(fields: [quotationId], references: [id])
+
+  @@index([quotationId, createdAt], map: "idx_pn_quot_date")
+}
+
+// =============================================================================
+// DOMAIN: 14. BUYER CREDIT & LEDGER
+// =============================================================================
+
+model BuyerCreditLimit {
+  id          String  @id @default(cuid())
+  buyerId     String
+  segment     Segment
+
+  totalLimit      Decimal @db.Decimal(18, 2)
+  utilizedLimit     Decimal @db.Decimal(18, 2) @default(0)
+
+  paymentTerms    String?
+  isActive        Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isDeleted Boolean @default(false)
+  version   Int     @default(0)
+
+  @@index([buyerId, segment, isActive], map: "idx_bcl_buyer_seg_act")
+}
+
+model BuyerLedger {
+  id            String  @id @default(cuid())
+  buyerId       String
+  segment       Segment
+
+  // FIX #4: Enum for transaction type
+  transactionType BuyerLedgerType
+  orderId         String?
+  amount          Decimal @db.Decimal(18, 2)
+  balance         Decimal @db.Decimal(18, 2)
+  description     String?
+
+  createdAt DateTime @default(now())
+  createdBy String?
+
+  buyer User @relation(fields: [buyerId], references: [id])
+
+  @@index([buyerId, createdAt], map: "idx_bl_buyer_date")
+  @@index([buyerId, transactionType], map: "idx_bl_buyer_type")
+}
+
+model SellerPayout {
+  id            String  @id @default(cuid())
+  sellerId      String
+  orderId       String
+
+  grossAmount     Decimal @db.Decimal(18, 2)
+  platformFee     Decimal @db.Decimal(18, 2)
+  paymentGatewayFee Decimal @db.Decimal(18, 2) @default(0)
+  tdsAmount       Decimal @db.Decimal(18, 2) @default(0)
+  netPayout       Decimal @db.Decimal(18, 2)
+
+  // FIX #5: Enum for payout status
+  status          PayoutStatus
+  utrNumber       String?
+  transferDate    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  seller User @relation(fields: [sellerId], references: [id])
+
+  @@index([sellerId, status], map: "idx_sp_seller_stat")
+  @@index([orderId], map: "idx_sp_order")
+}
+
+// =============================================================================
+// DOMAIN: 15. PLATFORM FINANCIALS & COMPLIANCE
+// =============================================================================
+
+model PlatformCommission {
+  id        String @id @default(cuid())
+  orderId   String @unique
+
+  commissionPercent Decimal @db.Decimal(5, 2)
+  commissionAmount  Decimal @db.Decimal(18, 2)
+  category          String?
+
+  createdAt DateTime @default(now())
+
+  @@index([orderId], map: "idx_pc_order")
+}
+
+model TaxInvoice {
+  id            String @id @default(cuid())
+  orderId         String @unique
+
+  invoiceNumber   String @unique
+  invoiceDate     DateTime
+
+  taxableValue      Decimal @db.Decimal(18, 2)
+  cgstAmount        Decimal @db.Decimal(18, 2) @default(0)
+  sgstAmount        Decimal @db.Decimal(18, 2) @default(0)
+  igstAmount        Decimal @db.Decimal(18, 2) @default(0)
+  totalTaxAmount    Decimal @db.Decimal(18, 2)
+  totalInvoiceValue Decimal @db.Decimal(18, 2)
+
+  irn       String? @unique
+  qrCodeUrl String?
+  pdfUrl    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orderId], map: "idx_ti_order")
+  @@index([invoiceDate], map: "idx_ti_date")
+}
+
+// =============================================================================
+// DOMAIN: 16. TRUST & REVIEWS
+// =============================================================================
+
+model ProductReview {
+  id         String @id @default(cuid())
+  productId  String
+  reviewerId String
+
+  rating       Int
+  comment      String?
+  images       String[]
+
+  wouldRecommend     Boolean @default(true)
+  isVerifiedPurchase Boolean @default(false)
+  isVisible          Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
+  deletedAt DateTime?
+
+  product  Product @relation(fields: [productId], references: [id])
+  reviewer User    @relation(fields: [reviewerId], references: [id])
+
+  @@index([productId, isVisible, createdAt], map: "idx_pr_prod_vis_date")
+  @@index([reviewerId], map: "idx_pr_reviewer")
+}
+
+model SellerRating {
+  id         String @id @default(cuid())
+  sellerId   String
+  reviewerId String
+
+  productQuality Int
+  deliverySpeed  Int
+  communication  Int
+  overallRating  Int
+  comment        String?
+
+  createdAt DateTime @default(now())
+  isDeleted Boolean  @default(false)
+
+  seller   User @relation("RatingSeller", fields: [sellerId], references: [id])
+  reviewer User @relation("RatingReviewer", fields: [reviewerId], references: [id])
+
+  @@index([sellerId, createdAt], map: "idx_sr_seller_date")
+}
+
+// =============================================================================
+// DOMAIN: 17. COUPON & PROMOTIONS
+// =============================================================================
+
+model Coupon {
+  id            String  @id @default(cuid())
+  code          String  @unique
+  description   String?
+
+  // FIX #6: Enum for discount type
+  discountType  DiscountType
+  discountValue Decimal @db.Decimal(18, 2)
+
+  minOrderValue   Decimal? @db.Decimal(18, 2)
+  maxDiscount     Decimal? @db.Decimal(18, 2)
+  totalUsageLimit Int?
+  usagePerUser    Int?
+
+  validFrom     DateTime
+  validUntil    DateTime
+  segment       Segment?
+  isActive      Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
+
+  @@index([code, isActive, validFrom, validUntil], map: "idx_cpn_code_act_date")
+}
+
+// =============================================================================
+// DOMAIN: 18. SEARCH SYNCHRONIZATION
+// =============================================================================
+
+model SearchProductDocument {
+  id        String  @id @default(cuid())
+  productId String  @unique
+
+  name         String
+  // FIX #1: Native tsvector via Prisma unsupported type
+  searchVector Unsupported("tsvector")? @map("search_vector")
+
+  price      Decimal @db.Decimal(18, 2)
+  categoryId String
+  segment    Segment
+  sellerId   String
+
+  viewCount  Int @default(0)
+  orderCount Int @default(0)
+
+  lastIndexedAt DateTime @default(now())
+  needsReindex  Boolean  @default(true)
+
+  @@index([segment, categoryId, price, lastIndexedAt], map: "idx_spd_seg_cat_price_date")
+  @@index([sellerId, lastIndexedAt], map: "idx_spd_seller_date")
+  @@index([name], map: "idx_spd_name")
+}
+
+// =============================================================================
+// DOMAIN: 19. STATE MACHINE HISTORY (Immutable + Partition-ready)
+// =============================================================================
+
+model OrderStatusHistory {
+  id         String @id @default(cuid())
+  orderId    String
+
+  statusFrom  String?
+  statusTo    String
+  reason      String?
+
+  // FIX #3: Enum for actor role
+  changedBy   String
+  actorRole   SystemActorType
+
+  ipAddress   String?
+  userAgent   String?
+
+  createdAt   DateTime @default(now())
+  historyMonth String // Partition-ready key
+
+  @@index([orderId, createdAt], map: "idx_osh_order_date")
+}
+
+model PaymentStatusHistory {
+  id         String @id @default(cuid())
+  paymentId  String
+
+  statusFrom String?
+  statusTo   String
+  gatewayRef String?
+  reason     String?
+
+  // FIX #3: Enum for actor role
+  changedBy  String
+  actorRole  SystemActorType
+
+  createdAt  DateTime @default(now())
+  historyMonth String // Partition-ready key
+
+  @@index([paymentId, createdAt], map: "idx_psh_pay_date")
+}
+
+// =============================================================================
+// DOMAIN: 20. PRICE HISTORY (Analytics & Compliance)
+// =============================================================================
+
+model ProductPriceHistory {
+  id        String @id @default(cuid())
+  productId String
+
+  oldPrice  Decimal @db.Decimal(18, 2)
+  newPrice  Decimal @db.Decimal(18, 2)
+  changedBy String
+  reason    String?
+
+  createdAt DateTime @default(now())
+
+  @@index([productId, createdAt], map: "idx_pph_prod_date")
+}
+
+// =============================================================================
+// DOMAIN: 21. INVENTORY SNAPSHOT (Reconciliation & Fraud)
+// =============================================================================
+
+model InventorySnapshot {
+  id         String @id @default(cuid())
+  inventoryId String
+
+  quantity    Int
+  reservedQty Int
+  damagedQty  Int
+  snapshotDate DateTime @default(now())
+
+  @@index([inventoryId, snapshotDate], map: "idx_is_inv_date")
+}
+
+// =============================================================================
+// DOMAIN: 22. FRAUD / RISK PLACEHOLDER
+// =============================================================================
+
+model FraudSignal {
+  id         String @id @default(cuid())
+  entityType String
+  entityId   String
+  signalType String
+  score      Int
+  metadata   Json?
+  resolved   Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([entityType, entityId], map: "idx_fs_entity")
+  @@index([score, createdAt], map: "idx_fs_score_date")
+}
+
+// =============================================================================
+// DOMAIN: 23. SECURITY & RATE LIMITING
+// =============================================================================
+
+model OtpAttempt {
+  id        String @id @default(cuid())
+  phone     String
+  otp       String
+  ipAddress String?
+  userAgent String?
+  isValid   Boolean
+
+  createdAt DateTime @default(now())
+
+  @@index([phone, createdAt], map: "idx_otp_phone_date")
+  @@index([ipAddress, createdAt], map: "idx_otp_ip_date")
+}
+
+model SecurityEvent {
+  id          String @id @default(cuid())
+  eventType   String
+  ipAddress   String
+  userAgent   String?
+  userId      String?
+  metadata    Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([ipAddress, createdAt], map: "idx_sev_ip_date")
+  @@index([userId, eventType], map: "idx_sev_user_type")
+}
+
+// =============================================================================
+// DOMAIN: 24. SEARCH ANALYTICS (Operational Intelligence)
+// =============================================================================
+
+model SearchAnalytics {
+  id        String @id @default(cuid())
+  query     String
+  segment   Segment?
+  userId    String?
+
+  resultsCount Int
+  clickedProductId String?
+  isAbandoned    Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([query, createdAt], map: "idx_sa_query_date")
+  @@index([userId, createdAt], map: "idx_sa_user_date")
+}
+
+// =============================================================================
+// DOMAIN: 25. API CREDENTIALS / WEBHOOKS
+// =============================================================================
+
+model ApiCredential {
+  id        String @id @default(cuid())
+  name      String
+  apiKey    String @unique
+  encryptedSecret String
+  scopes    String[]
+  isActive  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
+}
+
+model WebhookEndpoint {
+  id        String @id @default(cuid())
+  url       String
+  events    String[]
+  secret    String
+  isActive  Boolean @default(true)
+  lastDeliveryAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
+}
+
+model WebhookDelivery {
+  id        String @id @default(cuid())
+  endpointId String
+  eventId   String
+
+  payload   Json
+  response  String?
+  statusCode Int?
+  isSuccess  Boolean
+
+  createdAt DateTime @default(now())
+
+  @@index([endpointId, createdAt], map: "idx_whd_endp_date")
+}
+
+// =============================================================================
+// DOMAIN: 26. DEAD LETTER EVENTS
+// =============================================================================
+
+model DeadLetterEvent {
+  id         String @id @default(cuid())
+  originalId String?
+  eventType  String
+  payload    Json
+  error      String
+  retryCount Int    @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([eventType, createdAt], map: "idx_dle_type_date")
+}
+
+// =============================================================================
+// DOMAIN: 27. LOGIN SESSION (Security)
+// =============================================================================
+
+model LoginSession {
+  id           String @id @default(cuid())
+  userId       String
+  refreshToken String @unique
+  userAgent    String?
+  ipAddress    String?
+  expiresAt    DateTime
+  revoked      Boolean @default(false)
+  refreshTokenFamilyId String
+  refreshTokenVersion  Int       @default(1)
+  revokedAt            DateTime?
+  revokeReason         String?
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, expiresAt], map: "idx_ls_user_exp")
+  @@index([refreshToken], map: "idx_ls_refresh")
+}
+
+// =============================================================================
+// DOMAIN: 28. OPERATOR FIELD & QC WORKFLOWS
+// =============================================================================
+
+model FieldVisit {
+  id          String  @id @default(cuid())
+  agentId     String
+  orderId     String?
+  sellerId    String?
+
+  // FIX #2: Enum for visit type
+  visitType   FieldVisitType
+  // FIX #2: Enum for status
+  status      FieldVisitStatus
+
+  latitude    Float?
+  longitude   Float?
+
+  visitNotes   String?
+  imageUrls    String[]
+  signatureUrl String?
+
+  scheduledAt DateTime
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([agentId, status, scheduledAt], map: "idx_fv_agent_stat_sch")
+  @@index([orderId], map: "idx_fv_order")
+}
+
+model QualityCheckRecord {
+  id        String @id @default(cuid())
+  returnId  String
+
+  passed      Boolean
+  notes       String?
+  images      String[]
+  videoUrl    String?
+
+  productCondition String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([returnId, passed], map: "idx_qcr_ret_pass")
+}
+
+// =============================================================================
+// DOMAIN: 29. CACHE INVALIDATION (Future-ready Placeholder)
+// =============================================================================
+
+model CacheInvalidationEvent {
+  id        String @id @default(cuid())
+  eventType String // e.g. "ProductUpdated", "InventoryChanged"
+  entityType String
+  entityId  String
+  processedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([entityType, entityId, processedAt], map: "idx_cie_entity_proc")
+}
+
+// =============================================================================
+// DOMAIN: 30. SEARCH REINDEX QUEUE (Future-ready Placeholder)
+// =============================================================================
+
+model SearchReindexJob {
+  id        String @id @default(cuid())
+  entityType String // "Product", "Category", "Business"
+  entityId  String
+  priority  Int    @default(0)
+  processedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([entityType, entityId, processedAt], map: "idx_srj_entity_proc")
+}
+
+// =============================================================================
+// END OF SCHEMA
+// =============================================================================
+// NOW: FREEZE COMPLETE.
+// =============================================================================

@@ -23,7 +23,7 @@ import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
       pinoHttp: {
         level: process.env['NODE_ENV'] === 'production' ? 'warn' : 'info',
         transport:
-          process.env['NODE_ENV'] !== 'production'
+          process.env['NODE_ENV'] === 'development'
             ? {
                 target: 'pino-pretty',
                 options: {
