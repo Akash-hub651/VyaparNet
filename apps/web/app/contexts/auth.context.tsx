@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { UserProfileResponse, AuthTokensResponse } from '@vyaparnet/types';
 
 interface AuthContextValue {
@@ -24,7 +24,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
  * Tradeoff: refresh token lost on page reload → user must re-login.
  * This is acceptable for MVP. Sprint 2 (Phase 2): consider secure httpOnly cookie.
  */
-export function AuthProvider({ children }: { children: ReactNode }): JSX.Element {
+export function AuthProvider({ children }: { children: ReactNode }): React.JSX.Element {
   const [user, setUser] = useState<UserProfileResponse | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);

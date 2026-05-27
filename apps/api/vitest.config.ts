@@ -11,6 +11,13 @@ export default defineConfig({
     // NestJS integration tests bootstrap a full app including DB + Redis.
     // 30 seconds prevents silent hangs during slow CI provisioning.
     testTimeout: 30000,
+    fileParallelism: false,
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        singleThread: true,
+      },
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

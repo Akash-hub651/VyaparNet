@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/auth.context';
 import type { AuthTokensResponse } from '@vyaparnet/types';
@@ -22,7 +22,7 @@ import { SendOtpSchema, VerifyOtpSchema } from '@vyaparnet/types';
  */
 type LoginStep = 'phone' | 'otp' | 'success';
 
-export default function LoginPage(): JSX.Element {
+export default function LoginPage(): React.JSX.Element {
   const [step, setStep] = useState<LoginStep>('phone');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');

@@ -18,11 +18,14 @@ export default defineConfig({
     // Integration tests live in test/integration/ (Sprint 1+)
     include: ['test/integration/**/*.spec.ts'],
     exclude: ['node_modules', 'dist'],
+    fileParallelism: false,
     // Allow zero tests — Sprint 0 has no integration test files yet
     passWithNoTests: true,
     // Integration tests may wait for DB migrations and seeding
     testTimeout: 60000,
     hookTimeout: 30000,
+    // Run tests sequentially to prevent DB conflicts
+    fileParallelism: false,
   },
   resolve: {
     alias: {

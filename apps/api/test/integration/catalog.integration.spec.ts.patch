@@ -1,0 +1,11 @@
+--- test/integration/catalog.integration.spec.ts
++++ test/integration/catalog.integration.spec.ts
+@@ -183,6 +183,10 @@
+       // Clear event outbox before testing
+       await prisma.eventOutbox.deleteMany();
+ 
++      const dbProd = await prisma.product.findUnique({ where: { id: product.id }});
++      console.log('Product before publish:', dbProd?.id, 'version:', dbProd?.version);
++
+       // 2. Publish once
+       await productsService.publishProduct(product.id, sellerAId, UserRole.SELLER);

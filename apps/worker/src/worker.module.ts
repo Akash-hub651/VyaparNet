@@ -1,13 +1,17 @@
-import { Module } from "@nestjs/common";
-// Workers added Sprint 3+
-// Currently: bare module to verify worker scaffold works
+import { Module } from '@nestjs/common';
+import { ConfigModule } from './core/config/config.module';
+import { PrismaModule } from './core/prisma/prisma.module';
+import { RedisModule } from './core/redis/redis.module';
+import { BullMQModule } from './core/bullmq/bullmq.module';
+import { ImageProcessingProcessor } from './modules/media/image-processing.processor';
 
 @Module({
   imports: [
-    // ConfigModule (Sprint 1)
-    // PrismaModule (Sprint 1)
-    // RedisModule (Sprint 1)
-    // BullMQModule (Sprint 3+)
+    ConfigModule,
+    PrismaModule,
+    RedisModule,
+    BullMQModule,
   ],
+  providers: [ImageProcessingProcessor],
 })
 export class WorkerModule {}

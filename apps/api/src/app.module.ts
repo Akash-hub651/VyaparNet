@@ -8,6 +8,7 @@ import { BullMQModule } from './core/bullmq/bullmq.module';
 import { LoggerModule } from './core/logger/logger.module';
 import { HealthModule } from './core/health/health.module';
 import { IdentityModule } from './modules/identity/identity.module';
+import { CatalogModule } from './modules/catalog/catalog.module';
 import { JwtAuthGuard } from './shared/guards/jwt-auth.guard';
 import { RolesGuard } from './shared/guards/roles.guard';
 import { PermissionsGuard } from './shared/guards/permissions.guard';
@@ -43,7 +44,7 @@ import { PermissionsGuard } from './shared/guards/permissions.guard';
     IdentityModule, // Authentication + User management
 
     // ─── Sprint 2+ ─────────────────────────────────────────
-    // CatalogModule,       // Sprint 2
+    CatalogModule,       // Sprint 2
     // InventoryModule,     // Sprint 3
     // OrderModule,         // Sprint 4
     // PaymentModule,       // Sprint 4

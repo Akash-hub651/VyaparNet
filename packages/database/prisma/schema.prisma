@@ -282,6 +282,29 @@ enum BuyerLedgerType {
   ADJUSTMENT
 }
 
+enum ProductStatus {
+  DRAFT
+  PENDING_APPROVAL
+  ACTIVE
+  REJECTED
+  ARCHIVED
+}
+
+enum MediaClass {
+  PRODUCT_IMAGE
+  COMPLIANCE_DOCUMENT
+  SWATCH
+  SPEC_SHEET
+  CAD_FILE
+}
+
+enum ApprovalPolicyType {
+  AUTO_APPROVE
+  MANUAL_REVIEW
+  DOCUMENT_REQUIRED
+  COMPLIANCE_CHECK
+}
+
 // =============================================================================
 // DOMAIN: 1. USER & IDENTITY
 // =============================================================================
@@ -301,37 +324,37 @@ model User {
   otpExpiresAt    DateTime?
   isPhoneVerified Boolean   @default(false)
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
   tokenVersion Int       @default(1)
-  createdBy String?
-  updatedBy String?
-  isDeleted Boolean   @default(false)
-  deletedAt DateTime?
-  version   Int       @default(0)
+  createdBy    String?
+  updatedBy    String?
+  isDeleted    Boolean   @default(false)
+  deletedAt    DateTime?
+  version      Int       @default(0)
 
-  ownedBusinesses Business[]       @relation("BusinessOwner")
+  ownedBusinesses Business[]      @relation("BusinessOwner")
   addresses       Address[]
   carts           Cart[]
   orders          Order[]
   notifications   Notification[]
   loginSessions   LoginSession[]
   auditLogs       AuditLog[]
-  kycDocuments    KycDocument[]    @relation("VerifiedKyc")
-  assignedTickets SupportTicket[]  @relation("TicketAssignee")
-  raisedTickets   SupportTicket[]  @relation("TicketRaiser")
+  kycDocuments    KycDocument[]   @relation("VerifiedKyc")
+  assignedTickets SupportTicket[] @relation("TicketAssignee")
+  raisedTickets   SupportTicket[] @relation("TicketRaiser")
 
   // Reverse relations for named relations
-  verifiedKycDocs   KycDocument[]    @relation("KycVerifier")
-  approvedProducts  Product[]        @relation("ProductApprover")
-  uploadedMedia     Media[]          @relation("MediaUploader")
-  inspectedReturns  ReturnRequest[]  @relation("ReturnInspector")
-  resolvedDisputes  Dispute[]        @relation("DisputeResolver")
-  productReviews    ProductReview[]
-  sellerRatingsGiven  SellerRating[] @relation("RatingReviewer")
-  sellerRatingsReceived SellerRating[] @relation("RatingSeller")
-  buyerLedgers      BuyerLedger[]
-  sellerPayouts     SellerPayout[]
+  verifiedKycDocs       KycDocument[]   @relation("KycVerifier")
+  approvedProducts      Product[]       @relation("ProductApprover")
+  uploadedMedia         Media[]         @relation("MediaUploader")
+  inspectedReturns      ReturnRequest[] @relation("ReturnInspector")
+  resolvedDisputes      Dispute[]       @relation("DisputeResolver")
+  productReviews        ProductReview[]
+  sellerRatingsGiven    SellerRating[]  @relation("RatingReviewer")
+  sellerRatingsReceived SellerRating[]  @relation("RatingSeller")
+  buyerLedgers          BuyerLedger[]
+  sellerPayouts         SellerPayout[]
 
   @@index([phone], map: "idx_user_phone")
   @@index([segment, role, isDeleted], map: "idx_user_seg_role_del")
@@ -351,15 +374,15 @@ model Business {
   trustScore      Int       @default(0)
   establishedYear Int?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   createdBy String?
   updatedBy String?
-  isDeleted Boolean  @default(false)
+  isDeleted Boolean   @default(false)
   deletedAt DateTime?
-  version   Int      @default(0)
+  version   Int       @default(0)
 
-  owner    User      @relation("BusinessOwner", fields: [ownerId], references: [id])
+  owner    User          @relation("BusinessOwner", fields: [ownerId], references: [id])
   products Product[]
   orders   Order[]
   kycDocs  KycDocument[]
@@ -409,9 +432,9 @@ model Address {
   longitude Float?
   isDefault Boolean @default(false)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  isDeleted Boolean  @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  isDeleted Boolean   @default(false)
   deletedAt DateTime?
 
   user User @relation(fields: [userId], references: [id])
@@ -423,8 +446,35 @@ model Address {
 // DOMAIN: 2. PRODUCT & CATALOG
 // =============================================================================
 
+model SegmentAttributeSchema {
+  id        String   @id @default(cuid())
+  segment   Segment
+  version   Int      @default(1)
+  schema    Json
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([segment, version])
+  @@map("segment_attribute_schemas")
+}
+
+model SegmentApprovalPolicy {
+  id               String             @id @default(cuid())
+  segment          Segment            @unique
+  policyType       ApprovalPolicyType
+  minTrustScore    Int                @default(0)
+  requiredDocTypes String[]
+  expiryDays       Int?
+  isActive         Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@map("segment_approval_policies")
+}
+
 model Category {
-  id           String @id @default(cuid())
+  id           String  @id @default(cuid())
   name         String
   slug         String  @unique
   description  String?
@@ -433,16 +483,17 @@ model Category {
   imageUrl     String?
   displayOrder Int     @default(0)
   isActive     Boolean @default(true)
+  filterConfig Json?
 
   parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children Category[] @relation("CategoryHierarchy")
   products Product[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   createdBy String?
   updatedBy String?
-  isDeleted Boolean  @default(false)
+  isDeleted Boolean   @default(false)
   deletedAt DateTime?
 
   @@index([segment, isActive], map: "idx_cat_seg_active")
@@ -450,7 +501,7 @@ model Category {
 }
 
 model Product {
-  id          String @id @default(cuid())
+  id          String  @id @default(cuid())
   name        String
   slug        String  @unique
   description String?
@@ -467,55 +518,57 @@ model Product {
   gstPercent Decimal? @db.Decimal(5, 2)
 
   // FIX #1: Native tsvector via Prisma unsupported type
-  searchVector Unsupported("tsvector")? @map("search_vector")
-  metaTitle    String?
-  metaDesc     String?
-  tags         String[]
+  searchVector      Unsupported("tsvector")? @map("search_vector")
+  metaTitle         String?
+  metaDesc          String?
+  tags              String[]
+  segmentAttributes Json?                    @default("{}")
 
-  isActive   Boolean @default(true)
-  isDraft    Boolean @default(true)
+  isActive   Boolean       @default(true)
+  isDraft    Boolean       @default(true)
+  status     ProductStatus @default(DRAFT)
   approvedBy String?
   approvedAt DateTime?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   createdBy String?
   updatedBy String?
-  isDeleted Boolean  @default(false)
+  isDeleted Boolean   @default(false)
   deletedAt DateTime?
-  version   Int      @default(0)
+  version   Int       @default(0)
 
-  category   Category     @relation(fields: [categoryId], references: [id])
-  business   Business     @relation(fields: [businessId], references: [id])
+  category   Category         @relation(fields: [categoryId], references: [id])
+  business   Business         @relation(fields: [businessId], references: [id])
   // FIX #10: Active relation to approver
-  approver   User?        @relation("ProductApprover", fields: [approvedBy], references: [id])
+  approver   User?            @relation("ProductApprover", fields: [approvedBy], references: [id])
   inventory  Inventory?
   media      ProductMedia[]
   variants   ProductVariant[]
   cartItems  CartItem[]
   orderItems OrderItem[]
   reviews    ProductReview[]
+  // FIX #5: GIN index must be applied via raw SQL migration
+  // CREATE INDEX idx_prod_search_vector ON "Product" USING GIN ("search_vector");
 
   @@index([segment, categoryId, isActive], map: "idx_prod_seg_cat_act")
   @@index([businessId, isActive], map: "idx_prod_biz_act")
   @@index([slug], map: "idx_prod_slug")
   @@index([hsnCode], map: "idx_prod_hsn")
-  // FIX #5: GIN index must be applied via raw SQL migration
-  // CREATE INDEX idx_prod_search_vector ON "Product" USING GIN ("search_vector");
 }
 
 model ProductVariant {
-  id          String @id @default(cuid())
+  id          String   @id @default(cuid())
   productId   String
   variantName String
-  sku         String @unique
+  sku         String   @unique
   price       Decimal? @db.Decimal(18, 2)
-  quantity    Int    @default(0)
-  reservedQty Int    @default(0)
+  quantity    Int      @default(0)
+  reservedQty Int      @default(0)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  isDeleted Boolean  @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  isDeleted Boolean   @default(false)
   deletedAt DateTime?
 
   product Product @relation(fields: [productId], references: [id])
@@ -525,9 +578,10 @@ model ProductVariant {
 }
 
 model ProductMedia {
-  id        String @id @default(cuid())
-  productId String
-  mediaId   String @unique
+  id           String @id @default(cuid())
+  productId    String
+  mediaId      String @unique
+  displayOrder Int    @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -539,27 +593,28 @@ model ProductMedia {
 
 // FIX #20, #21: Added ownership and hashing for security
 model Media {
-  id          String    @id @default(cuid())
-  type        MediaType
-  url         String
+  id           String     @id @default(cuid())
+  type         MediaType
+  url          String
   thumbnailUrl String?
-  name        String
-  size        Int
-  mimeType    String
-  isProcessed Boolean   @default(false)
-  uploadedBy  String?
-  checksum    String?
+  name         String
+  size         Int
+  mimeType     String
+  isProcessed  Boolean    @default(false)
+  mediaClass   MediaClass @default(PRODUCT_IMAGE)
+  uploadedBy   String?
+  checksum     String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  isDeleted Boolean  @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  isDeleted Boolean   @default(false)
   deletedAt DateTime?
 
   productMedia ProductMedia[]
   variant      ProductVariant? @relation(fields: [variantId], references: [id])
   variantId    String?
   // FIX #8: Active relation to uploader
-  uploader     User?        @relation("MediaUploader", fields: [uploadedBy], references: [id])
+  uploader     User?           @relation("MediaUploader", fields: [uploadedBy], references: [id])
 
   @@index([uploadedBy], map: "idx_media_uploader")
 }
@@ -569,18 +624,18 @@ model Media {
 // =============================================================================
 
 model Inventory {
-  id              String  @id @default(cuid())
-  productId       String  @unique
+  id               String  @id @default(cuid())
+  productId        String  @unique
   productVariantId String?
-  businessId      String
-  segment         Segment
+  businessId       String
+  segment          Segment
 
-  quantity        Int @default(0)
-  reservedQty     Int @default(0)
-  damagedQty      Int @default(0)
-  incomingQty     Int @default(0)
-  lowStockThreshold Int @default(10)
-  isLowStock      Boolean @default(false)
+  quantity          Int     @default(0)
+  reservedQty       Int     @default(0)
+  damagedQty        Int     @default(0)
+  incomingQty       Int     @default(0)
+  lowStockThreshold Int     @default(10)
+  isLowStock        Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -588,8 +643,8 @@ model Inventory {
   updatedBy String?
   version   Int      @default(0)
 
-  product Product @relation(fields: [productId], references: [id])
-  movements InventoryMovement[]
+  product      Product                @relation(fields: [productId], references: [id])
+  movements    InventoryMovement[]
   reservations InventoryReservation[]
 
   @@index([productId], map: "idx_inv_prod")
@@ -598,13 +653,13 @@ model Inventory {
 }
 
 model InventoryMovement {
-  id        String @id @default(cuid())
+  id          String                @id @default(cuid())
   inventoryId String
-  type      InventoryMovementType
-  quantity  Int
-  orderId   String?
-  returnId  String?
-  reason    String?
+  type        InventoryMovementType
+  quantity    Int
+  orderId     String?
+  returnId    String?
+  reason      String?
 
   createdAt DateTime @default(now())
   createdBy String?
@@ -616,7 +671,7 @@ model InventoryMovement {
 }
 
 model InventoryReservation {
-  id        String   @id @default(cuid())
+  id          String            @id @default(cuid())
   inventoryId String
   cartId      String?
   orderId     String?
@@ -640,20 +695,20 @@ model InventoryReservation {
 
 // FIX #9: Relaxed unique constraint to support multi-segment carts
 model Cart {
-  id        String     @id @default(cuid())
-  userId    String
-  segment   Segment
-  status    CartStatus @default(ACTIVE)
+  id      String     @id @default(cuid())
+  userId  String
+  segment Segment
+  status  CartStatus @default(ACTIVE)
 
-  subtotal  Decimal @db.Decimal(18, 2) @default(0)
-  taxAmount Decimal @db.Decimal(18, 2) @default(0)
-  discount  Decimal @db.Decimal(18, 2) @default(0)
-  total     Decimal @db.Decimal(18, 2) @default(0)
+  subtotal  Decimal @default(0) @db.Decimal(18, 2)
+  taxAmount Decimal @default(0) @db.Decimal(18, 2)
+  discount  Decimal @default(0) @db.Decimal(18, 2)
+  total     Decimal @default(0) @db.Decimal(18, 2)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user  User     @relation(fields: [userId], references: [id])
+  user  User       @relation(fields: [userId], references: [id])
   items CartItem[]
 
   // FIX #9: Composite unique for multi-cart support per user/segment
@@ -662,13 +717,13 @@ model Cart {
 }
 
 model CartItem {
-  id          String @id @default(cuid())
-  cartId      String
-  productId   String
-  quantity    Int
-  unitPrice   Decimal @db.Decimal(18, 2)
-  totalPrice  Decimal @db.Decimal(18, 2)
-  discountAmount Decimal @db.Decimal(18, 2) @default(0)
+  id             String  @id @default(cuid())
+  cartId         String
+  productId      String
+  quantity       Int
+  unitPrice      Decimal @db.Decimal(18, 2)
+  totalPrice     Decimal @db.Decimal(18, 2)
+  discountAmount Decimal @default(0) @db.Decimal(18, 2)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -684,49 +739,49 @@ model CartItem {
 // =============================================================================
 
 model Order {
-  id            String @id @default(cuid())
-  orderNumber   String @unique
-  segment       Segment
-  status        OrderStatus @default(DRAFT)
+  id          String      @id @default(cuid())
+  orderNumber String      @unique
+  segment     Segment
+  status      OrderStatus @default(DRAFT)
 
-  buyerId     String
-  sellerId    String
-  cartId      String?
+  buyerId  String
+  sellerId String
+  cartId   String?
 
   shippingAddressSnapshot Json
   billingAddressSnapshot  Json
 
   subtotal     Decimal @db.Decimal(18, 2)
   taxAmount    Decimal @db.Decimal(18, 2)
-  shippingCost Decimal @db.Decimal(18, 2) @default(0)
-  discount     Decimal @db.Decimal(18, 2) @default(0)
+  shippingCost Decimal @default(0) @db.Decimal(18, 2)
+  discount     Decimal @default(0) @db.Decimal(18, 2)
   grandTotal   Decimal @db.Decimal(18, 2)
 
-  placedAt      DateTime?
-  confirmedAt   DateTime?
-  processingAt  DateTime?
-  readyToShipAt DateTime?
-  shippedAt     DateTime?
+  placedAt         DateTime?
+  confirmedAt      DateTime?
+  processingAt     DateTime?
+  readyToShipAt    DateTime?
+  shippedAt        DateTime?
   outForDeliveryAt DateTime?
-  deliveredAt   DateTime?
-  completedAt   DateTime?
-  cancelledAt   DateTime?
+  deliveredAt      DateTime?
+  completedAt      DateTime?
+  cancelledAt      DateTime?
 
   cancellationReason String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   createdBy String?
   updatedBy String?
-  isDeleted Boolean  @default(false)
+  isDeleted Boolean   @default(false)
   deletedAt DateTime?
-  version   Int      @default(0)
+  version   Int       @default(0)
 
   // FIX #6: Partition-ready key
   orderMonth String
 
-  buyer    User      @relation(fields: [buyerId], references: [id])
-  seller   Business  @relation(fields: [sellerId], references: [id])
+  buyer    User            @relation(fields: [buyerId], references: [id])
+  seller   Business        @relation(fields: [sellerId], references: [id])
   items    OrderItem[]
   payments Payment[]
   returns  ReturnRequest[]
@@ -741,22 +796,22 @@ model Order {
 }
 
 model OrderItem {
-  id            String @id @default(cuid())
-  orderId       String
-  productId     String
+  id        String @id @default(cuid())
+  orderId   String
+  productId String
 
-  productName   String
-  productSlug   String
-  productImage  String?
+  productName  String
+  productSlug  String
+  productImage String?
 
-  quantity Int
-  unitPrice Decimal @db.Decimal(18, 2)
-  discount  Decimal @db.Decimal(18, 2) @default(0)
+  quantity   Int
+  unitPrice  Decimal @db.Decimal(18, 2)
+  discount   Decimal @default(0) @db.Decimal(18, 2)
   totalPrice Decimal @db.Decimal(18, 2)
 
   hsnCode    String?
-  gstPercent Decimal @db.Decimal(5, 2) @default(0)
-  gstAmount  Decimal @db.Decimal(18, 2) @default(0)
+  gstPercent Decimal @default(0) @db.Decimal(5, 2)
+  gstAmount  Decimal @default(0) @db.Decimal(18, 2)
 
   createdAt DateTime @default(now())
 
@@ -768,16 +823,16 @@ model OrderItem {
 }
 
 model OrderTracking {
-  id               String @id @default(cuid())
-  orderId          String
-  status           String
-  trackingNumber   String?
-  carrier          String?
-  carrierUrl       String?
+  id                String    @id @default(cuid())
+  orderId           String
+  status            String
+  trackingNumber    String?
+  carrier           String?
+  carrierUrl        String?
   estimatedDelivery DateTime?
-  locationLat      Float?
-  locationLng      Float?
-  locationCity     String?
+  locationLat       Float?
+  locationLng       Float?
+  locationCity      String?
 
   createdAt DateTime @default(now())
 
@@ -791,15 +846,15 @@ model OrderTracking {
 // =============================================================================
 
 model Payment {
-  id         String @id @default(cuid())
-  orderId    String
-  amount     Decimal @db.Decimal(18, 2)
+  id      String  @id @default(cuid())
+  orderId String
+  amount  Decimal @db.Decimal(18, 2)
 
-  method      PaymentMethod
-  gateway     String
-  gatewayRef  String?
+  method         PaymentMethod
+  gateway        String
+  gatewayRef     String?
   // FIX #8: Idempotency key for duplicate prevention
-  idempotencyKey String? @unique
+  idempotencyKey String?       @unique
 
   status     PaymentStatus @default(PENDING)
   capturedAt DateTime?
@@ -824,25 +879,25 @@ model Payment {
 // =============================================================================
 
 model ReturnRequest {
-  id             String @id @default(cuid())
-  orderId        String
-  itemId         String
+  id      String @id @default(cuid())
+  orderId String
+  itemId  String
 
-  reason          ReturnReason
-  description     String?
-  images          String[]
+  reason      ReturnReason
+  description String?
+  images      String[]
 
-  status          ReturnStatus @default(PENDING)
-  requestedRefundAmount Decimal @db.Decimal(18, 2)
-  approvedRefundAmount  Decimal @db.Decimal(18, 2) @default(0)
+  status                ReturnStatus @default(PENDING)
+  requestedRefundAmount Decimal      @db.Decimal(18, 2)
+  approvedRefundAmount  Decimal      @default(0) @db.Decimal(18, 2)
 
-  qcNotes       String?
-  qcImageUrl    String?
-  inspectedBy   String?
-  inspectedAt   DateTime?
+  qcNotes     String?
+  qcImageUrl  String?
+  inspectedBy String?
+  inspectedAt DateTime?
 
-  resolution    String?
-  resolvedAt    DateTime?
+  resolution String?
+  resolvedAt DateTime?
 
   // FIX #15: SLA tracking
   slaBreachedAt DateTime?
@@ -851,7 +906,7 @@ model ReturnRequest {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  order Order @relation(fields: [orderId], references: [id])
+  order     Order @relation(fields: [orderId], references: [id])
   // FIX #12: Active relation to inspector
   inspector User? @relation("ReturnInspector", fields: [inspectedBy], references: [id])
 
@@ -864,7 +919,7 @@ model ReturnRequest {
 // =============================================================================
 
 model Notification {
-  id       String @id @default(cuid())
+  id       String                @id @default(cuid())
   userId   String
   type     NotificationType
   title    String
@@ -872,7 +927,7 @@ model Notification {
   channels NotificationChannel[]
   metadata Json?
 
-  isRead Boolean @default(false)
+  isRead Boolean   @default(false)
   readAt DateTime?
 
   createdAt DateTime @default(now())
@@ -887,15 +942,15 @@ model Notification {
 }
 
 model NotificationTemplate {
-  id        String @id @default(cuid())
-  name      String @unique
-  type      NotificationType
-  channels  NotificationChannel[]
-  titleHi   String
-  bodyHi    String
-  titleEn   String
-  bodyEn    String
-  isActive  Boolean @default(true)
+  id       String                @id @default(cuid())
+  name     String                @unique
+  type     NotificationType
+  channels NotificationChannel[]
+  titleHi  String
+  bodyHi   String
+  titleEn  String
+  bodyEn   String
+  isActive Boolean               @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -906,9 +961,9 @@ model NotificationTemplate {
 // =============================================================================
 
 model AuditLog {
-  id         String @id @default(cuid())
-  actorId    String
-  action     AuditAction
+  id      String      @id @default(cuid())
+  actorId String
+  action  AuditAction
 
   entityType String
   entityId   String
@@ -917,9 +972,9 @@ model AuditLog {
   oldValue Json?
   newValue Json?
 
-  ipAddress   String?
-  userAgent   String?
-  sessionId   String?
+  ipAddress String?
+  userAgent String?
+  sessionId String?
 
   createdAt DateTime @default(now())
 
@@ -943,14 +998,14 @@ model EventOutbox {
   eventVersion  String @default("1.0")
   schemaVersion String @default("4.3")
 
-  status      EventStatus @default(PENDING)
-  retryCount  Int         @default(0)
-  lastError   String?
+  status     EventStatus @default(PENDING)
+  retryCount Int         @default(0)
+  lastError  String?
 
   // FIX #25: Deduplication key for exactly-once processing
   deduplicationKey String? @unique
 
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
   processedAt DateTime?
   eventMonth  String
 
@@ -963,7 +1018,7 @@ model EventOutbox {
 // =============================================================================
 
 model SupportTicket {
-  id         String @id @default(cuid())
+  id         String  @id @default(cuid())
   userId     String
   orderId    String?
   assignedTo String?
@@ -971,15 +1026,15 @@ model SupportTicket {
   subject     String
   description String
   priority    SupportTicketPriority @default(MEDIUM)
-  status      SupportTicketStatus @default(OPEN)
+  status      SupportTicketStatus   @default(OPEN)
 
   // FIX #15: SLA tracking
   firstResponseAt DateTime?
   escalatedAt     DateTime?
   slaBreachedAt   DateTime?
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
   resolvedAt DateTime?
 
   user     User  @relation("TicketRaiser", fields: [userId], references: [id])
@@ -990,16 +1045,16 @@ model SupportTicket {
 }
 
 model Dispute {
-  id          String @id @default(cuid())
+  id          String        @id @default(cuid())
   orderId     String
   raisedBy    String
   reason      String
   description String?
   status      DisputeStatus @default(OPEN)
 
-  resolvedBy  String?
-  resolution  String?
-  resolvedAt  DateTime?
+  resolvedBy String?
+  resolution String?
+  resolvedAt DateTime?
 
   // FIX #15: SLA tracking
   firstResponseAt DateTime?
@@ -1009,7 +1064,7 @@ model Dispute {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  order Order @relation(fields: [orderId], references: [id])
+  order    Order @relation(fields: [orderId], references: [id])
   // FIX #11: Active relation to resolver
   resolver User? @relation("DisputeResolver", fields: [resolvedBy], references: [id])
 
@@ -1028,7 +1083,7 @@ model AppConfig {
   env   String @default("production")
 
   // FIX #18: Versioning for config safety
-  version   Int      @default(1)
+  version   Int     @default(1)
   updatedBy String?
 
   createdAt DateTime @default(now())
@@ -1036,13 +1091,13 @@ model AppConfig {
 }
 
 model FeatureFlag {
-  id          String  @id @default(cuid())
-  name        String  @unique
-  description String?
-  enabled     Boolean @default(false)
-  rolloutPercent Int  @default(0)
-  segment     Segment?
-  env         String @default("production")
+  id             String   @id @default(cuid())
+  name           String   @unique
+  description    String?
+  enabled        Boolean  @default(false)
+  rolloutPercent Int      @default(0)
+  segment        Segment?
+  env            String   @default("production")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1053,28 +1108,28 @@ model FeatureFlag {
 // =============================================================================
 
 model Quotation {
-  id          String          @id @default(cuid())
-  orderId     String?         @unique
-  status      QuotationStatus @default(DRAFT)
-  buyerId     String
-  sellerId    String
-  segment     Segment
+  id       String          @id @default(cuid())
+  orderId  String?         @unique
+  status   QuotationStatus @default(DRAFT)
+  buyerId  String
+  sellerId String
+  segment  Segment
 
   subtotal   Decimal? @db.Decimal(18, 2)
   taxAmount  Decimal? @db.Decimal(18, 2)
-  discount   Decimal? @db.Decimal(18, 2) @default(0)
+  discount   Decimal? @default(0) @db.Decimal(18, 2)
   grandTotal Decimal? @db.Decimal(18, 2)
 
-  validUntil        DateTime
+  validUntil          DateTime
   negotiationDeadline DateTime?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   createdBy String?
   updatedBy String?
-  isDeleted Boolean @default(false)
+  isDeleted Boolean   @default(false)
   deletedAt DateTime?
-  version   Int     @default(0)
+  version   Int       @default(0)
 
   quoteMonth String
 
@@ -1087,12 +1142,12 @@ model Quotation {
 }
 
 model QuotationItem {
-  id           String @id @default(cuid())
-  quotationId  String
-  productId    String
+  id          String @id @default(cuid())
+  quotationId String
+  productId   String
 
-  productName    String
-  productSlug    String
+  productName String
+  productSlug String
 
   quantity       Int
   unitPrice      Decimal  @db.Decimal(18, 2)
@@ -1110,7 +1165,7 @@ model PriceNegotiation {
   id          String @id @default(cuid())
   quotationId String
 
-  proposedPrice Decimal @db.Decimal(18, 2)
+  proposedPrice Decimal  @db.Decimal(18, 2)
   proposedBy    String
   message       String?
   counterPrice  Decimal? @db.Decimal(18, 2)
@@ -1129,34 +1184,34 @@ model PriceNegotiation {
 // =============================================================================
 
 model BuyerCreditLimit {
-  id          String  @id @default(cuid())
-  buyerId     String
-  segment     Segment
+  id      String  @id @default(cuid())
+  buyerId String
+  segment Segment
 
-  totalLimit      Decimal @db.Decimal(18, 2)
-  utilizedLimit     Decimal @db.Decimal(18, 2) @default(0)
+  totalLimit    Decimal @db.Decimal(18, 2)
+  utilizedLimit Decimal @default(0) @db.Decimal(18, 2)
 
-  paymentTerms    String?
-  isActive        Boolean @default(true)
+  paymentTerms String?
+  isActive     Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  isDeleted Boolean @default(false)
-  version   Int     @default(0)
+  isDeleted Boolean  @default(false)
+  version   Int      @default(0)
 
   @@index([buyerId, segment, isActive], map: "idx_bcl_buyer_seg_act")
 }
 
 model BuyerLedger {
-  id            String  @id @default(cuid())
-  buyerId       String
-  segment       Segment
+  id      String  @id @default(cuid())
+  buyerId String
+  segment Segment
 
   // FIX #4: Enum for transaction type
   transactionType BuyerLedgerType
   orderId         String?
-  amount          Decimal @db.Decimal(18, 2)
-  balance         Decimal @db.Decimal(18, 2)
+  amount          Decimal         @db.Decimal(18, 2)
+  balance         Decimal         @db.Decimal(18, 2)
   description     String?
 
   createdAt DateTime @default(now())
@@ -1169,20 +1224,20 @@ model BuyerLedger {
 }
 
 model SellerPayout {
-  id            String  @id @default(cuid())
-  sellerId      String
-  orderId       String
+  id       String @id @default(cuid())
+  sellerId String
+  orderId  String
 
-  grossAmount     Decimal @db.Decimal(18, 2)
-  platformFee     Decimal @db.Decimal(18, 2)
-  paymentGatewayFee Decimal @db.Decimal(18, 2) @default(0)
-  tdsAmount       Decimal @db.Decimal(18, 2) @default(0)
-  netPayout       Decimal @db.Decimal(18, 2)
+  grossAmount       Decimal @db.Decimal(18, 2)
+  platformFee       Decimal @db.Decimal(18, 2)
+  paymentGatewayFee Decimal @default(0) @db.Decimal(18, 2)
+  tdsAmount         Decimal @default(0) @db.Decimal(18, 2)
+  netPayout         Decimal @db.Decimal(18, 2)
 
   // FIX #5: Enum for payout status
-  status          PayoutStatus
-  utrNumber       String?
-  transferDate    DateTime?
+  status       PayoutStatus
+  utrNumber    String?
+  transferDate DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1198,8 +1253,8 @@ model SellerPayout {
 // =============================================================================
 
 model PlatformCommission {
-  id        String @id @default(cuid())
-  orderId   String @unique
+  id      String @id @default(cuid())
+  orderId String @unique
 
   commissionPercent Decimal @db.Decimal(5, 2)
   commissionAmount  Decimal @db.Decimal(18, 2)
@@ -1211,16 +1266,16 @@ model PlatformCommission {
 }
 
 model TaxInvoice {
-  id            String @id @default(cuid())
-  orderId         String @unique
+  id      String @id @default(cuid())
+  orderId String @unique
 
-  invoiceNumber   String @unique
-  invoiceDate     DateTime
+  invoiceNumber String   @unique
+  invoiceDate   DateTime
 
   taxableValue      Decimal @db.Decimal(18, 2)
-  cgstAmount        Decimal @db.Decimal(18, 2) @default(0)
-  sgstAmount        Decimal @db.Decimal(18, 2) @default(0)
-  igstAmount        Decimal @db.Decimal(18, 2) @default(0)
+  cgstAmount        Decimal @default(0) @db.Decimal(18, 2)
+  sgstAmount        Decimal @default(0) @db.Decimal(18, 2)
+  igstAmount        Decimal @default(0) @db.Decimal(18, 2)
   totalTaxAmount    Decimal @db.Decimal(18, 2)
   totalInvoiceValue Decimal @db.Decimal(18, 2)
 
@@ -1244,17 +1299,17 @@ model ProductReview {
   productId  String
   reviewerId String
 
-  rating       Int
-  comment      String?
-  images       String[]
+  rating  Int
+  comment String?
+  images  String[]
 
   wouldRecommend     Boolean @default(true)
   isVerifiedPurchase Boolean @default(false)
   isVisible          Boolean @default(true)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  isDeleted Boolean  @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  isDeleted Boolean   @default(false)
   deletedAt DateTime?
 
   product  Product @relation(fields: [productId], references: [id])
@@ -1289,23 +1344,23 @@ model SellerRating {
 // =============================================================================
 
 model Coupon {
-  id            String  @id @default(cuid())
-  code          String  @unique
-  description   String?
+  id          String  @id @default(cuid())
+  code        String  @unique
+  description String?
 
   // FIX #6: Enum for discount type
   discountType  DiscountType
-  discountValue Decimal @db.Decimal(18, 2)
+  discountValue Decimal      @db.Decimal(18, 2)
 
   minOrderValue   Decimal? @db.Decimal(18, 2)
   maxDiscount     Decimal? @db.Decimal(18, 2)
   totalUsageLimit Int?
   usagePerUser    Int?
 
-  validFrom     DateTime
-  validUntil    DateTime
-  segment       Segment?
-  isActive      Boolean  @default(true)
+  validFrom  DateTime
+  validUntil DateTime
+  segment    Segment?
+  isActive   Boolean  @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1319,8 +1374,8 @@ model Coupon {
 // =============================================================================
 
 model SearchProductDocument {
-  id        String  @id @default(cuid())
-  productId String  @unique
+  id        String @id @default(cuid())
+  productId String @unique
 
   name         String
   // FIX #1: Native tsvector via Prisma unsupported type
@@ -1334,8 +1389,8 @@ model SearchProductDocument {
   viewCount  Int @default(0)
   orderCount Int @default(0)
 
-  lastIndexedAt DateTime @default(now())
-  needsReindex  Boolean  @default(true)
+  lastIndexedAt DateTime?
+  needsReindex  Boolean   @default(true)
 
   @@index([segment, categoryId, price, lastIndexedAt], map: "idx_spd_seg_cat_price_date")
   @@index([sellerId, lastIndexedAt], map: "idx_spd_seller_date")
@@ -1347,29 +1402,29 @@ model SearchProductDocument {
 // =============================================================================
 
 model OrderStatusHistory {
-  id         String @id @default(cuid())
-  orderId    String
+  id      String @id @default(cuid())
+  orderId String
 
-  statusFrom  String?
-  statusTo    String
-  reason      String?
+  statusFrom String?
+  statusTo   String
+  reason     String?
 
   // FIX #3: Enum for actor role
-  changedBy   String
-  actorRole   SystemActorType
+  changedBy String
+  actorRole SystemActorType
 
-  ipAddress   String?
-  userAgent   String?
+  ipAddress String?
+  userAgent String?
 
-  createdAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
   historyMonth String // Partition-ready key
 
   @@index([orderId, createdAt], map: "idx_osh_order_date")
 }
 
 model PaymentStatusHistory {
-  id         String @id @default(cuid())
-  paymentId  String
+  id        String @id @default(cuid())
+  paymentId String
 
   statusFrom String?
   statusTo   String
@@ -1377,10 +1432,10 @@ model PaymentStatusHistory {
   reason     String?
 
   // FIX #3: Enum for actor role
-  changedBy  String
-  actorRole  SystemActorType
+  changedBy String
+  actorRole SystemActorType
 
-  createdAt  DateTime @default(now())
+  createdAt    DateTime @default(now())
   historyMonth String // Partition-ready key
 
   @@index([paymentId, createdAt], map: "idx_psh_pay_date")
@@ -1409,12 +1464,12 @@ model ProductPriceHistory {
 // =============================================================================
 
 model InventorySnapshot {
-  id         String @id @default(cuid())
+  id          String @id @default(cuid())
   inventoryId String
 
-  quantity    Int
-  reservedQty Int
-  damagedQty  Int
+  quantity     Int
+  reservedQty  Int
+  damagedQty   Int
   snapshotDate DateTime @default(now())
 
   @@index([inventoryId, snapshotDate], map: "idx_is_inv_date")
@@ -1425,7 +1480,7 @@ model InventorySnapshot {
 // =============================================================================
 
 model FraudSignal {
-  id         String @id @default(cuid())
+  id         String  @id @default(cuid())
   entityType String
   entityId   String
   signalType String
@@ -1444,7 +1499,7 @@ model FraudSignal {
 // =============================================================================
 
 model OtpAttempt {
-  id        String @id @default(cuid())
+  id        String  @id @default(cuid())
   phone     String
   otp       String
   ipAddress String?
@@ -1458,12 +1513,12 @@ model OtpAttempt {
 }
 
 model SecurityEvent {
-  id          String @id @default(cuid())
-  eventType   String
-  ipAddress   String
-  userAgent   String?
-  userId      String?
-  metadata    Json?
+  id        String  @id @default(cuid())
+  eventType String
+  ipAddress String
+  userAgent String?
+  userId    String?
+  metadata  Json?
 
   createdAt DateTime @default(now())
 
@@ -1476,14 +1531,14 @@ model SecurityEvent {
 // =============================================================================
 
 model SearchAnalytics {
-  id        String @id @default(cuid())
-  query     String
-  segment   Segment?
-  userId    String?
+  id      String   @id @default(cuid())
+  query   String
+  segment Segment?
+  userId  String?
 
-  resultsCount Int
+  resultsCount     Int
   clickedProductId String?
-  isAbandoned    Boolean @default(false)
+  isAbandoned      Boolean @default(false)
 
   createdAt DateTime @default(now())
 
@@ -1496,12 +1551,12 @@ model SearchAnalytics {
 // =============================================================================
 
 model ApiCredential {
-  id        String @id @default(cuid())
-  name      String
-  apiKey    String @unique
+  id              String   @id @default(cuid())
+  name            String
+  apiKey          String   @unique
   encryptedSecret String
-  scopes    String[]
-  isActive  Boolean @default(true)
+  scopes          String[]
+  isActive        Boolean  @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1509,11 +1564,11 @@ model ApiCredential {
 }
 
 model WebhookEndpoint {
-  id        String @id @default(cuid())
-  url       String
-  events    String[]
-  secret    String
-  isActive  Boolean @default(true)
+  id             String    @id @default(cuid())
+  url            String
+  events         String[]
+  secret         String
+  isActive       Boolean   @default(true)
   lastDeliveryAt DateTime?
 
   createdAt DateTime @default(now())
@@ -1522,12 +1577,12 @@ model WebhookEndpoint {
 }
 
 model WebhookDelivery {
-  id        String @id @default(cuid())
+  id         String @id @default(cuid())
   endpointId String
-  eventId   String
+  eventId    String
 
-  payload   Json
-  response  String?
+  payload    Json
+  response   String?
   statusCode Int?
   isSuccess  Boolean
 
@@ -1541,12 +1596,12 @@ model WebhookDelivery {
 // =============================================================================
 
 model DeadLetterEvent {
-  id         String @id @default(cuid())
+  id         String  @id @default(cuid())
   originalId String?
   eventType  String
   payload    Json
   error      String
-  retryCount Int    @default(0)
+  retryCount Int     @default(0)
 
   createdAt DateTime @default(now())
 
@@ -1558,13 +1613,13 @@ model DeadLetterEvent {
 // =============================================================================
 
 model LoginSession {
-  id           String @id @default(cuid())
-  userId       String
-  refreshToken String @unique
-  userAgent    String?
-  ipAddress    String?
-  expiresAt    DateTime
-  revoked      Boolean @default(false)
+  id                   String    @id @default(cuid())
+  userId               String
+  refreshToken         String    @unique
+  userAgent            String?
+  ipAddress            String?
+  expiresAt            DateTime
+  revoked              Boolean   @default(false)
   refreshTokenFamilyId String
   refreshTokenVersion  Int       @default(1)
   revokedAt            DateTime?
@@ -1583,18 +1638,18 @@ model LoginSession {
 // =============================================================================
 
 model FieldVisit {
-  id          String  @id @default(cuid())
-  agentId     String
-  orderId     String?
-  sellerId    String?
+  id       String  @id @default(cuid())
+  agentId  String
+  orderId  String?
+  sellerId String?
 
   // FIX #2: Enum for visit type
-  visitType   FieldVisitType
+  visitType FieldVisitType
   // FIX #2: Enum for status
-  status      FieldVisitStatus
+  status    FieldVisitStatus
 
-  latitude    Float?
-  longitude   Float?
+  latitude  Float?
+  longitude Float?
 
   visitNotes   String?
   imageUrls    String[]
@@ -1612,13 +1667,13 @@ model FieldVisit {
 }
 
 model QualityCheckRecord {
-  id        String @id @default(cuid())
-  returnId  String
+  id       String @id @default(cuid())
+  returnId String
 
-  passed      Boolean
-  notes       String?
-  images      String[]
-  videoUrl    String?
+  passed   Boolean
+  notes    String?
+  images   String[]
+  videoUrl String?
 
   productCondition String
 
@@ -1633,10 +1688,10 @@ model QualityCheckRecord {
 // =============================================================================
 
 model CacheInvalidationEvent {
-  id        String @id @default(cuid())
-  eventType String // e.g. "ProductUpdated", "InventoryChanged"
-  entityType String
-  entityId  String
+  id          String    @id @default(cuid())
+  eventType   String // e.g. "ProductUpdated", "InventoryChanged"
+  entityType  String
+  entityId    String
   processedAt DateTime?
 
   createdAt DateTime @default(now())
@@ -1649,10 +1704,10 @@ model CacheInvalidationEvent {
 // =============================================================================
 
 model SearchReindexJob {
-  id        String @id @default(cuid())
-  entityType String // "Product", "Category", "Business"
-  entityId  String
-  priority  Int    @default(0)
+  id          String    @id @default(cuid())
+  entityType  String // "Product", "Category", "Business"
+  entityId    String
+  priority    Int       @default(0)
   processedAt DateTime?
 
   createdAt DateTime @default(now())
