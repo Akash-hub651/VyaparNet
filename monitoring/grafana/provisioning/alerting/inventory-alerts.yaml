@@ -1,0 +1,75 @@
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: Inventory Critical Alerts
+    folder: "VyaparNet System Alerts"
+    interval: 1m
+    rules:
+      - uid: inv_oversell_alert
+        title: "[CRITICAL] Inventory Oversell Prevented"
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: sum(increase(inventory_oversell_prevented_total[5m]))
+              intervalMs: 1000
+              maxDataPoints: 43200
+        noDataState: OK
+        execErrState: Error
+        for: 1m
+        annotations:
+          summary: "Oversell prevented by DB constraint! Concurrency risk!"
+          description: "Optimistic locking failed but DB transaction prevented oversell. This means contention is extremely high or locking mechanism is failing."
+        labels:
+          severity: critical
+          service: inventory
+
+      - uid: inv_drift_alert
+        title: "[CRITICAL] Critical Inventory Data Drift Detected"
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: sum(increase(inventory_drift_detected{isCritical="true"}[5m]))
+              intervalMs: 1000
+              maxDataPoints: 43200
+        noDataState: OK
+        execErrState: Error
+        for: 1m
+        annotations:
+          summary: "Inventory quantity drift detected"
+          description: "Incremental reconciliation worker found discrepancy between Inventory rows and EventOutbox/Movements."
+        labels:
+          severity: critical
+          service: inventory
+
+      - uid: inv_readonly_mode_alert
+        title: "[WARNING] Inventory in READ_ONLY Mode"
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: sum(increase(inventory_protection_mode_changes{mode="READ_ONLY"}[1m])) > 0
+              intervalMs: 1000
+              maxDataPoints: 43200
+        noDataState: OK
+        execErrState: Error
+        for: 1m
+        annotations:
+          summary: "Inventory API returning 503s intentionally"
+          description: "System has been placed into READ_ONLY mode. All reservation writes are currently blocked."
+        labels:
+          severity: warning
+          service: inventory

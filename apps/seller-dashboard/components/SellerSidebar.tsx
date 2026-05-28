@@ -44,6 +44,17 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
+    href: '/inventory',
+    id: 'nav-inventory',
+    label: 'Inventory',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <rect x="2" y="2" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M6 6h6M6 10h6M6 14h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
     href: '/settings',
     id: 'nav-settings',
     label: 'Settings',
@@ -106,7 +117,7 @@ export default function SellerSidebar(): React.JSX.Element {
 
       {/* Bottom info */}
       <div className="p-4 border-t border-[#E2E8F0]">
-        <p className="text-xs text-[#94A3B8]">Sprint 2 — Marketplace</p>
+        <p className="text-xs text-[#94A3B8]">Sprint 3 — Inventory</p>
       </div>
     </aside>
   );

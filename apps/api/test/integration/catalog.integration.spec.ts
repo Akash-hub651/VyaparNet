@@ -7,6 +7,7 @@ import { ProductStateMachineService } from '../../src/modules/catalog/products/p
 import { ProductStatus, Segment, UserRole } from '@vyaparnet/database';
 import { ProductsService } from '../../src/modules/catalog/products/products.service';
 import { GlobalExceptionFilter } from '../../src/shared/filters/global-exception.filter';
+import { cleanDatabase } from '../helpers/db-cleanup.helper';
 
 describe('Catalog Integration Tests', () => {
   let app: INestApplication;
@@ -35,15 +36,9 @@ describe('Catalog Integration Tests', () => {
     stateMachine = app.get(ProductStateMachineService);
     productsService = app.get(ProductsService);
 
-    // Clean up existing data for test stability
-    await prisma.eventOutbox.deleteMany();
-    await prisma.auditLog.deleteMany();
-    await prisma.product.deleteMany();
-    await prisma.category.deleteMany();
-    await prisma.business.deleteMany();
-    await prisma.loginSession.deleteMany();
-    await prisma.notification.deleteMany();
-    await prisma.user.deleteMany();
+    // FK-safe full database reset via canonical helper (test/helpers/db-cleanup.helper.ts)
+    // DO NOT add ad-hoc deleteMany() calls here — update the helper file instead.
+    await cleanDatabase(prisma as any);
 
     // 1. Create Sellers and Businesses
     const sellerA = await prisma.user.create({
@@ -101,16 +96,11 @@ describe('Catalog Integration Tests', () => {
   });
 
   afterAll(async () => {
-    await prisma.eventOutbox.deleteMany();
-    await prisma.auditLog.deleteMany();
-    await prisma.product.deleteMany();
-    await prisma.category.deleteMany();
-    await prisma.business.deleteMany();
-    await prisma.loginSession.deleteMany();
-    await prisma.notification.deleteMany();
-    await prisma.user.deleteMany();
+    // FK-safe full database reset via canonical helper (test/helpers/db-cleanup.helper.ts)
+    await cleanDatabase(prisma as any);
     await app.close();
   });
+
 
   describe('SEGMENT ISOLATION (MANDATORY)', () => {
     it('GET /products/:id wrong segment → 404/400', async () => {
@@ -195,7 +185,7 @@ describe('Catalog Integration Tests', () => {
       expect(count1).toBe(1);
 
       // Reset status to draft manually in DB to simulate retry state
-      const dbProd = await prisma.product.update({
+        await prisma.product.update({
         where: { id: product.id },
         data: { status: ProductStatus.DRAFT, version: { increment: 1 } }
       });

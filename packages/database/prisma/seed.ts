@@ -411,12 +411,69 @@ async function seedAppConfig() {
   console.log('✅ AppConfig seeded successfully.');
 }
 
+async function seedSegmentInventoryPolicy() {
+  console.log('🌱 Seeding Segment Inventory Policies...');
+
+  await prisma.segmentInventoryPolicy.upsert({
+    where: { segment: Segment.TEXTILE },
+    update: {
+      maxReservationTtlSeconds: 900,
+      maxReservationsPerUser: 5,
+      maxReservationQtyPerRequest: 500,
+      reservationVelocityLimitPerHour: 50,
+      allowBackorder: false,
+      allowVirtualStock: false,
+      lowStockThresholdPercent: 20,
+      isActive: true,
+    },
+    create: {
+      segment: Segment.TEXTILE,
+      maxReservationTtlSeconds: 900,
+      maxReservationsPerUser: 5,
+      maxReservationQtyPerRequest: 500,
+      reservationVelocityLimitPerHour: 50,
+      allowBackorder: false,
+      allowVirtualStock: false,
+      lowStockThresholdPercent: 20,
+      isActive: true,
+    },
+  });
+
+  await prisma.segmentInventoryPolicy.upsert({
+    where: { segment: Segment.SPARE_PARTS },
+    update: {
+      maxReservationTtlSeconds: 1800,
+      maxReservationsPerUser: 10,
+      maxReservationQtyPerRequest: 1000,
+      reservationVelocityLimitPerHour: 50,
+      allowBackorder: false,
+      allowVirtualStock: false,
+      lowStockThresholdPercent: 20,
+      isActive: true,
+    },
+    create: {
+      segment: Segment.SPARE_PARTS,
+      maxReservationTtlSeconds: 1800,
+      maxReservationsPerUser: 10,
+      maxReservationQtyPerRequest: 1000,
+      reservationVelocityLimitPerHour: 50,
+      allowBackorder: false,
+      allowVirtualStock: false,
+      lowStockThresholdPercent: 20,
+      isActive: true,
+    },
+  });
+
+  console.log('✅ Segment Inventory Policies seeded.');
+}
+
 async function main(): Promise<void> {
   console.log('🌱 Seed script starting...');
   
   await seedCategories();
   await seedSegmentInfrastructure();
   await seedAppConfig();
+  await seedSegmentInventoryPolicy();
   
   console.log('✅ Seed script complete.');
 }
@@ -429,3 +486,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+

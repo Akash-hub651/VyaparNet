@@ -9,6 +9,7 @@ import { LoggerModule } from './core/logger/logger.module';
 import { HealthModule } from './core/health/health.module';
 import { IdentityModule } from './modules/identity/identity.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
 import { JwtAuthGuard } from './shared/guards/jwt-auth.guard';
 import { RolesGuard } from './shared/guards/roles.guard';
 import { PermissionsGuard } from './shared/guards/permissions.guard';
@@ -39,13 +40,13 @@ import { PermissionsGuard } from './shared/guards/permissions.guard';
     RedisModule, // Global cache/session client
     BullMQModule, // Queue registration
     HealthModule, // Health check endpoints
-
+ 
     // ─── Sprint 1 ──────────────────────────────────────────
     IdentityModule, // Authentication + User management
 
     // ─── Sprint 2+ ─────────────────────────────────────────
     CatalogModule,       // Sprint 2
-    // InventoryModule,     // Sprint 3
+    InventoryModule,     // Sprint 3
     // OrderModule,         // Sprint 4
     // PaymentModule,       // Sprint 4
     // NotificationModule,  // Sprint 6

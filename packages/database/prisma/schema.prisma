@@ -309,6 +309,24 @@ enum ApprovalPolicyType {
 // DOMAIN: 1. USER & IDENTITY
 // =============================================================================
 
+model SegmentInventoryPolicy {
+  id                              String   @id @default(cuid())
+  segment                         Segment  @unique
+  maxReservationTtlSeconds        Int      @default(900)
+  maxReservationsPerUser          Int      @default(10)
+  maxReservationQtyPerRequest     Int      @default(1000)
+  reservationVelocityLimitPerHour Int      @default(50)
+  allowBackorder                  Boolean  @default(false)
+  allowVirtualStock               Boolean  @default(false)
+  lowStockThresholdPercent        Int      @default(20)
+  isActive                        Boolean  @default(true)
+  
+  createdAt                       DateTime @default(now())
+  updatedAt                       DateTime @updatedAt
+
+  @@map("segment_inventory_policies")
+}
+
 model User {
   id        String    @id @default(cuid())
   phone     String    @unique
@@ -650,6 +668,7 @@ model Inventory {
   @@index([productId], map: "idx_inv_prod")
   @@index([businessId, isLowStock], map: "idx_inv_biz_low")
   @@index([segment], map: "idx_inv_seg")
+  @@index([updatedAt], map: "idx_inv_updated_at")
 }
 
 model InventoryMovement {
@@ -676,8 +695,12 @@ model InventoryReservation {
   cartId      String?
   orderId     String?
   quantity    Int
-  status      ReservationStatus @default(ACTIVE)
-  expiresAt   DateTime
+  status               ReservationStatus @default(ACTIVE)
+  expiresAt            DateTime
+  reservedByUserId     String?
+  reservedByBusinessId String?
+  orderContext         String?
+  reservationSource    String?           @default("WEB")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -685,6 +708,7 @@ model InventoryReservation {
   inventory Inventory @relation(fields: [inventoryId], references: [id])
 
   @@index([inventoryId, status, expiresAt], map: "idx_invres_inv_stat_exp")
+  @@index([status, expiresAt], map: "idx_invres_active_expiry")
   @@index([cartId], map: "idx_invres_cart")
   @@index([orderId], map: "idx_invres_order")
 }

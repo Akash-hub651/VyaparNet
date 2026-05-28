@@ -19,3 +19,6 @@ export * from './catalog/search-engine.interface';
 export * from './catalog/segment-registry';
 export * from './catalog/schemas/textile-product.schema';
 export * from './catalog/schemas/spare-parts-product.schema';
+
+// Inventory
+export * from './inventory/inventory.schemas';

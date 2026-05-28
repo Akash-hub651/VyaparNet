@@ -1,4 +1,5 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { PrismaService } from './prisma.service';
 import { EventStatus } from '@vyaparnet/database';
 
@@ -8,7 +9,10 @@ export class EventOutboxProcessor implements OnModuleInit, OnModuleDestroy {
   private timer!: NodeJS.Timeout;
   private isProcessing = false;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly moduleRef: ModuleRef,
+  ) {}
 
   onModuleInit() {
     this.logger.log('Starting Event Outbox Processor...');
@@ -99,6 +103,20 @@ export class EventOutboxProcessor implements OnModuleInit, OnModuleDestroy {
     // In Sprint 2 Phase 6, we simulate Kafka/RabbitMQ dispatch
     // We can assume it is successful if it reaches here.
     this.logger.debug(`Simulating dispatch of event ${event.eventType} to broker...`);
-    // Example: await this.kafkaService.emit(event.eventType, event.payload);
+
+    if (event.eventType === 'ProductCreated') {
+      try {
+        // Dynamically resolve InventoryEventConsumer from module ref to prevent circular module dependencies
+        const consumer = this.moduleRef.get('InventoryEventConsumer', { strict: false });
+        if (consumer && typeof consumer.handleProductCreated === 'function') {
+          await consumer.handleProductCreated(event.payload);
+        } else {
+          this.logger.warn('InventoryEventConsumer is not registered or does not have handleProductCreated method.');
+        }
+      } catch (err) {
+        this.logger.error('Error dispatching ProductCreated event to InventoryEventConsumer', err);
+        throw err; // bubble up to trigger retry count and DLQ logic
+      }
+    }
   }
 }

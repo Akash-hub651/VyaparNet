@@ -17,6 +17,7 @@ import { notFound } from 'next/navigation';
 import { getProduct } from '../../../../lib/api/products.client';
 import ProductGallery from '../../../../components/buyer/ProductGallery';
 import SegmentAttributeDisplay from '../../../../components/buyer/SegmentAttributeDisplay';
+import StockStatus from '../../../../components/buyer/StockStatus';
 
 // ─────────────────────────────────────────────────────────────
 // ISR: revalidate every 60 seconds
@@ -168,8 +169,9 @@ export default async function ProductDetailPage({
             </div>
             <p className="text-xs text-[#64748B] mt-1">Exclusive of applicable taxes</p>
 
-            {/* MOQ badge */}
-            <div className="mt-3 flex items-center gap-2">
+            {/* MOQ and Stock Status badges */}
+            <div className="mt-3 flex items-center flex-wrap gap-2">
+              <StockStatus productId={product.id} segment={product.segment} />
               <span className="inline-flex items-center text-sm font-medium bg-[#EFF6FF] text-[#2563EB] px-3 py-1 rounded-full border border-[#BFDBFE]">
                 Min. Order: {product.moq} {product.unit}
               </span>

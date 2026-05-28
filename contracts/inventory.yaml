@@ -1,0 +1,289 @@
+openapi: 3.0.3
+info:
+  title: VyaparNet Inventory API
+  description: Inventory management and reservation API.
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+    description: Current API version
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ReserveInventoryRequest:
+      type: object
+      required:
+        - productId
+        - quantity
+        - segment
+      properties:
+        productId:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+        segment:
+          type: string
+          enum: [TEXTILE, SPARE_PARTS]
+        cartId:
+          type: string
+        orderId:
+          type: string
+        orderType:
+          type: string
+          enum: [CART, ORDER, RFQ]
+          default: CART
+        paymentMethod:
+          type: string
+          enum: [ONLINE_UPI, ONLINE_CARD, COD, CREDIT, BANK_TRANSFER]
+    
+    ReserveInventoryResponse:
+      type: object
+      required:
+        - reservationId
+        - status
+        - expiresAt
+      properties:
+        reservationId:
+          type: string
+        status:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+
+    ReleaseInventoryRequest:
+      type: object
+      required:
+        - reservationId
+        - reason
+      properties:
+        reservationId:
+          type: string
+        reason:
+          type: string
+          enum: [ORDER_CANCELLED, PAYMENT_FAILED, CART_EXPIRED, MANUAL_RELEASE]
+
+    ReleaseInventoryResponse:
+      type: object
+      required:
+        - reservationId
+        - status
+        - alreadyReleased
+      properties:
+        reservationId:
+          type: string
+        status:
+          type: string
+        alreadyReleased:
+          type: boolean
+
+    UpdateInventoryRequest:
+      type: object
+      required:
+        - quantity
+        - reason
+      properties:
+        quantity:
+          type: integer
+          minimum: 0
+        lowStockThreshold:
+          type: integer
+          minimum: 0
+        reason:
+          type: string
+
+    InventoryAvailabilityResponse:
+      type: object
+      required:
+        - productId
+        - availableQuantity
+        - isLowStock
+        - lastUpdated
+      properties:
+        productId:
+          type: string
+        availableQuantity:
+          type: integer
+        isLowStock:
+          type: boolean
+        lastUpdated:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+        message:
+          type: string
+        error:
+          type: string
+
+security:
+  - bearerAuth: []
+
+paths:
+  /inventory/{productId}:
+    get:
+      summary: Get product stock availability
+      security: []
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Stock availability retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryAvailabilityResponse'
+        '404':
+          description: Product not found
+
+  /inventory/seller/list:
+    get:
+      summary: List inventory for a seller
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: lowStockOnly
+          schema:
+            type: boolean
+        - in: query
+          name: segment
+          schema:
+            type: string
+            enum: [TEXTILE, SPARE_PARTS]
+      responses:
+        '200':
+          description: Inventory list retrieved successfully
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  /inventory/{productId}:
+    patch:
+      summary: Update product stock
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateInventoryRequest'
+      responses:
+        '200':
+          description: Stock updated successfully
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Product not found
+
+  /inventory/reserve:
+    post:
+      summary: Reserve product stock
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReserveInventoryRequest'
+      responses:
+        '200':
+          description: Stock reserved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReserveInventoryResponse'
+        '400':
+          description: Bad request (e.g. missing Idempotency-Key)
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '409':
+          description: Conflict (concurrent updates or out of stock)
+
+  /inventory/release:
+    post:
+      summary: Release product stock
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReleaseInventoryRequest'
+      responses:
+        '200':
+          description: Stock released successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReleaseInventoryResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Reservation not found
+
+  /inventory/{productId}/movements:
+    get:
+      summary: Get inventory movements
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+        - in: query
+          name: cursor
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Inventory movements retrieved successfully
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Product not found

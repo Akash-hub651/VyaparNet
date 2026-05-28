@@ -5,6 +5,7 @@ import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/core/prisma/prisma.service';
 import { SearchService } from '../../src/modules/catalog/search/search.service';
 import { Segment, UserRole } from '@vyaparnet/database';
+import { cleanDatabase } from '../helpers/db-cleanup.helper';
 
 describe('Search Integration Tests', () => {
   let app: INestApplication;
@@ -22,15 +23,9 @@ describe('Search Integration Tests', () => {
     prisma = app.get(PrismaService);
     searchService = app.get(SearchService);
 
-    // Clean up
-    await prisma.searchProductDocument.deleteMany();
-    await prisma.auditLog.deleteMany();
-    await prisma.product.deleteMany();
-    await prisma.category.deleteMany();
-    await prisma.business.deleteMany();
-    await prisma.loginSession.deleteMany();
-    await prisma.notification.deleteMany();
-    await prisma.user.deleteMany();
+    // FK-safe full database reset via canonical helper (test/helpers/db-cleanup.helper.ts)
+    // DO NOT add ad-hoc deleteMany() calls here — update the helper file instead.
+    await cleanDatabase(prisma as any);
 
     // Create minimal data for SearchProductDocument tests
     const seller = await prisma.user.create({
@@ -100,14 +95,8 @@ describe('Search Integration Tests', () => {
   });
 
   afterAll(async () => {
-    await prisma.searchProductDocument.deleteMany();
-    await prisma.auditLog.deleteMany();
-    await prisma.product.deleteMany();
-    await prisma.category.deleteMany();
-    await prisma.business.deleteMany();
-    await prisma.loginSession.deleteMany();
-    await prisma.notification.deleteMany();
-    await prisma.user.deleteMany();
+    // FK-safe full database reset via canonical helper (test/helpers/db-cleanup.helper.ts)
+    await cleanDatabase(prisma as any);
     await app.close();
   });
 
