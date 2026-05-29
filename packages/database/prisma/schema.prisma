@@ -70,6 +70,7 @@ enum OrderStatus {
   DELIVERED
   COMPLETED
   CANCELLED
+  PAYMENT_FAILED
   RETURN_INITIATED
   REFUND_INITIATED
   DISPUTE_OPEN
@@ -790,6 +791,7 @@ model Order {
   deliveredAt      DateTime?
   completedAt      DateTime?
   cancelledAt      DateTime?
+  paymentFailedAt  DateTime?
 
   cancellationReason String?
 
@@ -820,9 +822,10 @@ model Order {
 }
 
 model OrderItem {
-  id        String @id @default(cuid())
+  id        String  @id @default(cuid())
   orderId   String
   productId String
+  sellerId  String?
 
   productName  String
   productSlug  String
@@ -874,9 +877,10 @@ model Payment {
   orderId String
   amount  Decimal @db.Decimal(18, 2)
 
-  method         PaymentMethod
-  gateway        String
-  gatewayRef     String?
+  method           PaymentMethod
+  gateway          String
+  gatewayRef       String?
+  gatewayPaymentId String?       @unique(map: "idx_pay_gateway_payment_id")
   // FIX #8: Idempotency key for duplicate prevention
   idempotencyKey String?       @unique
 
@@ -1433,17 +1437,16 @@ model OrderStatusHistory {
   statusTo   String
   reason     String?
 
-  // FIX #3: Enum for actor role
-  changedBy String
+  actorId   String
   actorRole SystemActorType
 
   ipAddress String?
   userAgent String?
 
-  createdAt    DateTime @default(now())
+  timestamp    DateTime @default(now())
   historyMonth String // Partition-ready key
 
-  @@index([orderId, createdAt], map: "idx_osh_order_date")
+  @@index([orderId, timestamp], map: "idx_osh_order_date")
 }
 
 model PaymentStatusHistory {

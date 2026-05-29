@@ -7,6 +7,7 @@ interface AuthContextValue {
   user: UserProfileResponse | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  token: string | null;
   login: (tokens: AuthTokensResponse) => void;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -86,6 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
       user,
       isLoading,
       isAuthenticated: !!user,
+      token: accessToken,
       login,
       logout,
       refreshUser,

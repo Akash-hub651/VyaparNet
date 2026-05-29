@@ -12,7 +12,7 @@ import { SessionService } from './session.service';
 import { AuthRepository } from './repositories/auth.repository';
 import { SessionRepository } from './repositories/session.repository';
 import { AuditSafeWriterService } from '../../security/audit/audit-safe-writer.service';
-import { Inject } from '@nestjs/common';
+import { Inject, forwardRef } from '@nestjs/common';
 import { SMS_SERVICE } from './sms.service.interface';
 import type { SmsService } from './sms.service.interface';
 import type {
@@ -49,7 +49,7 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => PrismaService)) private readonly prisma: PrismaService,
     private readonly otpService: OtpService,
     private readonly tokenService: TokenService,
     private readonly authRepository: AuthRepository,

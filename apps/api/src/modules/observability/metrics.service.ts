@@ -1,0 +1,76 @@
+import { Injectable } from '@nestjs/common';
+import { InjectMetric } from '@willsoto/nestjs-prometheus';
+import { Counter, Gauge, Histogram } from 'prom-client';
+
+@Injectable()
+export class MetricsService {
+  constructor(
+    // Cart metrics
+    @InjectMetric('cart_item_count_total')
+    public readonly cartItemCountTotal: Counter<string>,
+    @InjectMetric('cart_checkout_initiated_total')
+    public readonly cartCheckoutInitiatedTotal: Counter<string>,
+    @InjectMetric('cart_abandoned_total')
+    public readonly cartAbandonedTotal: Counter<string>,
+    @InjectMetric('cart_warning_surfaced_total')
+    public readonly cartWarningSurfacedTotal: Counter<string>,
+
+    // Checkout funnel
+    @InjectMetric('checkout_funnel_step_total')
+    public readonly checkoutFunnelStepTotal: Counter<string>,
+
+    // Order metrics
+    @InjectMetric('order_created_total')
+    public readonly orderCreatedTotal: Counter<string>,
+    @InjectMetric('order_confirmed_total')
+    public readonly orderConfirmedTotal: Counter<string>,
+    @InjectMetric('order_cancelled_total')
+    public readonly orderCancelledTotal: Counter<string>,
+    @InjectMetric('order_payment_failed_total')
+    public readonly orderPaymentFailedTotal: Counter<string>,
+    @InjectMetric('order_stuck_in_placed_total')
+    public readonly orderStuckInPlacedTotal: Gauge<string>,
+    @InjectMetric('order_number_collision_total')
+    public readonly orderNumberCollisionTotal: Counter<string>,
+
+    // Payment metrics
+    @InjectMetric('payment_initiated_total')
+    public readonly paymentInitiatedTotal: Counter<string>,
+    @InjectMetric('payment_success_total')
+    public readonly paymentSuccessTotal: Counter<string>,
+    @InjectMetric('payment_failed_total')
+    public readonly paymentFailedTotal: Counter<string>,
+    @InjectMetric('payment_webhook_received_total')
+    public readonly paymentWebhookReceivedTotal: Counter<string>,
+    @InjectMetric('payment_webhook_duplicate_total')
+    public readonly paymentWebhookDuplicateTotal: Counter<string>,
+    @InjectMetric('payment_webhook_invalid_signature_total')
+    public readonly paymentWebhookInvalidSignatureTotal: Counter<string>,
+    @InjectMetric('payment_webhook_queue_timeout_total')
+    public readonly paymentWebhookQueueTimeoutTotal: Counter<string>,
+    @InjectMetric('payment_reconciliation_run_total')
+    public readonly paymentReconciliationRunTotal: Counter<string>,
+    @InjectMetric('payment_reconciliation_missed_total')
+    public readonly paymentReconciliationMissedTotal: Counter<string>,
+    @InjectMetric('payment_reconciliation_latency_ms')
+    public readonly paymentReconciliationLatencyMs: Histogram<string>,
+    @InjectMetric('payment_retry_redis_premature_eviction_total')
+    public readonly paymentRetryRedisPrematureEvictionTotal: Counter<string>,
+
+    // Queue metrics
+    @InjectMetric('bullmq_payment_queue_depth')
+    public readonly bullmqPaymentQueueDepth: Gauge<string>,
+    @InjectMetric('bullmq_payment_webhook_worker_latency_ms')
+    public readonly bullmqPaymentWebhookWorkerLatencyMs: Histogram<string>,
+    @InjectMetric('bullmq_payment_dlq_size')
+    public readonly bullmqPaymentDlqSize: Gauge<string>,
+
+    // Infrastructure metrics
+    @InjectMetric('redis_unavailable_total')
+    public readonly redisUnavailableTotal: Counter<string>,
+    @InjectMetric('rate_limit_atomic_failure_total')
+    public readonly rateLimitAtomicFailureTotal: Counter<string>,
+    @InjectMetric('webhook_double_consume_prevented_total')
+    public readonly webhookDoubleConsumePreventedTotal: Counter<string>,
+  ) {}
+}

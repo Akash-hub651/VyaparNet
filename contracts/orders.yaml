@@ -1,0 +1,98 @@
+openapi: 3.0.3
+info:
+  title: VyaparNet Orders API
+  version: 1.0.0
+  description: API specifications for VyaparNet Orders module
+paths:
+  /api/v1/orders:
+    post:
+      summary: Create Order
+      description: Creates a new order from cart for COD or ONLINE payment.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          schema:
+            type: string
+          required: true
+          description: Unique key to prevent duplicate orders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - shippingAddressId
+                - billingAddressId
+                - paymentMethod
+                - segment
+              properties:
+                shippingAddressId:
+                  type: string
+                billingAddressId:
+                  type: string
+                paymentMethod:
+                  type: string
+                  enum: [COD, ONLINE_UPI, ONLINE_CARD]
+                segment:
+                  type: string
+      responses:
+        '201':
+          description: Order Created Successfully
+        '400':
+          description: Bad Request (Missing idempotency key, invalid cart, etc.)
+        '409':
+          description: Conflict (Insufficient stock)
+  /api/v1/orders/{orderId}:
+    get:
+      summary: Get Order
+      description: Retrieve details of an order
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order details
+        '404':
+          description: Order not found
+  /api/v1/orders/{orderId}/cancel:
+    post:
+      summary: Cancel Order
+      description: Cancels a placed order and releases inventory
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reason
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Order cancelled successfully
+        '422':
+          description: Order already in terminal state
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { Logger } from 'nestjs-pino';
 import helmet from 'helmet';
+import * as express from 'express';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './shared/filters/global-exception.filter';
@@ -18,6 +19,12 @@ async function bootstrap(): Promise<void> {
   app.flushLogs();
 
   const configService = app.get(ConfigService<AppConfig, true>);
+
+  // ─── Raw body for webhook route (INV-15) ───
+  // HARDENED: express.raw() MUST be configured BEFORE express.json() for the webhook route.
+  // This ensures the webhook controller receives a raw Buffer for HMAC-SHA256 verification.
+  // JSON parsing would alter whitespace and break the HMAC check.
+  app.use('/api/v1/payments/webhook', express.raw({ type: '*/*' }));
 
   // ─── Security headers ───
   // Authority: VyaparNet_Implementation_Architecture_Official_Freeze_v1.md Section 17

@@ -93,17 +93,22 @@ export class InventoryService implements InventoryServicePublicInterface {
     const reservations =
       await this.reservationRepo.findActiveByOrderId(orderId);
 
-    // Release them all concurrently
-    const results = await Promise.all(
-      reservations.map((res) =>
-        this.releaseService.release({
-          reservationId: res.id,
-          reason,
-          userId: actorId,
-          role: 'SYSTEM',
-        }),
-      ),
-    );
+    // HARDENED (S4-W6): Sequential for...of — NEVER Promise.all.
+    // Concurrent releases on the same Inventory row cause optimistic-lock
+    // contention storms and deadlock amplification under multi-item carts.
+    // Each release increments Inventory.quantity with a version check —
+    // running them concurrently means ALL but one will fail and retry,
+    // creating cascading DB round-trips under failure paths.
+    const results: ReleaseStockResult[] = [];
+    for (const res of reservations) {
+      const result = await this.releaseService.release({
+        reservationId: res.id,
+        reason,
+        userId: actorId,
+        role: 'SYSTEM',
+      });
+      results.push(result);
+    }
 
     return results;
   }

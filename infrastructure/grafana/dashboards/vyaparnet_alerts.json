@@ -1,0 +1,175 @@
+{
+  "title": "VyaparNet E-Commerce Alerts",
+  "uid": "vyaparnet_alerts",
+  "panels": [
+    {
+      "type": "alertlist",
+      "title": "VyaparNet Active Alerts",
+      "targets": []
+    }
+  ],
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  },
+  "rules": [
+    {
+      "name": "CRITICAL: Invalid Webhook Signature",
+      "expr": "sum(rate(payment_webhook_invalid_signature_total[1m])) > 0",
+      "for": "1m",
+      "labels": {
+        "severity": "critical"
+      },
+      "annotations": {
+        "summary": "Invalid webhook signature detected",
+        "description": "Possible attack or misconfiguration."
+      }
+    },
+    {
+      "name": "CRITICAL: Webhook Queue Timeout (INV-22)",
+      "expr": "sum(rate(payment_webhook_queue_timeout_total[1m])) > 0",
+      "for": "1m",
+      "labels": {
+        "severity": "critical"
+      },
+      "annotations": {
+        "summary": "Webhook queue timeout",
+        "description": "HARDENED: BullMQ queue.add timed out (INV-22)."
+      }
+    },
+    {
+      "name": "CRITICAL: High Payment Failure Rate",
+      "expr": "sum(rate(payment_failed_total[5m])) / sum(rate(payment_initiated_total[5m])) > 0.05",
+      "for": "5m",
+      "labels": {
+        "severity": "critical"
+      },
+      "annotations": {
+        "summary": "High Payment Failure Rate",
+        "description": "Payment failures exceed 5% of initiated payments in the last 5 minutes."
+      }
+    },
+    {
+      "name": "CRITICAL: High Webhook DLQ Size",
+      "expr": "bullmq_payment_dlq_size > 5",
+      "for": "5m",
+      "labels": {
+        "severity": "critical"
+      },
+      "annotations": {
+        "summary": "High Payment Webhook DLQ Size",
+        "description": "Unprocessed webhooks equal unconfirmed orders."
+      }
+    },
+    {
+      "name": "CRITICAL: Orders Stuck In PLACED",
+      "expr": "order_stuck_in_placed_total > 10",
+      "for": "5m",
+      "labels": {
+        "severity": "critical"
+      },
+      "annotations": {
+        "summary": "Orders stuck in PLACED",
+        "description": "More than 10 orders stuck in PLACED over 30 minutes, indicates webhook delivery failure."
+      }
+    },
+    {
+      "name": "CRITICAL: Redis Outage",
+      "expr": "sum(rate(redis_unavailable_total[1m])) > 0",
+      "for": "1m",
+      "labels": {
+        "severity": "critical"
+      },
+      "annotations": {
+        "summary": "Redis unavailable",
+        "description": "HARDENED: Redis outage = idempotency blind."
+      }
+    },
+    {
+      "name": "CRITICAL: Double Consume Prevented (INV-19)",
+      "expr": "sum(rate(webhook_double_consume_prevented_total[1m])) > 0",
+      "for": "1m",
+      "labels": {
+        "severity": "critical"
+      },
+      "annotations": {
+        "summary": "Double consume prevented",
+        "description": "HARDENED: Double-consume race detected and prevented."
+      }
+    },
+    {
+      "name": "WARNING: Missed Payment Reconciliation",
+      "expr": "sum(rate(payment_reconciliation_missed_total[1m])) > 10",
+      "for": "5m",
+      "labels": {
+        "severity": "warning"
+      },
+      "annotations": {
+        "summary": "Reconciliation missed",
+        "description": "More than 10 reconciliations missed in a single run."
+      }
+    },
+    {
+      "name": "WARNING: High Reconciliation Latency",
+      "expr": "histogram_quantile(0.95, rate(payment_reconciliation_latency_ms_bucket[5m])) > 30000",
+      "for": "5m",
+      "labels": {
+        "severity": "warning"
+      },
+      "annotations": {
+        "summary": "High reconciliation latency",
+        "description": "Reconciliation taking longer than 30 seconds."
+      }
+    },
+    {
+      "name": "WARNING: Checkout Funnel Drop-off",
+      "expr": "sum(rate(checkout_funnel_step_total{step=\"order_placed\"}[1h])) / sum(rate(checkout_funnel_step_total{step=\"payment_select\"}[1h])) < 0.5",
+      "for": "1h",
+      "labels": {
+        "severity": "warning"
+      },
+      "annotations": {
+        "summary": "High drop-off in checkout funnel",
+        "description": "Less than 50% of users proceeding from payment selection to order placement."
+      }
+    },
+    {
+      "name": "WARNING: High Out Of Stock Warnings",
+      "expr": "sum(rate(cart_warning_surfaced_total{warning_type=\"OUT_OF_STOCK\"}[1h])) > 100",
+      "for": "1h",
+      "labels": {
+        "severity": "warning"
+      },
+      "annotations": {
+        "summary": "High OUT_OF_STOCK warnings",
+        "description": "Catalog availability issue detected."
+      }
+    },
+    {
+      "name": "WARNING: Premature Redis Eviction (INV-23)",
+      "expr": "sum(rate(payment_retry_redis_premature_eviction_total[1h])) > 5",
+      "for": "1h",
+      "labels": {
+        "severity": "warning"
+      },
+      "annotations": {
+        "summary": "Premature Redis eviction",
+        "description": "HARDENED: Redis maxmemory eviction detected."
+      }
+    },
+    {
+      "name": "WARNING: Order Number Collision (INV-25)",
+      "expr": "sum(rate(order_number_collision_total[1h])) > 0",
+      "for": "1h",
+      "labels": {
+        "severity": "warning"
+      },
+      "annotations": {
+        "summary": "Order Number Collision",
+        "description": "HARDENED: Order number collision retries (INV-25)."
+      }
+    }
+  ]
+}

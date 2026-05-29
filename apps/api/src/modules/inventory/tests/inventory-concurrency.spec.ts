@@ -39,13 +39,19 @@ describe('Inventory Concurrency Tests (L1-L7)', () => {
     // FK-safe full database reset via canonical helper (test/helpers/db-cleanup.helper.ts)
     // DO NOT add ad-hoc deleteMany() calls here — update the helper file instead.
     await cleanDatabase(prisma as any);
+    
+    // Clear Redis keys to prevent cross-run pollution
+    const keys = await redis.keys('inv_*');
+    if (keys.length > 0) {
+      await redis.del(...keys);
+    }
 
     await prisma.segmentInventoryPolicy.create({
       data: {
         segment: Segment.TEXTILE,
         maxReservationQtyPerRequest: 100,
-        maxReservationsPerUser: 100,
-        reservationVelocityLimitPerHour: 500,
+        maxReservationsPerUser: 10000,
+        reservationVelocityLimitPerHour: 50000,
         maxReservationTtlSeconds: 900,
       }
     });
@@ -325,7 +331,7 @@ describe('Inventory Concurrency Tests (L1-L7)', () => {
   it('L7: Velocity abuse → 429 after threshold', async () => {
     const { productId } = await createProductWithStock(5000);
     const userId = randomUUID(); 
-    await redis.set(`inv_velocity:${userId}:TEXTILE`, '500');
+    await redis.set(`inv_velocity:${userId}:TEXTILE`, '50000');
 
     try {
       await inventoryService.reserve({

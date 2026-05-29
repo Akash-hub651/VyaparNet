@@ -18,6 +18,7 @@ import { getProduct } from '../../../../lib/api/products.client';
 import ProductGallery from '../../../../components/buyer/ProductGallery';
 import SegmentAttributeDisplay from '../../../../components/buyer/SegmentAttributeDisplay';
 import StockStatus from '../../../../components/buyer/StockStatus';
+import AddToCartButton from '../../../../components/buyer/AddToCartButton';
 
 // ─────────────────────────────────────────────────────────────
 // ISR: revalidate every 60 seconds
@@ -230,22 +231,19 @@ export default async function ProductDetailPage({
           )}
 
           {/* CTA buttons (stubs — order/cart in Sprint 4) */}
-          <div className="flex gap-3 pt-2">
-            <button
-              id="product-detail-add-to-order"
-              disabled
-              className="flex-1 bg-[#2563EB] text-white font-semibold py-3 px-6 rounded-lg opacity-50 cursor-not-allowed transition-all text-sm"
-              title="Cart & Orders coming in Sprint 4"
-            >
-              Add to Order
-            </button>
+          <div className="pt-2">
+            <AddToCartButton
+              productId={product.id}
+              moq={product.moq}
+              segment={product.segment}
+            />
             <button
               id="product-detail-request-quote"
               disabled
-              className="flex-1 border-2 border-[#2563EB] text-[#2563EB] font-semibold py-3 px-6 rounded-lg opacity-50 cursor-not-allowed transition-all text-sm"
+              className="w-full mt-3 border-2 border-[#2563EB] text-[#2563EB] font-semibold py-3 px-6 rounded-lg opacity-50 cursor-not-allowed transition-all text-sm"
               title="Quotation coming in Sprint 5"
             >
-              Request Quote
+              Request Quote (Sprint 5)
             </button>
           </div>
         </div>

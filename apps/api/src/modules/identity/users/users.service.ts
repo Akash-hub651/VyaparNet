@@ -2,8 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { UsersRepository } from './repositories/users.repository';
 import { AuditSafeWriterService } from '../../security/audit/audit-safe-writer.service';
 import { AuditAction } from '@vyaparnet/types';
-import type { UpdateUserDto, UserProfileResponse } from '@vyaparnet/types';
-import type { User, Business } from '@vyaparnet/database';
+import type { UpdateUserDto, UserProfileResponse, CreateAddressDto, AddressType } from '@vyaparnet/types';
+import type { User, Business, Address } from '@vyaparnet/database';
 import { UserRole, Segment, KycStatus } from '@vyaparnet/types';
 
 /**
@@ -102,6 +102,60 @@ export class UsersService {
         kycStatus: (b.kycStatus as string) ?? KycStatus.UNVERIFIED,
         isVerified: b.kycStatus === 'VERIFIED',
       })),
+    };
+  }
+
+  async getAddresses(userId: string): Promise<AddressType[]> {
+    const addresses = await this.usersRepository.findAddressesByUserId(userId);
+    return addresses.map((addr) => this.mapAddressToResponse(addr));
+  }
+
+  async createAddress(
+    userId: string,
+    dto: CreateAddressDto,
+    ipAddress?: string,
+  ): Promise<AddressType> {
+    const address = await this.usersRepository.createAddress({
+      userId,
+      name: dto.name,
+      line1: dto.line1,
+      line2: dto.line2,
+      city: dto.city,
+      state: dto.state,
+      pincode: dto.pincode,
+      landmark: dto.landmark,
+      isDefault: dto.isDefault,
+    });
+
+    void this.auditSafeWriterService.safeWrite({
+      actorId: userId,
+      action: AuditAction.CREATE,
+      entityType: 'Address',
+      entityId: address.id,
+      newValue: dto as unknown as Record<string, unknown>,
+      ipAddress,
+    });
+
+    return this.mapAddressToResponse(address);
+  }
+
+  private mapAddressToResponse(address: Address): AddressType {
+    return {
+      id: address.id,
+      userId: address.userId,
+      name: address.name,
+      line1: address.line1,
+      line2: address.line2 ?? null,
+      city: address.city,
+      state: address.state,
+      pincode: address.pincode,
+      landmark: address.landmark ?? null,
+      country: address.country,
+      latitude: address.latitude ?? null,
+      longitude: address.longitude ?? null,
+      isDefault: address.isDefault,
+      createdAt: address.createdAt,
+      updatedAt: address.updatedAt,
     };
   }
 }

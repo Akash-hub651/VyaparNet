@@ -54,6 +54,14 @@ export const configSchema = z.object({
   THROTTLER_TTL_MS: z.string().default('60000').transform(Number),
   THROTTLER_LIMIT: z.string().default('100').transform(Number),
 
+  // ─── Razorpay ─────────────────────────────────────────────
+  // HARDENED: Secrets MUST NOT have .default() values — a missing secret in
+  // production must fail startup, not silently use a placeholder.
+  // Use RAZORPAY_KEY_ID placeholder default is acceptable (non-secret public ID).
+  RAZORPAY_KEY_ID: z.string().default('rzp_test_placeholder'),
+  RAZORPAY_KEY_SECRET: z.string().min(8, 'RAZORPAY_KEY_SECRET must be explicitly set — no placeholder allowed in production'),
+  RAZORPAY_WEBHOOK_SECRET: z.string().min(8, 'RAZORPAY_WEBHOOK_SECRET must be explicitly set — no placeholder allowed in production'),
+
   // ─── AWS & S3 (Sprint 2 / Phase 3) ──────────────────────────
   AWS_REGION: z.string().default('ap-south-1'),
   AWS_ACCESS_KEY_ID: z.string().default('dummy_access_key'),

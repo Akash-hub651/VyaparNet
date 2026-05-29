@@ -10,6 +10,9 @@ import { HealthModule } from './core/health/health.module';
 import { IdentityModule } from './modules/identity/identity.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
+import { OrderModule } from './modules/order/order.module';
+import { PaymentModule } from './modules/payment/payment.module';
+import { ObservabilityModule } from './modules/observability/observability.module';
 import { JwtAuthGuard } from './shared/guards/jwt-auth.guard';
 import { RolesGuard } from './shared/guards/roles.guard';
 import { PermissionsGuard } from './shared/guards/permissions.guard';
@@ -44,11 +47,12 @@ import { PermissionsGuard } from './shared/guards/permissions.guard';
     // ─── Sprint 1 ──────────────────────────────────────────
     IdentityModule, // Authentication + User management
 
-    // ─── Sprint 2+ ─────────────────────────────────────────
+    // ─── Sprint 2+ ───────────────────────────────────────────────────────
     CatalogModule,       // Sprint 2
     InventoryModule,     // Sprint 3
-    // OrderModule,         // Sprint 4
-    // PaymentModule,       // Sprint 4
+    OrderModule,         // Sprint 4
+    PaymentModule,       // Sprint 4
+    ObservabilityModule, // Sprint 4 Observability
     // NotificationModule,  // Sprint 6
     // AuditModule,         // Sprint 7
     // AdminModule,         // Sprint 7

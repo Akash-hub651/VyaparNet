@@ -12,11 +12,13 @@ import { ZodValidationPipe } from '../../../shared/pipes/zod-validation.pipe';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { UsersService } from './users.service';
 import { OnboardingService } from './onboarding.service';
-import { UpdateUserSchema, OnboardBusinessSchema } from '@vyaparnet/types';
+import { UpdateUserSchema, OnboardBusinessSchema, CreateAddressSchema } from '@vyaparnet/types';
 import type {
   UpdateUserDto,
   OnboardBusinessDto,
   UserProfileResponse,
+  CreateAddressDto,
+  AddressType,
 } from '@vyaparnet/types';
 import type { JwtPayload } from '../auth/token.service';
 
@@ -77,5 +79,32 @@ export class UsersController {
       success: true,
       data: { message: 'Onboarding complete. Welcome to VyaparNet!' },
     };
+  }
+
+  /**
+   * GET /api/v1/users/addresses
+   * Returns all active addresses for the authenticated user.
+   */
+  @Get('addresses')
+  async getAddresses(
+    @CurrentUser() user: JwtPayload,
+  ): Promise<{ success: true; data: AddressType[] }> {
+    const addresses = await this.usersService.getAddresses(user.sub);
+    return { success: true, data: addresses };
+  }
+
+  /**
+   * POST /api/v1/users/addresses
+   * Creates a new address for the authenticated user.
+   */
+  @Post('addresses')
+  @HttpCode(HttpStatus.CREATED)
+  async createAddress(
+    @CurrentUser() user: JwtPayload,
+    @Body(new ZodValidationPipe(CreateAddressSchema)) dto: CreateAddressDto,
+    @Ip() ip: string,
+  ): Promise<{ success: true; data: AddressType }> {
+    const address = await this.usersService.createAddress(user.sub, dto, ip);
+    return { success: true, data: address };
   }
 }

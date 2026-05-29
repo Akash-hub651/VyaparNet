@@ -1,0 +1,91 @@
+openapi: 3.0.3
+info:
+  title: VyaparNet Payments API
+  version: 1.0.0
+  description: API specifications for VyaparNet Payments module
+paths:
+  /api/v1/payments/initiate:
+    post:
+      summary: Initiate Payment
+      description: Initiates a payment for an order
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          schema:
+            type: string
+          required: true
+          description: Unique key to prevent duplicate payments
+        - in: header
+          name: x-reauth-token
+          schema:
+            type: string
+          required: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - orderId
+                - paymentMethod
+              properties:
+                orderId:
+                  type: string
+                paymentMethod:
+                  type: string
+      responses:
+        '200':
+          description: Payment initiated successfully
+        '400':
+          description: Bad Request
+  /api/v1/payments/{orderId}/status:
+    get:
+      summary: Get Payment Status
+      description: Retrieve the payment status of an order
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Payment status
+        '404':
+          description: Order or Payment not found
+  /api/v1/payments/retry:
+    post:
+      summary: Retry Payment
+      description: Retries a failed payment within the 30-minute window
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - orderId
+                - paymentMethod
+              properties:
+                orderId:
+                  type: string
+                paymentMethod:
+                  type: string
+      responses:
+        '200':
+          description: Payment retry initiated successfully
+        '422':
+          description: Payment retry window expired
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

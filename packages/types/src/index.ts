@@ -22,3 +22,13 @@ export * from './catalog/schemas/spare-parts-product.schema';
 
 // Inventory
 export * from './inventory/inventory.schemas';
+
+// Cart
+export * from './cart/cart.schemas';
+
+// Order
+export * from './order/order.schemas';
+
+// Payment
+export * from './payment/payment.schemas';
+export * from './payment/payment-provider.interface';

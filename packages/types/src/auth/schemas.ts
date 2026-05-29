@@ -127,3 +127,37 @@ export interface BusinessSummary {
   kycStatus: string;
   isVerified: boolean;
 }
+
+// ─── Address ──────────────────────────────────────────────────
+
+export const CreateAddressSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters').max(100),
+  line1: z.string().min(5, 'Address line 1 must be at least 5 characters').max(200),
+  line2: z.string().optional().nullable(),
+  city: z.string().min(2, 'City must be at least 2 characters').max(100),
+  state: z.string().min(2, 'State must be at least 2 characters').max(100),
+  pincode: z.string().regex(/^[1-9][0-9]{5}$/, 'Valid 6-digit Indian pincode required'),
+  landmark: z.string().optional().nullable(),
+  isDefault: z.boolean().default(false),
+});
+export type CreateAddressDto = z.infer<typeof CreateAddressSchema>;
+
+export const AddressDto = z.object({
+  id: z.string(),
+  userId: z.string(),
+  name: z.string(),
+  line1: z.string(),
+  line2: z.string().nullable().optional(),
+  city: z.string(),
+  state: z.string(),
+  pincode: z.string(),
+  landmark: z.string().nullable().optional(),
+  country: z.string(),
+  latitude: z.number().nullable().optional(),
+  longitude: z.number().nullable().optional(),
+  isDefault: z.boolean(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+export type AddressType = z.infer<typeof AddressDto>;
+

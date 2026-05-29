@@ -55,8 +55,15 @@ export class UsersRepository {
     return this.prisma.business.create({ data });
   }
 
-  async createAddress(data: Prisma.AddressCreateInput): Promise<Address> {
+  async createAddress(data: Prisma.AddressUncheckedCreateInput): Promise<Address> {
     return this.prisma.address.create({ data });
+  }
+
+  async findAddressesByUserId(userId: string): Promise<Address[]> {
+    return this.prisma.address.findMany({
+      where: { userId, isDeleted: false },
+      orderBy: { createdAt: 'desc' },
+    });
   }
 
   async hasOnboarded(userId: string): Promise<boolean> {
