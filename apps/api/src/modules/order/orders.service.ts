@@ -65,6 +65,8 @@ export class OrdersService {
   ) {}
 
   async createOrder(dto: CreateOrderDto, userId: string, ipAddress: string): Promise<OrderResponseDto> {
+    this.metrics.checkoutFunnelStepTotal.inc({ step: 'create_order_initiated' });
+
     // ── STEP 1: IDEMPOTENCY CHECK (INV-33: userId from JWT always first) ──
     // HARDENED (INV-33): key format MUST be order_idem:{userId}:{clientKey}
     const idempotencyKey = `order_idem:${userId}:${dto.clientIdempotencyKey}`;
@@ -78,6 +80,7 @@ export class OrdersService {
     await this.checkCheckoutRate(userId);
 
     // ── STEP 3: LOAD CART ──
+    this.metrics.cartCheckoutInitiatedTotal.inc({ segment: dto.segment });
     const cart = await this.cartRepo.findActiveWithItems(userId, dto.segment as any);
     if (!cart || cart.items.length === 0) {
       throw new BadRequestException({ code: 'CART_EMPTY', message: 'Cart is empty or not found' });
@@ -294,7 +297,7 @@ export class OrdersService {
               statusFrom: null,
               statusTo: 'PLACED',
               actorId: userId,
-              actorRole: 'USER' as any, // maps buyer action to SystemActorType
+              actorRole: 'BUYER' as any, // INV-S5-22: buyer placed the order (SystemActorType.BUYER)
               timestamp: new Date(),
               historyMonth,
             },
@@ -308,7 +311,7 @@ export class OrdersService {
                 statusFrom: 'PLACED',
                 statusTo: 'CONFIRMED',
                 actorId: userId,
-                actorRole: 'USER' as any, // COD auto-confirm
+                actorRole: 'SYSTEM' as any, // INV-S5-22: COD auto-confirm is SYSTEM-initiated, not buyer action
                 reason: 'COD',
                 timestamp: new Date(),
                 historyMonth,
@@ -515,7 +518,7 @@ export class OrdersService {
           statusFrom: order.status as OrderStatus,
           statusTo: 'CANCELLED',
           actorId: userId,
-          actorRole: 'USER' as any, // SystemActorType — buyer cancel maps to USER
+          actorRole: 'BUYER' as any, // INV-S5-22: SystemActorType.BUYER — buyer-initiated cancel
           reason,
           timestamp: new Date(),
           historyMonth,
@@ -561,6 +564,7 @@ export class OrdersService {
       // Redis degraded: skip rate limit but log metric (§4.3)
       this.logger.warn({ userId, err }, 'Redis unavailable for checkout rate limit — allowing request');
       this.metrics.redisUnavailableTotal.inc({ component: 'checkout_rate_limit' });
+      this.metrics.rateLimitAtomicFailureTotal.inc({ endpoint: 'checkout' });
       return;
     }
 

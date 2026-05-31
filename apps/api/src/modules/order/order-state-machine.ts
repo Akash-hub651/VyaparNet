@@ -4,7 +4,7 @@ import { OrderStatus } from '@vyaparnet/database';
 // Locked transition map — implemented in OrderStateMachine per §6.2
 const VALID_TRANSITIONS: Record<string, OrderStatus[]> = {
   PLACED: ['CONFIRMED', 'PAYMENT_FAILED', 'CANCELLED'],
-  CONFIRMED: ['PROCESSING', 'CANCELLED'],   // PROCESSING is Sprint 5 — 422 until then
+  CONFIRMED: ['PROCESSING', 'CANCELLED'],   // Sprint 5 active. CONFIRMED→SHIPPED is SELLER-ONLY (via SELLER_VALID_TRANSITIONS)
   PAYMENT_FAILED: ['CONFIRMED', 'CANCELLED'],
   PROCESSING: ['SHIPPED'],                  // Sprint 5
   SHIPPED: ['DELIVERED'],                   // Sprint 5
@@ -20,7 +20,14 @@ const VALID_TRANSITIONS: Record<string, OrderStatus[]> = {
 const TERMINAL_STATES: OrderStatus[] = ['COMPLETED', 'CANCELLED'];
 
 // Sprint 5 states — present in state machine but return 422 in Sprint 4
-const SPRINT5_STATES: OrderStatus[] = ['PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED'];
+// In Sprint 5, PROCESSING and SHIPPED are unlocked. DELIVERED and COMPLETED remain locked until Sprint 7.
+const SPRINT5_STATES: OrderStatus[] = ['DELIVERED', 'COMPLETED'];
+
+export const STATUS_TIMESTAMP_FIELD_MAP: Partial<Record<OrderStatus, string>> = {
+  CONFIRMED: 'confirmedAt',
+  PROCESSING: 'processingAt',
+  SHIPPED: 'shippedAt',
+} as const;
 
 export function validateTransition(current: OrderStatus, next: OrderStatus): void {
   const allowed = VALID_TRANSITIONS[current];
@@ -37,6 +44,35 @@ export function validateTransition(current: OrderStatus, next: OrderStatus): voi
     throw new UnprocessableEntityException({
       code: 'TRANSITION_NOT_YET_ACTIVE',
       message: `Transition to ${next} will be activated in Sprint 5`,
+    });
+  }
+}
+
+// Sprint 5: Seller-specific transition map (INV-S5-6, INV-S5-7)
+// DELIVERED/COMPLETED transitions are RESERVED for Sprint 7 admin flow.
+const SELLER_VALID_TRANSITIONS: Partial<Record<string, OrderStatus[]>> = {
+  PLACED: ['CONFIRMED'],
+  CONFIRMED: ['PROCESSING', 'SHIPPED'],
+  PROCESSING: ['SHIPPED'],
+  // All other statuses: seller cannot initiate transitions
+};
+
+export function validateSellerTransition(current: OrderStatus, next: OrderStatus): void {
+  // DELIVERED / COMPLETED guard — Sprint 7 only (INV-S5-7)
+  if (next === 'DELIVERED' || next === 'COMPLETED') {
+    throw new UnprocessableEntityException({
+      code: 'TRANSITION_RESERVED_FOR_ADMIN',
+      message: `Transition to ${next} is reserved for Sprint 7 Admin`,
+    });
+  }
+
+  const allowed = SELLER_VALID_TRANSITIONS[current] ?? [];
+  if (!allowed.includes(next)) {
+    throw new UnprocessableEntityException({
+      code: 'INVALID_STATUS_TRANSITION',
+      from: current,
+      to: next,
+      allowedTransitions: allowed,
     });
   }
 }

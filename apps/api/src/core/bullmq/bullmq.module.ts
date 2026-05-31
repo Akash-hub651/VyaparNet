@@ -51,7 +51,9 @@ import type { AppConfig } from '../config/config.schema';
       { name: 'notifications' }, // Medium priority — Sprint 6
       { name: 'search-reindex' }, // Low priority — Sprint 2
       { name: 'analytics' }, // Low priority — Sprint 4
-      { name: 'dead-letter' }, // DLQ — Sprint 3
+      { name: 'dead-letter' }, // DLQ — Sprint 3 (other domains)
+      { name: 'notifications-failed' }, // Notification DLQ — Sprint 6 §21.2 LOCKED name (AF-3)
+      { name: 'scorecard' }, // Seller scorecard cron — Sprint 5 Phase 7
     ),
   ],
   exports: [BullModule],

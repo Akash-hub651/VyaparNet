@@ -25,6 +25,7 @@ export enum KycStatus {
   PENDING = 'PENDING',
   VERIFIED = 'VERIFIED',
   REJECTED = 'REJECTED',
+  SUSPENDED = 'SUSPENDED',
 }
 
 export enum QuotationStatus {
@@ -236,6 +237,8 @@ export enum SystemActorType {
   SYSTEM = 'SYSTEM',
   CRON = 'CRON',
   WORKFLOW = 'WORKFLOW',
+  SELLER = 'SELLER',   // Added Sprint 5: seller-initiated status transitions (INV-S5-22)
+  BUYER = 'BUYER',     // Added Sprint 5: buyer-initiated cancellations (INV-S5-22)
 }
 
 export enum PayoutStatus {

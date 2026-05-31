@@ -47,6 +47,9 @@ import { PAYMENT_PROVIDER_TOKEN } from '@vyaparnet/types';
         removeOnFail: 500,
       },
     }),
+    BullModule.registerQueue({
+      name: 'scorecard',
+    }),
     // HARDENED: forwardRef prevents circular dependency (PaymentModule ↔ OrderModule)
     forwardRef(() => OrderModule),
     // InventoryModule — for consume() and releaseAllForOrder() in webhook processor

@@ -40,6 +40,32 @@ export interface InventoryServicePublicInterface {
     productId: string,
     segment: string,
   ): Promise<InventoryAvailabilityResponse>;
+  /**
+   * Count low-stock items for a seller's business (KPI dashboard use).
+   * This is the ONLY permitted path — INV-S5-27 forbids direct Inventory
+   * queries from the seller/buyer modules.
+   */
+  countLowStock(businessId: string, segment: string): Promise<number>;
+  /**
+   * Paginated inventory list for seller dashboard.
+   */
+  listInventory(params: {
+    businessId: string;
+    take?: number;
+    cursor?: string;
+    lowStockOnly?: boolean;
+  }): Promise<{ items: any[]; nextCursor: string | null }>;
+  /**
+   * FIX-8 (SC-1): Batch availability check for N+1 elimination in BuyerReorderService.
+   * Instead of N sequential getAvailability() calls, fetches all stocks in one DB query.
+   * Returns a Map<productId, InventoryAvailabilityResponse> for O(1) lookup per item.
+   *
+   * INV-S5-27: This is the ONLY permitted path for batch inventory queries from buyer module.
+   */
+  getBatchAvailability(
+    productIds: string[],
+    segment: string,
+  ): Promise<Map<string, InventoryAvailabilityResponse>>;
 }
 
 /**
@@ -166,5 +192,71 @@ export class InventoryService implements InventoryServicePublicInterface {
       isLowStock: data.isLowStock,
       lastUpdated: data.updatedAt,
     };
+  }
+
+  /**
+   * Count low-stock inventory items for a seller's KPI dashboard.
+   *
+   * Delegates to InventoryQueryService — the ONLY permitted path for
+   * cross-module inventory count access. (INV-S5-27)
+   *
+   * @param businessId - Business.id (NOT User.id) — INV-S5-1
+   * @param segment    - Segment isolation — INV-S5-33
+   */
+  async countLowStock(businessId: string, segment: string): Promise<number> {
+    return this.queryService.countLowStock(businessId, segment);
+  }
+
+  /**
+   * Paginated inventory list for seller dashboard.
+   */
+  async listInventory(params: {
+    businessId: string;
+    take?: number;
+    cursor?: string;
+    lowStockOnly?: boolean;
+  }) {
+    return this.queryService.listInventory(params);
+  }
+
+  /**
+   * FIX-8 (SC-1): Batch availability check — eliminates N+1 in BuyerReorderService.
+   *
+   * Fetches availability for multiple products in a SINGLE DB query.
+   * Returns Map<productId, InventoryAvailabilityResponse> for O(1) lookup.
+   *
+   * Authority: INV-S5-27 — InventoryService is the SOLE inventory authority.
+   * Called by BuyerReorderService.reorder() instead of N sequential getAvailability() calls.
+   */
+  async getBatchAvailability(
+    productIds: string[],
+    _segment: string,
+  ): Promise<Map<string, InventoryAvailabilityResponse>> {
+    if (productIds.length === 0) {
+      return new Map();
+    }
+    // Single DB query for all productIds (INV-S5-27)
+    const inventoryRows = await this.queryService.getBatchAvailability(productIds);
+    const result = new Map<string, InventoryAvailabilityResponse>();
+    for (const row of inventoryRows) {
+      result.set(row.productId, {
+        productId: row.productId,
+        availableQuantity: row.availableQty,
+        isLowStock: row.isLowStock,
+        lastUpdated: row.updatedAt,
+      });
+    }
+    // Ensure missing productIds default to 0 availability (product not in inventory)
+    for (const productId of productIds) {
+      if (!result.has(productId)) {
+        result.set(productId, {
+          productId,
+          availableQuantity: 0,
+          isLowStock: true,
+          lastUpdated: new Date().toISOString(), // FIX: ISO string per InventoryAvailabilityResponse type
+        });
+      }
+    }
+    return result;
   }
 }

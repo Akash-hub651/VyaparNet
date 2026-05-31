@@ -10,6 +10,7 @@
  */
 export interface SmsService {
   sendOtp(phoneNumber: string, otp: string): Promise<SmsResult>;
+  sendTransactional(phoneNumber: string, message: string): Promise<SmsResult>; // Sprint 6 addition
 }
 
 export interface SmsResult {

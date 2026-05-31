@@ -368,5 +368,6 @@ export class PaymentWebhookProcessorWorker {
       'Payment failed — inventory released, order PAYMENT_FAILED, retry window set',
     );
     this.metrics.paymentFailedTotal.inc({ provider: 'RAZORPAY', reason: errorDescription });
+    this.metrics.orderPaymentFailedTotal.inc({ reason: errorDescription });
   }
 }

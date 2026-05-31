@@ -44,6 +44,7 @@ enum KycStatus {
   PENDING
   VERIFIED
   REJECTED
+  SUSPENDED
 }
 
 enum QuotationStatus {
@@ -253,12 +254,16 @@ enum FieldVisitType {
 }
 
 // FIX #13: Formal System Actor Enum
+// Sprint 5 Extension (FIX S5-1): Added SELLER and BUYER for audit trail correctness (INV-S5-22)
+// OrderStatusHistory.actorRole now correctly distinguishes seller vs. buyer vs. system actions
 enum SystemActorType {
   USER
   ADMIN
   SYSTEM
   CRON
   WORKFLOW
+  SELLER   // Added Sprint 5: seller-initiated status transitions
+  BUYER    // Added Sprint 5: buyer-initiated cancellations
 }
 
 // FIX #5: Enum for SellerPayout status
@@ -374,6 +379,10 @@ model User {
   sellerRatingsReceived SellerRating[]  @relation("RatingSeller")
   buyerLedgers          BuyerLedger[]
   sellerPayouts         SellerPayout[]
+  // Sprint 6: Notification preferences (JSONB — null = use DEFAULT_NOTIFICATION_PREFERENCES — INV-S6-5)
+  notificationPreferences Json?
+  // Sprint 6: Web push subscriptions (multi-device, capped at 10 per user — INV-S6-22)
+  pushSubscriptions     PushSubscription[]
 
   @@index([phone], map: "idx_user_phone")
   @@index([segment, role, isDeleted], map: "idx_user_seg_role_del")
@@ -405,10 +414,28 @@ model Business {
   products Product[]
   orders   Order[]
   kycDocs  KycDocument[]
+  sellerScore SellerScore?
 
   @@index([ownerId], map: "idx_biz_owner")
   @@index([segment, isDeleted], map: "idx_biz_seg_del")
   @@index([slug], map: "idx_biz_slug")
+}
+
+model SellerScore {
+  id                     String   @id @default(cuid())
+  businessId             String   @unique
+  compositeScore         Int      @default(0)  // 0-100
+  dispatchSpeedScore     Int      @default(0)  // 0-100
+  deliveryQualityScore   Int      @default(0)  // 0-100
+  acceptanceRate         Int      @default(0)  // 0-100
+  orderCount             Int      @default(0)  // sample size
+  calculatedAt           DateTime
+  previousCompositeScore Int?                  // NULL on first calculation
+
+  business Business @relation(fields: [businessId], references: [id])
+
+  @@index([businessId], map: "idx_seller_score_biz")
+  @@index([compositeScore], map: "idx_seller_score_composite")
 }
 
 model KycDocument {
@@ -817,6 +844,7 @@ model Order {
   @@index([segment, status, createdAt], map: "idx_order_seg_stat_date")
   @@index([buyerId, status], map: "idx_order_buyer_stat")
   @@index([sellerId, status], map: "idx_order_seller_stat")
+  @@index([sellerId, createdAt], map: "idx_order_seller_date")
   @@index([orderNumber], map: "idx_order_num")
   @@index([orderMonth], map: "idx_order_month")
 }
@@ -860,6 +888,8 @@ model OrderTracking {
   locationLat       Float?
   locationLng       Float?
   locationCity      String?
+  dispatchProofUrl  String?
+  dispatchProofAt   DateTime?
 
   createdAt DateTime @default(now())
 
@@ -984,6 +1014,25 @@ model NotificationTemplate {
   updatedAt DateTime @updatedAt
 }
 
+// Sprint 6: PushSubscription — one row per (userId, endpoint) unique pair.
+// Capped at 10 per user (INV-S6-22). On 410 Gone: deleted immediately (INV-S6-9).
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String
+  p256dh    String   // Web Push encryption key
+  auth      String   // Web Push auth secret
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isActive  Boolean  @default(true)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, endpoint], map: "uq_push_sub_user_endpoint")
+  @@index([userId, isActive], map: "idx_push_sub_user_active")
+}
+
 // =============================================================================
 // DOMAIN: 9. AUDIT & COMPLIANCE (Partition-ready)
 // =============================================================================
@@ -1024,7 +1073,7 @@ model EventOutbox {
   eventType     String
   payload       Json
   eventVersion  String @default("1.0")
-  schemaVersion String @default("4.3")
+  schemaVersion String @default("5.0")  // R4: Updated from 4.3 to 5.0 — always set explicitly in code (INV-S5-23)
 
   status     EventStatus @default(PENDING)
   retryCount Int         @default(0)

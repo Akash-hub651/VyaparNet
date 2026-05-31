@@ -60,6 +60,53 @@ export const metricProviders = [
     help: 'Total order number collisions on creation',
   }),
 
+  // Sprint 5 Metrics
+  makeCounterProvider({
+    name: 'order_status_transition_total',
+    help: 'Track every status transition',
+    labelNames: ['from', 'to', 'actor'],
+  }),
+  makeHistogramProvider({
+    name: 'seller_dispatch_time_hours',
+    help: 'CONFIRMED->SHIPPED latency',
+    labelNames: ['segment'],
+  }),
+  makeCounterProvider({
+    name: 'buyer_reorder_total',
+    help: 'Total reorders initiated by buyers',
+    labelNames: ['segment', 'outcome'],
+  }),
+  makeHistogramProvider({
+    name: 'seller_kpi_query_latency_ms',
+    help: 'KPI dashboard performance',
+  }),
+  makeCounterProvider({
+    name: 'dispatch_proof_upload_total',
+    help: 'Total dispatch proof uploads',
+    labelNames: ['outcome'],
+  }),
+  makeCounterProvider({
+    name: 'seller_scorecard_run_total',
+    help: 'Cron execution count for seller scorecard',
+  }),
+  makeHistogramProvider({
+    name: 'seller_scorecard_latency_ms',
+    help: 'Time to compute all seller scores',
+  }),
+  makeGaugeProvider({
+    name: 'seller_scorecard_dlq_size',
+    help: 'Size of scorecard worker DLQ',
+  }),
+  makeCounterProvider({
+    name: 'kpi_redis_bypass_total',
+    help: 'Redis unavailable, DB fallback for KPIs',
+    labelNames: ['segment'],
+  }),
+  makeCounterProvider({
+    name: 'seller_context_guard_cache_miss_total',
+    help: 'SellerContextGuard DB lookups',
+  }),
+
   // Payment metrics
   makeCounterProvider({
     name: 'payment_initiated_total',
@@ -139,4 +186,19 @@ export const metricProviders = [
     name: 'webhook_double_consume_prevented_total',
     help: 'Total double consume races prevented in webhook',
   }),
+
+  // Sprint 6: Notification Metrics (§23.1)
+  makeCounterProvider({ name: 'notification_sent_total', help: 'Total notifications sent', labelNames: ['channel', 'eventType', 'segment'] }),
+  makeCounterProvider({ name: 'notification_failed_total', help: 'Total notifications failed', labelNames: ['channel', 'reason', 'eventType'] }),
+  makeCounterProvider({ name: 'notification_dedup_skipped_total', help: 'Total notifications skipped due to dedup', labelNames: ['eventType'] }),
+  makeCounterProvider({ name: 'notification_outbox_consumed_total', help: 'Total outbox events consumed', labelNames: ['eventType'] }),
+  makeCounterProvider({ name: 'notification_outbox_failed_total', help: 'Total outbox events failed to process', labelNames: ['reason'] }),
+  makeGaugeProvider({ name: 'notification_queue_depth', help: 'Depth of the notifications queue (waiting jobs)' }),
+  makeGaugeProvider({ name: 'notification_dlq_size', help: 'Size of notifications-failed DLQ' }),
+  makeGaugeProvider({ name: 'notification_push_subscriptions_active', help: 'Total active push subscriptions across all users' }),
+  makeHistogramProvider({ name: 'notification_outbox_to_delivery_ms', help: 'Latency from outbox to delivery', buckets: [50, 100, 500, 1000, 2000, 5000] }),
+  makeHistogramProvider({ name: 'notification_template_render_ms', help: 'Template render latency per call', buckets: [1, 5, 10, 50, 100] }),
+  // FIX-9: Circuit breaker state gauge — 0 = CLOSED (healthy), 1 = OPEN (blocking delivery)
+  // Label {channel}: 'sms' | 'email'. Enables Grafana alert when either channel trips.
+  makeGaugeProvider({ name: 'notification_circuit_breaker_state', help: 'Circuit breaker state per channel: 1=OPEN, 0=CLOSED', labelNames: ['channel'] }),
 ];

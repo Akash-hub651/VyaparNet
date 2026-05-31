@@ -169,7 +169,10 @@ describe('OrdersService', () => {
           orderCancelledTotal: { inc: vi.fn() }, 
           orderCreatedTotal: { inc: vi.fn() },
           orderConfirmedTotal: { inc: vi.fn() },
-          redisUnavailableTotal: { inc: vi.fn() } 
+          redisUnavailableTotal: { inc: vi.fn() },
+          checkoutFunnelStepTotal: { inc: vi.fn() },
+          cartCheckoutInitiatedTotal: { inc: vi.fn() },
+          rateLimitAtomicFailureTotal: { inc: vi.fn() }
         } },
       ],
     })

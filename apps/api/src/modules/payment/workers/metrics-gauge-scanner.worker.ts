@@ -33,6 +33,7 @@ export class MetricsGaugeScannerWorker implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     @InjectQueue('payments') private readonly paymentsQueue: Queue,
+    @InjectQueue('scorecard') private readonly scorecardQueue: Queue,
     private readonly metrics: MetricsService,
   ) {}
 
@@ -57,6 +58,7 @@ export class MetricsGaugeScannerWorker implements OnModuleInit {
       await Promise.all([
         this.updateStuckOrdersGauge(),
         this.updateDlqSizeGauge(),
+        this.updateScorecardDlqGauge(),
       ]);
     } catch (err) {
       // Non-fatal — metric update failure must never impact business operations
@@ -116,6 +118,27 @@ export class MetricsGaugeScannerWorker implements OnModuleInit {
       this.logger.warn(
         { failedJobCount: failedCount },
         `HARDENED (OPTIONAL-3): ${failedCount} failed job(s) in payments queue DLQ — investigate and replay if needed`,
+      );
+    }
+
+    const activeCount = await this.paymentsQueue.getActiveCount();
+    const waitingCount = await this.paymentsQueue.getWaitingCount();
+    this.metrics.bullmqPaymentQueueDepth.set(activeCount + waitingCount);
+  }
+
+  /**
+   * Updates the scorecard DLQ size gauge.
+   * Counts failed jobs in the scorecard queue.
+   */
+  private async updateScorecardDlqGauge(): Promise<void> {
+    const failedCount = await this.scorecardQueue.getFailedCount();
+
+    this.metrics.sellerScorecardDlqSize.set(failedCount);
+
+    if (failedCount > 0) {
+      this.logger.error(
+        { failedJobCount: failedCount },
+        `Scorecard DLQ growing: ${failedCount} failed job(s) in scorecard queue DLQ — investigate worker failures`,
       );
     }
   }

@@ -12,7 +12,10 @@ import { CatalogModule } from './modules/catalog/catalog.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { OrderModule } from './modules/order/order.module';
 import { PaymentModule } from './modules/payment/payment.module';
+import { BuyerModule } from './modules/buyer/buyer.module';
+import { SellerModule } from './modules/seller/seller.module';
 import { ObservabilityModule } from './modules/observability/observability.module';
+import { NotificationModule } from './modules/notification/notification.module';
 import { JwtAuthGuard } from './shared/guards/jwt-auth.guard';
 import { RolesGuard } from './shared/guards/roles.guard';
 import { PermissionsGuard } from './shared/guards/permissions.guard';
@@ -53,7 +56,10 @@ import { PermissionsGuard } from './shared/guards/permissions.guard';
     OrderModule,         // Sprint 4
     PaymentModule,       // Sprint 4
     ObservabilityModule, // Sprint 4 Observability
-    // NotificationModule,  // Sprint 6
+    BuyerModule,         // Sprint 5
+    SellerModule,        // Sprint 5
+    // INV-S6-1: Pure consumer — NEVER writes EventOutbox. Registered in Sprint 6.
+    NotificationModule,  // Sprint 6
     // AuditModule,         // Sprint 7
     // AdminModule,         // Sprint 7
     // ProcurementModule,   // Sprint 8

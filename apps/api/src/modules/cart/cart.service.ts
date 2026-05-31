@@ -142,6 +142,10 @@ export class CartService {
     await this.redis.del(`cart:${userId}:${segment}`);
 
     this.metrics.cartItemCountTotal.inc({ segment, action: 'remove' });
+
+    if (cart.items && cart.items.length <= 1) {
+      this.metrics.cartAbandonedTotal.inc({ segment });
+    }
   }
 
   // Pure function for totals

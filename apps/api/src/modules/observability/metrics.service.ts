@@ -33,6 +33,28 @@ export class MetricsService {
     @InjectMetric('order_number_collision_total')
     public readonly orderNumberCollisionTotal: Counter<string>,
 
+    // Sprint 5 Metrics
+    @InjectMetric('order_status_transition_total')
+    public readonly orderStatusTransitionTotal: Counter<string>,
+    @InjectMetric('seller_dispatch_time_hours')
+    public readonly sellerDispatchTimeHours: Histogram<string>,
+    @InjectMetric('buyer_reorder_total')
+    public readonly buyerReorderTotal: Counter<string>,
+    @InjectMetric('seller_kpi_query_latency_ms')
+    public readonly sellerKpiQueryLatencyMs: Histogram<string>,
+    @InjectMetric('dispatch_proof_upload_total')
+    public readonly dispatchProofUploadTotal: Counter<string>,
+    @InjectMetric('seller_scorecard_run_total')
+    public readonly sellerScorecardRunTotal: Counter<string>,
+    @InjectMetric('seller_scorecard_latency_ms')
+    public readonly sellerScorecardLatencyMs: Histogram<string>,
+    @InjectMetric('seller_scorecard_dlq_size')
+    public readonly sellerScorecardDlqSize: Gauge<string>,
+    @InjectMetric('kpi_redis_bypass_total')
+    public readonly kpiRedisBypassTotal: Counter<string>,
+    @InjectMetric('seller_context_guard_cache_miss_total')
+    public readonly sellerContextGuardCacheMissTotal: Counter<string>,
+
     // Payment metrics
     @InjectMetric('payment_initiated_total')
     public readonly paymentInitiatedTotal: Counter<string>,

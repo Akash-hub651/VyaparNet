@@ -84,6 +84,14 @@ export class PaymentController {
     return this.paymentService.getPaymentStatus(orderId, userId) as unknown as Record<string, unknown>;
   }
 
+  @Get(':orderId/retry-status')
+  async getRetryStatus(
+    @CurrentUser('id') userId: string,
+    @Param('orderId') orderId: string,
+  ) {
+    return this.paymentService.getRetryStatus(orderId, userId);
+  }
+
   /**
    * POST /payments/retry
    *

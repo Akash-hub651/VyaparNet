@@ -63,6 +63,7 @@ import type { AppConfig } from '../../../core/config/config.schema';
     AuditRepository,
     AuditSafeWriterService,
     AuthMetrics,
+    SMS_SERVICE, // Exported for NotificationModule (Phase 6)
   ],
 })
 export class AuthModule {}

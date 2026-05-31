@@ -49,7 +49,7 @@ describe('CartService', () => {
         { provide: RedisService, useValue: redisService },
         { provide: InventoryService, useValue: inventoryService },
         { provide: PrismaService, useValue: prismaService },
-        { provide: MetricsService, useValue: { cartItemCountTotal: { inc: vi.fn() }, cartWarningSurfacedTotal: { inc: vi.fn() } } },
+        { provide: MetricsService, useValue: { cartItemCountTotal: { inc: vi.fn() }, cartWarningSurfacedTotal: { inc: vi.fn() }, cartAbandonedTotal: { inc: vi.fn() } } },
       ],
     }).compile();
 

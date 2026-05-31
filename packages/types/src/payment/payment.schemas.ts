@@ -50,7 +50,15 @@ export const PaymentStatusDto = z.object({
   capturedAt: z.date().nullable(),
 });
 
+export const RetryStatusSchema = z.object({
+  retryAllowed: z.boolean(),
+  retryWindowRemainingMs: z.number().nullable(),
+  attemptCount: z.number(),
+});
+
+
 export type InitiatePaymentDto = z.infer<typeof InitiatePaymentSchema>;
 export type PaymentRetryDto = z.infer<typeof PaymentRetrySchema>;
 export type PaymentType = z.infer<typeof PaymentDto>;
 export type PaymentStatusType = z.infer<typeof PaymentStatusDto>;
+export type RetryStatusDto = z.infer<typeof RetryStatusSchema>;

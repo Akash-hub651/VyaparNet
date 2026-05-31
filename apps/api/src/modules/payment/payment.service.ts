@@ -12,7 +12,7 @@ import { RedisService } from '../../core/redis/redis.service';
 import { PaymentRepository } from './payment.repository';
 import { OrdersRepository } from '../order/orders.repository';
 import { PAYMENT_PROVIDER_TOKEN } from '@vyaparnet/types';
-import type { PaymentProvider } from '@vyaparnet/types';
+import type { PaymentProvider, RetryStatusDto } from '@vyaparnet/types';
 import { formatYearMonth } from '../order/order-state-machine';
 import { MetricsService } from '../observability/metrics.service';
 
@@ -235,6 +235,28 @@ export class PaymentService {
       gatewayPaymentId: payment.gatewayPaymentId,
       capturedAt: payment.capturedAt,
       failureReason: payment.failureReason,
+    };
+  }
+
+  async getRetryStatus(orderId: string, userId: string): Promise<RetryStatusDto> {
+    const order = await this.ordersRepo.findById(orderId, userId);
+
+    if (!order || order.status !== 'PAYMENT_FAILED') {
+      return { retryAllowed: false, retryWindowRemainingMs: null, attemptCount: 0 };
+    }
+
+    // Dual authority check (INV-23)
+    const retryWindowMs = 30 * 60 * 1000; // 30 minutes
+    const paymentFailedAt = order?.paymentFailedAt?.getTime() ?? 0;
+    const elapsed = Date.now() - paymentFailedAt;
+    const remaining = retryWindowMs - elapsed;
+
+    const failedPayments = await this.paymentRepo.findFailedByOrderId(orderId);
+
+    return {
+      retryAllowed: remaining > 0 && failedPayments.length < 3,
+      retryWindowRemainingMs: remaining > 0 ? remaining : null,
+      attemptCount: failedPayments.length,
     };
   }
 

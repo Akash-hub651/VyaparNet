@@ -206,6 +206,26 @@ export class InventoryRepository {
   }
 
   /**
+   * Count low-stock inventory items for a business.
+   * Used by SellerKpiService via InventoryService facade (INV-S5-27).
+   *
+   * @param businessId - Business.id (NOT User.id) — INV-S5-1
+   * @param segment    - Segment isolation filter — INV-S5-33
+   */
+  async countLowStock(
+    businessId: string,
+    segment: string,
+  ): Promise<number> {
+    return this.prisma.inventory.count({
+      where: {
+        businessId,  // MANDATORY: segment isolation (INV-S5-14, INV-S5-33)
+        segment: segment as any,
+        isLowStock: true,
+      },
+    });
+  }
+
+  /**
    * Find inventory records updated since a given checkpoint.
    * Used by incremental reconciliation. (§16.1)
    * Explicit take and orderBy. (§33.4 RULE 6)
@@ -225,4 +245,22 @@ export class InventoryRepository {
       orderBy: { updatedAt: 'asc' },
     });
   }
+
+  /**
+   * FIX-8 (SC-1): Batch find inventory rows by productIds array.
+   *
+   * Single IN() query — O(1) DB round trips regardless of item count.
+   * Called ONLY by InventoryQueryService.getBatchAvailability().
+   * NOT used for reservation decisions (§0 INV-1).
+   */
+  async findManyByProductIds(productIds: string[]): Promise<Inventory[]> {
+    if (productIds.length === 0) return [];
+    return this.prisma.inventory.findMany({
+      where: {
+        productId: { in: productIds }, // IN() clause — single query for all products
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
 }
+

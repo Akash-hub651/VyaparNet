@@ -10,7 +10,6 @@ import {
   type MovementResponse,
 } from '../../../lib/api/inventory.client';
 
-});
 
 function formatDate(isoString: string): string {
   return new Date(isoString).toLocaleDateString('en-IN', {

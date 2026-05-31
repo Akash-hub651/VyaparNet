@@ -150,6 +150,37 @@ export class InventoryQueryService {
   }
 
   /**
+   * Count low-stock inventory items for a seller's business (KPI use case).
+   *
+   * Called by InventoryService.countLowStock() — the sole export path.
+   * Direct Prisma access from seller module is FORBIDDEN (INV-S5-27).
+   *
+   * @param businessId - Business.id (NOT User.id) — INV-S5-1
+   * @param segment    - Segment isolation — INV-S5-33
+   */
+  async countLowStock(businessId: string, segment: string): Promise<number> {
+    return this.inventoryRepo.countLowStock(businessId, segment);
+  }
+
+  /**
+   * FIX-8 (SC-1): Batch availability lookup — single DB query for multiple products.
+   *
+   * Called by InventoryService.getBatchAvailability() to eliminate N+1 in BuyerReorderService.
+   * Returns raw StockAvailabilityDto[] — caller maps to productId keyed Map.
+   *
+   * NOTE: Does NOT use Redis cache (cache would need N round-trips anyway).
+   * DB read is a single IN() query — efficient even for 50-item reorders.
+   */
+  async getBatchAvailability(productIds: string[]): Promise<StockAvailabilityDto[]> {
+    if (productIds.length === 0) return [];
+
+    // Single DB query with IN() clause — no N+1 (FIX-8)
+    const inventoryRows = await this.inventoryRepo.findManyByProductIds(productIds);
+    return inventoryRows.map((inv) => this._mapToAvailabilityDto(inv, false));
+  }
+
+
+  /**
    * Paginated movement history for an inventory record. (§33.4 RULE 6)
    * Bounded — no unbounded queries.
    */

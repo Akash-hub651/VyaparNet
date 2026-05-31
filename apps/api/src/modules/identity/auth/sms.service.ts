@@ -25,4 +25,20 @@ export class Msg91SmsService implements SmsService {
       };
     }
   }
+
+  async sendTransactional(phoneNumber: string, message: string): Promise<SmsResult> {
+    try {
+      const provider = this.smsProviderStrategy.getProvider();
+      await provider.sendTransactional({
+        phone: phoneNumber,
+        message,
+      });
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
 }

@@ -3,6 +3,7 @@ import { Msg91Provider } from './msg91.provider';
 
 export interface ISmsProvider {
   sendOtp(params: { phone: string; message: string }): Promise<void>;
+  sendTransactional(params: { phone: string; message: string }): Promise<void>;
 }
 
 /**
