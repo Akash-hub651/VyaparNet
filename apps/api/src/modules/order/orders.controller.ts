@@ -10,7 +10,10 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { OrdersService, CreateOrderDto as ServiceCreateOrderDto } from './orders.service';
+import {
+  OrdersService,
+  CreateOrderDto as ServiceCreateOrderDto,
+} from './orders.service';
 
 import { CurrentUser } from '../../shared/decorators/current-user.decorator';
 import { Roles } from '../../shared/decorators/roles.decorator';
@@ -53,7 +56,11 @@ export class OrdersController {
     @Req() req: Request,
   ) {
     if (!idempotencyKey) {
-      throw { statusCode: 400, message: 'Idempotency-Key header is required', code: 'IDEMPOTENCY_KEY_REQUIRED' };
+      throw {
+        statusCode: 400,
+        message: 'Idempotency-Key header is required',
+        code: 'IDEMPOTENCY_KEY_REQUIRED',
+      };
     }
 
     const ipAddress =
@@ -74,7 +81,7 @@ export class OrdersController {
     @CurrentUser('id') userId: string,
     @Param('orderId') orderId: string,
   ): Promise<Record<string, unknown>> {
-    return this.ordersService.getOrder(orderId, userId) as any;
+    return this.ordersService.getOrder(orderId, userId);
   }
 
   /**
@@ -89,7 +96,7 @@ export class OrdersController {
     @CurrentUser('id') userId: string,
     @Param('orderId') orderId: string,
   ): Promise<Record<string, unknown>[]> {
-    return this.ordersService.getOrderHistory(orderId, userId) as any;
+    return this.ordersService.getOrderHistory(orderId, userId);
   }
 
   @Post(':orderId/cancel')

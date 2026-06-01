@@ -19,22 +19,43 @@ export class WebPushService {
     private readonly config: ConfigService,
     private readonly pushSubscriptionRepository: PushSubscriptionRepository,
   ) {
-    webpush.setVapidDetails(
-      `mailto:${this.config.get('VAPID_EMAIL') || 'support@vyaparnet.com'}`,
-      this.config.get('VAPID_PUBLIC_KEY') || '',
-      this.config.get('VAPID_PRIVATE_KEY') || '',
-    );
+    const pubKey = this.config.get('VAPID_PUBLIC_KEY');
+    const privKey = this.config.get('VAPID_PRIVATE_KEY');
+    if (pubKey && privKey) {
+      try {
+        webpush.setVapidDetails(
+          `mailto:${this.config.get('VAPID_EMAIL') || 'support@vyaparnet.com'}`,
+          pubKey,
+          privKey,
+        );
+      } catch (err: any) {
+        this.logger.error('Failed to set VAPID details for Web Push', err);
+      }
+    } else {
+      this.logger.warn('VAPID_PUBLIC_KEY or VAPID_PRIVATE_KEY not set — Web Push notifications disabled');
+    }
   }
 
-  async sendToUser(userId: string, title: string, body: string, url?: string): Promise<void> {
-    const subscriptions = await this.pushSubscriptionRepository.findActiveForUser(userId);
+  async sendToUser(
+    userId: string,
+    title: string,
+    body: string,
+    url?: string,
+  ): Promise<void> {
+    const subscriptions =
+      await this.pushSubscriptionRepository.findActiveForUser(userId);
     if (subscriptions.length === 0) return;
 
-    const payload = JSON.stringify({ title, body, url, icon: '/icons/icon-192.png' });
+    const payload = JSON.stringify({
+      title,
+      body,
+      url,
+      icon: '/icons/icon-192.png',
+    });
 
     // Send to all devices (multi-device support)
     await Promise.allSettled(
-      subscriptions.map(sub => this.sendToSubscription(sub, payload))
+      subscriptions.map((sub) => this.sendToSubscription(sub, payload)),
     );
   }
 
@@ -44,18 +65,30 @@ export class WebPushService {
   ): Promise<void> {
     try {
       await webpush.sendNotification(
-        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+        {
+          endpoint: sub.endpoint,
+          keys: { p256dh: sub.p256dh, auth: sub.auth },
+        },
         payload,
         { TTL: 3600 },
       );
     } catch (err: any) {
       if (err.statusCode === 410) {
         // INV-S6-9: 410 Gone = stale subscription, delete immediately
-        await this.pushSubscriptionRepository.deleteByEndpoint(sub.userId, sub.endpoint);
-        this.logger.warn({ userId: sub.userId, endpoint: sub.endpoint.slice(-20) }, 'PUSH_SUBSCRIPTION_DELETED_STALE');
+        await this.pushSubscriptionRepository.deleteByEndpoint(
+          sub.userId,
+          sub.endpoint,
+        );
+        this.logger.warn(
+          { userId: sub.userId, endpoint: sub.endpoint.slice(-20) },
+          'PUSH_SUBSCRIPTION_DELETED_STALE',
+        );
       } else {
         // Other errors: log and swallow (push is best-effort)
-        this.logger.warn({ error: err instanceof Error ? err.message : String(err) }, 'PUSH_DELIVERY_FAILED');
+        this.logger.warn(
+          { error: err instanceof Error ? err.message : String(err) },
+          'PUSH_DELIVERY_FAILED',
+        );
       }
     }
   }

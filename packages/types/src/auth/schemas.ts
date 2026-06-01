@@ -43,6 +43,12 @@ export const RefreshTokenSchema = z.object({
 });
 export type RefreshTokenDto = z.infer<typeof RefreshTokenSchema>;
 
+export const AdminLoginSchema = z.object({
+  email: z.string().email('Valid email address required'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
+export type AdminLoginDto = z.infer<typeof AdminLoginSchema>;
+
 // ─── User ────────────────────────────────────────────────────
 
 export const UpdateUserSchema = z.object({

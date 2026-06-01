@@ -59,8 +59,18 @@ export const configSchema = z.object({
   // production must fail startup, not silently use a placeholder.
   // Use RAZORPAY_KEY_ID placeholder default is acceptable (non-secret public ID).
   RAZORPAY_KEY_ID: z.string().default('rzp_test_placeholder'),
-  RAZORPAY_KEY_SECRET: z.string().min(8, 'RAZORPAY_KEY_SECRET must be explicitly set — no placeholder allowed in production'),
-  RAZORPAY_WEBHOOK_SECRET: z.string().min(8, 'RAZORPAY_WEBHOOK_SECRET must be explicitly set — no placeholder allowed in production'),
+  RAZORPAY_KEY_SECRET: z
+    .string()
+    .min(
+      8,
+      'RAZORPAY_KEY_SECRET must be explicitly set — no placeholder allowed in production',
+    ),
+  RAZORPAY_WEBHOOK_SECRET: z
+    .string()
+    .min(
+      8,
+      'RAZORPAY_WEBHOOK_SECRET must be explicitly set — no placeholder allowed in production',
+    ),
 
   // ─── AWS & S3 (Sprint 2 / Phase 3) ──────────────────────────
   AWS_REGION: z.string().default('ap-south-1'),
@@ -68,6 +78,17 @@ export const configSchema = z.object({
   AWS_SECRET_ACCESS_KEY: z.string().default('dummy_secret_key'),
   AWS_S3_BUCKET: z.string().default('vyaparnet-media-dev'),
   CDN_BASE_URL: z.string().default('https://cdn.vyaparnet.dev/'),
+
+  // ─── Email & Notification (Sprint 6) ────────────────────────
+  RESEND_API_KEY: z.string().optional(),
+  EMAIL_FROM_ADDRESS: z.string().optional(),
+  VAPID_EMAIL: z.string().optional(),
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
+
+  // ─── Admin Bootstrap (Sprint 7) ────────────────────────────
+  ADMIN_BOOTSTRAP_PHONE: z.string().optional(),
+  ADMIN_BOOTSTRAP_PASSWORD: z.string().optional(),
 });
 
 export type AppConfig = z.infer<typeof configSchema>;

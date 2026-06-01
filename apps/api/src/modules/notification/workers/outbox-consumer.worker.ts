@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import type { Queue } from 'bull';
 import { z } from 'zod';
@@ -80,7 +85,9 @@ export class OutboxConsumerWorker implements OnModuleInit, OnModuleDestroy {
 
   /** Start polling on module init — every 5 seconds (matching EventOutboxProcessor pattern) */
   onModuleInit(): void {
-    this.logger.log('Starting NotificationOutboxConsumerWorker (5s interval)...');
+    this.logger.log(
+      'Starting NotificationOutboxConsumerWorker (5s interval)...',
+    );
     this.timer = setInterval(() => void this.pollEventOutbox(), 5000);
   }
 
@@ -191,11 +198,17 @@ export class OutboxConsumerWorker implements OnModuleInit, OnModuleDestroy {
       const payloadResult = this.validatePayload(eventType, event.payload);
       if (!payloadResult.success) {
         this.logger.error(
-          { eventId, eventType, errors: payloadResult.error?.issues ?? payloadResult.error },
+          {
+            eventId,
+            eventType,
+            errors: payloadResult.error?.issues ?? payloadResult.error,
+          },
           'OUTBOX_PAYLOAD_INVALID',
         );
         await this.markEventFailed(eventId, 'INVALID_PAYLOAD');
-        this.metrics.notificationOutboxFailedTotal.inc({ reason: 'invalid_payload' });
+        this.metrics.notificationOutboxFailedTotal.inc({
+          reason: 'invalid_payload',
+        });
         return;
       }
 
@@ -209,7 +222,6 @@ export class OutboxConsumerWorker implements OnModuleInit, OnModuleDestroy {
         this.markEventCompleted(eventId),
         this.safeSetIdempotencyKey(eventId),
       ]);
-
     } catch (err) {
       // FOOTGUN-3-E: error logged + event marked failed — does NOT rethrow
       this.logger.error(
@@ -248,9 +260,15 @@ export class OutboxConsumerWorker implements OnModuleInit, OnModuleDestroy {
       // Double-cast via unknown to satisfy type system while returning failure shape.
       const failureResult = {
         success: false as const,
-        error: new z.ZodError([{ code: 'custom', path: [], message: `No schema registered for eventType: ${eventType}` } as z.core.$ZodIssue]),
+        error: new z.ZodError([
+          {
+            code: 'custom',
+            path: [],
+            message: `No schema registered for eventType: ${eventType}`,
+          },
+        ]),
       };
-      return failureResult as unknown as ReturnType<z.ZodTypeAny['safeParse']>;
+      return failureResult;
     }
 
     return schema.safeParse(payload);

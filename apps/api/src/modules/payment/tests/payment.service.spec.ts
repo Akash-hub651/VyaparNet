@@ -40,7 +40,6 @@ const mockPaymentProvider = {
   getPaymentStatus: vi.fn(),
 };
 
-
 // ─── Tests ─────────────────────────────────────────────────────────────────
 
 describe('RazorpayPaymentProvider.verifyWebhookSignature', () => {
@@ -56,7 +55,10 @@ describe('RazorpayPaymentProvider.verifyWebhookSignature', () => {
     const sig = buildSignature(payload, secret);
 
     // Replicate verifyWebhookSignature logic
-    const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+    const expected = crypto
+      .createHmac('sha256', secret)
+      .update(payload)
+      .digest('hex');
     const result = crypto.timingSafeEqual(
       Buffer.from(expected, 'hex'),
       Buffer.from(sig, 'hex'),
@@ -66,9 +68,15 @@ describe('RazorpayPaymentProvider.verifyWebhookSignature', () => {
 
   it('returns false for an invalid/tampered signature', () => {
     const payload = Buffer.from('{"event":"payment.captured"}');
-    const wrongSig = buildSignature(Buffer.from('{"event":"payment.failed"}'), secret);
+    const wrongSig = buildSignature(
+      Buffer.from('{"event":"payment.failed"}'),
+      secret,
+    );
 
-    const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+    const expected = crypto
+      .createHmac('sha256', secret)
+      .update(payload)
+      .digest('hex');
     try {
       const result = crypto.timingSafeEqual(
         Buffer.from(expected, 'hex'),
@@ -82,11 +90,18 @@ describe('RazorpayPaymentProvider.verifyWebhookSignature', () => {
   });
 
   it('returns false for a tampered body (same signature, different body)', () => {
-    const originalBody = Buffer.from('{"event":"payment.captured","amount":1000}');
-    const tamperedBody = Buffer.from('{"event":"payment.captured","amount":9999}');
+    const originalBody = Buffer.from(
+      '{"event":"payment.captured","amount":1000}',
+    );
+    const tamperedBody = Buffer.from(
+      '{"event":"payment.captured","amount":9999}',
+    );
     const sigForOriginal = buildSignature(originalBody, secret);
 
-    const expected = crypto.createHmac('sha256', secret).update(tamperedBody).digest('hex');
+    const expected = crypto
+      .createHmac('sha256', secret)
+      .update(tamperedBody)
+      .digest('hex');
     const result = crypto.timingSafeEqual(
       Buffer.from(expected, 'hex'),
       Buffer.from(sigForOriginal, 'hex'),
@@ -105,7 +120,9 @@ describe('RazorpayPaymentProvider.verifyWebhookSignature', () => {
     }
     // The provider catches any throw inside timingSafeEqual and returns false
     // This test documents that the error path exists and is handled
-    expect(threwDuringBufferFrom === true || threwDuringBufferFrom === false).toBe(true);
+    expect(
+      threwDuringBufferFrom === true || threwDuringBufferFrom === false,
+    ).toBe(true);
   });
 });
 
@@ -119,7 +136,11 @@ describe('PaymentService.initiatePayment', () => {
   });
 
   it('returns cached response on idempotency hit', async () => {
-    const cached = { paymentUrl: 'https://pay.razorpay.com', razorpayOrderId: 'order_abc', paymentId: 'pay_001' };
+    const cached = {
+      paymentUrl: 'https://pay.razorpay.com',
+      razorpayOrderId: 'order_abc',
+      paymentId: 'pay_001',
+    };
     mockRedis.get.mockResolvedValue(JSON.stringify(cached));
 
     const { PaymentService } = await import('../payment.service');
@@ -128,11 +149,17 @@ describe('PaymentService.initiatePayment', () => {
       mockRedis as any,
       mockPaymentRepo as any,
       mockOrdersRepo as any,
-      mockPaymentProvider as any,
+      mockPaymentProvider,
       mockMetricsService as any,
     );
 
-    const result = await service.initiatePayment(orderId, 1000, 'ONLINE_UPI', clientKey, userId);
+    const result = await service.initiatePayment(
+      orderId,
+      1000,
+      'ONLINE_UPI',
+      clientKey,
+      userId,
+    );
     expect(result).toEqual(cached);
     expect(mockPaymentProvider.createOrder).not.toHaveBeenCalled();
   });
@@ -146,7 +173,7 @@ describe('PaymentService.initiatePayment', () => {
       mockRedis as any,
       mockPaymentRepo as any,
       mockOrdersRepo as any,
-      mockPaymentProvider as any,
+      mockPaymentProvider,
       mockMetricsService as any,
     );
 
@@ -167,7 +194,12 @@ describe('PaymentService.initiatePayment', () => {
     });
     mockPaymentProvider.createOrder.mockImplementation(async () => {
       callOrder.push('createOrder');
-      return { providerOrderId: 'order_abc', amount: 1000, currency: 'INR', metadata: {} };
+      return {
+        providerOrderId: 'order_abc',
+        amount: 1000,
+        currency: 'INR',
+        metadata: {},
+      };
     });
 
     // HARDENED (MEDIUM-1 fix): payment.create() + eventOutbox.create() now run inside $transaction.
@@ -199,11 +231,17 @@ describe('PaymentService.initiatePayment', () => {
       mockRedis as any,
       mockPaymentRepo as any,
       mockOrdersRepo as any,
-      mockPaymentProvider as any,
+      mockPaymentProvider,
       mockMetricsService as any,
     );
 
-    await service.initiatePayment(orderId, 1000, 'ONLINE_UPI', clientKey, userId);
+    await service.initiatePayment(
+      orderId,
+      1000,
+      'ONLINE_UPI',
+      clientKey,
+      userId,
+    );
 
     const redisSetIndex = callOrder.indexOf('redisSet');
     const paymentCreateIndex = callOrder.indexOf('paymentCreate');
@@ -227,12 +265,21 @@ describe('PaymentService.initiatePayment', () => {
       paymentFailedAt: null,
     });
     mockPaymentProvider.createOrder.mockResolvedValue({
-      providerOrderId: 'order_abc', amount: 1000, currency: 'INR', metadata: {},
+      providerOrderId: 'order_abc',
+      amount: 1000,
+      currency: 'INR',
+      metadata: {},
     });
 
     // HARDENED (MEDIUM-1 fix): $transaction now wraps payment.create + eventOutbox.create atomically
     const txStub = {
-      payment: { create: vi.fn().mockResolvedValue({ id: 'pay_001', method: 'ONLINE_UPI', amount: 1000 }) },
+      payment: {
+        create: vi.fn().mockResolvedValue({
+          id: 'pay_001',
+          method: 'ONLINE_UPI',
+          amount: 1000,
+        }),
+      },
       eventOutbox: { create: vi.fn().mockResolvedValue({}) },
     };
     mockPrisma.$transaction.mockImplementation(async (cb: any) => cb(txStub));
@@ -244,11 +291,17 @@ describe('PaymentService.initiatePayment', () => {
       mockRedis as any,
       mockPaymentRepo as any,
       mockOrdersRepo as any,
-      mockPaymentProvider as any,
+      mockPaymentProvider,
       mockMetricsService as any,
     );
 
-    await service.initiatePayment(orderId, 1000, 'ONLINE_UPI', clientKey, userId);
+    await service.initiatePayment(
+      orderId,
+      1000,
+      'ONLINE_UPI',
+      clientKey,
+      userId,
+    );
 
     const redisGetCall = mockRedis.get.mock.calls[0][0] as string;
     expect(redisGetCall).toMatch(`payment_idem:${userId}:`);
@@ -266,8 +319,8 @@ describe('WebhookController invariants', () => {
       'utf-8',
     );
 
-    const step1Index = controllerSource.indexOf('STEP 1');  // HMAC verification step
-    const step2Index = controllerSource.indexOf('STEP 2');  // JSON.parse step
+    const step1Index = controllerSource.indexOf('STEP 1'); // HMAC verification step
+    const step2Index = controllerSource.indexOf('STEP 2'); // JSON.parse step
 
     expect(step1Index).toBeGreaterThan(0);
     expect(step2Index).toBeGreaterThan(step1Index); // STEP 2 comes after STEP 1
@@ -298,7 +351,7 @@ describe('WebhookController invariants', () => {
       'utf-8',
     );
     // Verify idempotency key cleanup on timeout
-    expect(controllerSource).toContain("redis.del(`webhook_idem");
+    expect(controllerSource).toContain('redis.del(`webhook_idem');
     expect(controllerSource).toContain('QUEUE_TIMEOUT');
   });
 });

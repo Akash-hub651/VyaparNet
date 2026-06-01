@@ -338,7 +338,10 @@ export class InventoryReleaseService {
 
     if (input.role === 'SELLER') {
       // Seller can only release reservations for their own inventory
-      if (input.issuedByUserId && reservation.inventory.businessId !== input.issuedByUserId) {
+      if (
+        input.issuedByUserId &&
+        reservation.inventory.businessId !== input.issuedByUserId
+      ) {
         throw new ForbiddenException({
           code: 'RELEASE_UNAUTHORIZED',
           reason: 'Not your inventory',

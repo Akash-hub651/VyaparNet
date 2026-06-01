@@ -5,6 +5,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import * as crypto from 'crypto';
+import * as argon2 from 'argon2';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { OtpService } from './otp.service';
 import { TokenService } from './token.service';
@@ -20,6 +21,7 @@ import type {
   VerifyOtpDto,
   RefreshTokenDto,
   AuthTokensResponse,
+  AdminLoginDto,
 } from '@vyaparnet/types';
 import { AuditAction, UserRole, Segment } from '@vyaparnet/types';
 import { normalizeIndianPhoneNumber } from '@vyaparnet/utils';
@@ -49,7 +51,8 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
-    @Inject(forwardRef(() => PrismaService)) private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => PrismaService))
+    private readonly prisma: PrismaService,
     private readonly otpService: OtpService,
     private readonly tokenService: TokenService,
     private readonly authRepository: AuthRepository,
@@ -281,6 +284,133 @@ export class AuthService {
       refreshToken: rawRefreshToken,
       expiresIn: TokenService.ACCESS_TOKEN_TTL_SECONDS,
       tokenType: 'Bearer',
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // ADMIN LOGIN
+  // ─────────────────────────────────────────────────────────────
+
+  /**
+   * Password-based authentication for Admin Panel.
+   *
+   * @param dto AdminLoginDto containing email and password
+   * @param requestIp Client IP address
+   * @param userAgent Client user agent
+   */
+  async loginAdmin(
+    dto: AdminLoginDto,
+    requestIp: string,
+    userAgent: string,
+  ): Promise<{ tokens: AuthTokensResponse; user: any }> {
+    const { email, password } = dto;
+    
+    // Find user by email
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user || user.role !== UserRole.ADMIN || !user.password) {
+      throw new UnauthorizedException({
+        code: 'INVALID_CREDENTIALS',
+        message: 'Invalid email or password.',
+      });
+    }
+
+    // Verify password hash
+    const isValid = await argon2.verify(user.password, password);
+    if (!isValid) {
+      throw new UnauthorizedException({
+        code: 'INVALID_CREDENTIALS',
+        message: 'Invalid email or password.',
+      });
+    }
+
+    // Generate token pair
+    const { accessToken, rawRefreshToken, hashedRefreshToken } =
+      await this.tokenService.generateTokenPair({
+        sub: user.id,
+        role: user.role as UserRole,
+        segment: user.segment as Segment,
+        tokenVersion: user.tokenVersion,
+      });
+
+    // Atomic DB transaction for session and audit
+    let newSession;
+    try {
+      newSession = await this.prisma.$transaction(async (tx) => {
+        const expiresAt = new Date(
+          Date.now() + TokenService.REFRESH_TOKEN_TTL_SECONDS * 1000,
+        );
+        const session = await this.sessionRepository.create(
+          {
+            userId: user.id,
+            refreshToken: hashedRefreshToken,
+            userAgent: userAgent.slice(0, 255),
+            ipAddress: requestIp,
+            expiresAt,
+            refreshTokenFamilyId: crypto.randomUUID(),
+            refreshTokenVersion: 1,
+          },
+          tx,
+        );
+
+        await this.auditRepository.create(
+          {
+            actorId: user.id,
+            action: AuditAction.LOGIN,
+            entityType: 'User',
+            entityId: user.id,
+            entityName: 'admin-login',
+            ipAddress: requestIp,
+            userAgent: userAgent.slice(0, 255),
+            sessionId: session.id,
+          },
+          tx,
+        );
+
+        return session;
+      });
+    } catch (error) {
+      const err = error as Error;
+      this.logger.error({ error: err.message }, 'Admin Auth transaction failed');
+      throw new InternalServerErrorException({
+        code: 'AUTH_TRANSACTION_FAILED',
+        message: 'Authentication failed. Please try again.',
+      });
+    }
+
+    // Redis operations
+    await this.handlePostTransactionRedis(
+      user.phone, // fallback to phone for lockout clearing if any
+      rawRefreshToken,
+      newSession.id,
+      user.id,
+      user.tokenVersion,
+    );
+
+    // Enforce max session limit
+    await this.enforceMaxSessions(user.id, newSession.id);
+
+    this.logger.log(
+      {
+        userId: user.id,
+        role: user.role,
+        sessionId: newSession.id,
+      },
+      'Admin Login successful',
+    );
+
+    return {
+      tokens: {
+        accessToken,
+        refreshToken: rawRefreshToken,
+        expiresIn: TokenService.ACCESS_TOKEN_TTL_SECONDS,
+        tokenType: 'Bearer',
+      },
+      user: {
+        id: user.id,
+        email: user.email!,
+        name: user.name ?? 'Platform Admin',
+        role: user.role,
+      },
     };
   }
 

@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
-import { Prisma, OrderStatusHistory, OrderStatus, SystemActorType } from '@vyaparnet/database';
+import {
+  Prisma,
+  OrderStatusHistory,
+  OrderStatus,
+  SystemActorType,
+} from '@vyaparnet/database';
 
 // APPEND-ONLY: This repository has no update() or delete() methods by design.
 // See Sprint 4 INV-13. Violating this destroys audit trail integrity.

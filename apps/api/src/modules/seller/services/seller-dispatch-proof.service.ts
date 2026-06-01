@@ -8,12 +8,20 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { MetricsService } from '../../observability/metrics.service';
-import { S3Service, ALLOWED_DISPATCH_PROOF_MIME_TYPES, MAX_DISPATCH_PROOF_SIZE_BYTES } from '../../s3/s3.service';
+import {
+  S3Service,
+  ALLOWED_DISPATCH_PROOF_MIME_TYPES,
+  MAX_DISPATCH_PROOF_SIZE_BYTES,
+} from '../../s3/s3.service';
 import { DispatchProofConfirmDto } from '@vyaparnet/types';
 import { SellerContext } from './seller-order.service';
 
 // Statuses that allow dispatch proof upload — cannot upload for unshipped orders
-const DISPATCH_PROOF_ALLOWED_STATUSES = ['SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED'] as const;
+const DISPATCH_PROOF_ALLOWED_STATUSES = [
+  'SHIPPED',
+  'OUT_FOR_DELIVERY',
+  'DELIVERED',
+] as const;
 
 @Injectable()
 export class SellerDispatchProofService {
@@ -54,12 +62,23 @@ export class SellerDispatchProofService {
 
     try {
       // S3 call OUTSIDE $transaction (transaction boundary rule §4)
-      const result = await this.s3.generateDispatchProofUploadUrl(seller.businessId, orderId);
-      this.logger.log({ orderId, sellerId: seller.businessId, s3Key: result.s3Key }, 'DISPATCH_PROOF_UPLOAD_URL_GENERATED');
+      const result = await this.s3.generateDispatchProofUploadUrl(
+        seller.businessId,
+        orderId,
+      );
+      this.logger.log(
+        { orderId, sellerId: seller.businessId, s3Key: result.s3Key },
+        'DISPATCH_PROOF_UPLOAD_URL_GENERATED',
+      );
       return result;
     } catch (err: unknown) {
-      this.logger.error({ orderId, error: (err as Error).message }, 'DISPATCH_PROOF_URL_GENERATION_FAILED');
-      this.metrics.dispatchProofUploadTotal.inc({ outcome: 'url_generation_failed' });
+      this.logger.error(
+        { orderId, error: (err as Error).message },
+        'DISPATCH_PROOF_URL_GENERATION_FAILED',
+      );
+      this.metrics.dispatchProofUploadTotal.inc({
+        outcome: 'url_generation_failed',
+      });
       throw new ServiceUnavailableException({ code: 'S3_SERVICE_UNAVAILABLE' });
     }
   }
@@ -83,7 +102,9 @@ export class SellerDispatchProofService {
     // Reject cross-seller keys — prevents a seller from confirming another seller's upload
     const expectedPrefix = `dispatch-proofs/${seller.businessId}/`;
     if (!dto.s3Key.startsWith(expectedPrefix)) {
-      this.metrics.dispatchProofUploadTotal.inc({ outcome: 'ownership_violation' });
+      this.metrics.dispatchProofUploadTotal.inc({
+        outcome: 'ownership_violation',
+      });
       throw new ForbiddenException({
         code: 'S3_KEY_OWNERSHIP_VIOLATION',
         message: 'The provided s3Key does not belong to your business',
@@ -105,7 +126,10 @@ export class SellerDispatchProofService {
     try {
       headResult = await this.s3.headObject(dto.s3Key);
     } catch (err: unknown) {
-      this.logger.error({ orderId, s3Key: dto.s3Key, error: (err as Error).message }, 'DISPATCH_PROOF_HEAD_FAILED');
+      this.logger.error(
+        { orderId, s3Key: dto.s3Key, error: (err as Error).message },
+        'DISPATCH_PROOF_HEAD_FAILED',
+      );
       this.metrics.dispatchProofUploadTotal.inc({ outcome: 's3_unavailable' });
       throw new ServiceUnavailableException({ code: 'S3_SERVICE_UNAVAILABLE' });
     }
@@ -115,14 +139,17 @@ export class SellerDispatchProofService {
       this.metrics.dispatchProofUploadTotal.inc({ outcome: 'file_not_found' });
       throw new UnprocessableEntityException({
         code: 'FILE_NOT_FOUND_IN_S3',
-        message: 'The file has not been uploaded to S3 yet. Upload first, then confirm.',
+        message:
+          'The file has not been uploaded to S3 yet. Upload first, then confirm.',
       });
     }
 
     // STEP 3: MIME validation (INV-S5-35)
     // EXPLICIT list — NOT 'image/*' wildcard (AI Footgun check)
     const contentType = headResult.contentType ?? '';
-    const isAllowedMime = (ALLOWED_DISPATCH_PROOF_MIME_TYPES as readonly string[]).includes(contentType);
+    const isAllowedMime = (
+      ALLOWED_DISPATCH_PROOF_MIME_TYPES as readonly string[]
+    ).includes(contentType);
     if (!isAllowedMime) {
       this.metrics.dispatchProofUploadTotal.inc({ outcome: 'invalid_mime' });
       throw new UnprocessableEntityException({
@@ -180,7 +207,10 @@ export class SellerDispatchProofService {
 
     // STEP 5: Increment success metric
     this.metrics.dispatchProofUploadTotal.inc({ outcome: 'success' });
-    this.logger.log({ orderId, sellerId: seller.businessId, s3Key: dto.s3Key }, 'DISPATCH_PROOF_CONFIRMED');
+    this.logger.log(
+      { orderId, sellerId: seller.businessId, s3Key: dto.s3Key },
+      'DISPATCH_PROOF_CONFIRMED',
+    );
 
     return { dispatchProofUrl };
     // INV-S5-9: NO EventOutbox created here

@@ -1,4 +1,8 @@
-import { makeCounterProvider, makeGaugeProvider, makeHistogramProvider } from '@willsoto/nestjs-prometheus';
+import {
+  makeCounterProvider,
+  makeGaugeProvider,
+  makeHistogramProvider,
+} from '@willsoto/nestjs-prometheus';
 
 export const metricProviders = [
   // Cart metrics
@@ -188,17 +192,130 @@ export const metricProviders = [
   }),
 
   // Sprint 6: Notification Metrics (§23.1)
-  makeCounterProvider({ name: 'notification_sent_total', help: 'Total notifications sent', labelNames: ['channel', 'eventType', 'segment'] }),
-  makeCounterProvider({ name: 'notification_failed_total', help: 'Total notifications failed', labelNames: ['channel', 'reason', 'eventType'] }),
-  makeCounterProvider({ name: 'notification_dedup_skipped_total', help: 'Total notifications skipped due to dedup', labelNames: ['eventType'] }),
-  makeCounterProvider({ name: 'notification_outbox_consumed_total', help: 'Total outbox events consumed', labelNames: ['eventType'] }),
-  makeCounterProvider({ name: 'notification_outbox_failed_total', help: 'Total outbox events failed to process', labelNames: ['reason'] }),
-  makeGaugeProvider({ name: 'notification_queue_depth', help: 'Depth of the notifications queue (waiting jobs)' }),
-  makeGaugeProvider({ name: 'notification_dlq_size', help: 'Size of notifications-failed DLQ' }),
-  makeGaugeProvider({ name: 'notification_push_subscriptions_active', help: 'Total active push subscriptions across all users' }),
-  makeHistogramProvider({ name: 'notification_outbox_to_delivery_ms', help: 'Latency from outbox to delivery', buckets: [50, 100, 500, 1000, 2000, 5000] }),
-  makeHistogramProvider({ name: 'notification_template_render_ms', help: 'Template render latency per call', buckets: [1, 5, 10, 50, 100] }),
+  makeCounterProvider({
+    name: 'notification_sent_total',
+    help: 'Total notifications sent',
+    labelNames: ['channel', 'eventType', 'segment'],
+  }),
+  makeCounterProvider({
+    name: 'notification_failed_total',
+    help: 'Total notifications failed',
+    labelNames: ['channel', 'reason', 'eventType'],
+  }),
+  makeCounterProvider({
+    name: 'notification_dedup_skipped_total',
+    help: 'Total notifications skipped due to dedup',
+    labelNames: ['eventType'],
+  }),
+  makeCounterProvider({
+    name: 'notification_outbox_consumed_total',
+    help: 'Total outbox events consumed',
+    labelNames: ['eventType'],
+  }),
+  makeCounterProvider({
+    name: 'notification_outbox_failed_total',
+    help: 'Total outbox events failed to process',
+    labelNames: ['reason'],
+  }),
+  makeGaugeProvider({
+    name: 'notification_queue_depth',
+    help: 'Depth of the notifications queue (waiting jobs)',
+  }),
+  makeGaugeProvider({
+    name: 'notification_dlq_size',
+    help: 'Size of notifications-failed DLQ',
+  }),
+  makeGaugeProvider({
+    name: 'notification_push_subscriptions_active',
+    help: 'Total active push subscriptions across all users',
+  }),
+  makeHistogramProvider({
+    name: 'notification_outbox_to_delivery_ms',
+    help: 'Latency from outbox to delivery',
+    buckets: [50, 100, 500, 1000, 2000, 5000],
+  }),
+  makeHistogramProvider({
+    name: 'notification_template_render_ms',
+    help: 'Template render latency per call',
+    buckets: [1, 5, 10, 50, 100],
+  }),
   // FIX-9: Circuit breaker state gauge — 0 = CLOSED (healthy), 1 = OPEN (blocking delivery)
   // Label {channel}: 'sms' | 'email'. Enables Grafana alert when either channel trips.
-  makeGaugeProvider({ name: 'notification_circuit_breaker_state', help: 'Circuit breaker state per channel: 1=OPEN, 0=CLOSED', labelNames: ['channel'] }),
+  makeGaugeProvider({
+    name: 'notification_circuit_breaker_state',
+    help: 'Circuit breaker state per channel: 1=OPEN, 0=CLOSED',
+    labelNames: ['channel'],
+  }),
+
+  // ─── Sprint 7: Admin Action Metrics (§11.1) ──────────────────────────────────
+  makeCounterProvider({
+    name: 'admin_business_verified_total',
+    help: 'Total businesses verified by admin',
+    labelNames: ['segment'],
+  }),
+  makeCounterProvider({
+    name: 'admin_business_rejected_total',
+    help: 'Total businesses rejected by admin',
+    labelNames: ['segment'],
+  }),
+  makeCounterProvider({
+    name: 'admin_business_suspended_total',
+    help: 'Total businesses suspended by admin',
+    labelNames: ['segment', 'reason'],
+  }),
+  makeCounterProvider({
+    name: 'admin_product_approved_total',
+    help: 'Total products approved by admin',
+    labelNames: ['segment', 'adminId'],
+  }),
+  makeCounterProvider({
+    name: 'admin_product_rejected_total',
+    help: 'Total products rejected by admin',
+    labelNames: ['segment', 'adminId', 'reason'],
+  }),
+  makeCounterProvider({
+    name: 'admin_user_suspended_total',
+    help: 'Total users suspended by admin',
+    labelNames: ['role'],
+  }),
+  makeCounterProvider({
+    name: 'admin_payout_initiated_total',
+    help: 'Total seller payouts initiated by admin',
+    labelNames: [],
+  }),
+  makeCounterProvider({
+    name: 'admin_payout_amount_initiated_inr',
+    help: 'Cumulative INR total of initiated payouts',
+    labelNames: [],
+  }),
+  makeGaugeProvider({
+    name: 'exception_center_stuck_orders',
+    help: 'Current count of stuck orders',
+    labelNames: [],
+  }),
+  makeGaugeProvider({
+    name: 'exception_center_failed_payments',
+    help: 'Current count of failed payments',
+    labelNames: [],
+  }),
+  makeCounterProvider({
+    name: 'admin_audit_log_write_failures_total',
+    help: 'Total AuditLog write failures',
+    labelNames: [],
+  }),
+  makeHistogramProvider({
+    name: 'admin_kyc_document_fetch_ms',
+    help: 'Latency of KYC document fetch + signed URL generation',
+    buckets: [10, 50, 100, 300, 500, 1000],
+  }),
+  makeHistogramProvider({
+    name: 'admin_invoice_generation_ms',
+    help: 'Tax invoice PDF generation latency',
+    buckets: [200, 500, 1000, 2000, 5000, 10000],
+  }),
+  makeCounterProvider({
+    name: 'feature_flag_toggle_total',
+    help: 'Total feature flag toggles by admin',
+    labelNames: ['name', 'env', 'segment'],
+  }),
 ];

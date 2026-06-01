@@ -37,7 +37,10 @@ export class DeduplicationService {
     } catch (err) {
       // Redis failure: safe degraded mode — assume NOT a duplicate
       // Rationale: possible duplicate notification < missed notification at scale
-      this.logger.warn({ key, error: (err as Error).message }, 'DEDUP_REDIS_UNAVAILABLE_ASSUME_NOT_DUPLICATE');
+      this.logger.warn(
+        { key, error: (err as Error).message },
+        'DEDUP_REDIS_UNAVAILABLE_ASSUME_NOT_DUPLICATE',
+      );
       return false;
     }
   }
@@ -56,7 +59,10 @@ export class DeduplicationService {
       await this.redis.set(key, '1', 'EX', ttlSeconds);
     } catch (err) {
       // Swallow Redis failure — not critical path
-      this.logger.warn({ key, error: (err as Error).message }, 'DEDUP_SET_REDIS_UNAVAILABLE');
+      this.logger.warn(
+        { key, error: (err as Error).message },
+        'DEDUP_SET_REDIS_UNAVAILABLE',
+      );
     }
   }
 
@@ -68,7 +74,10 @@ export class DeduplicationService {
    *
    * @returns true if rate limit is active (skip SMS), false if allowed to send
    */
-  async isLowStockRateLimited(productId: string, businessId: string): Promise<boolean> {
+  async isLowStockRateLimited(
+    productId: string,
+    businessId: string,
+  ): Promise<boolean> {
     const key = `notif:lowstock:${productId}:${businessId}`;
     return this.isDuplicate(key);
   }
@@ -77,7 +86,10 @@ export class DeduplicationService {
    * Set the low-stock rate limit for a (productId, businessId) pair.
    * Called AFTER successfully enqueuing the SMS job.
    */
-  async setLowStockRateLimit(productId: string, businessId: string): Promise<void> {
+  async setLowStockRateLimit(
+    productId: string,
+    businessId: string,
+  ): Promise<void> {
     const key = `notif:lowstock:${productId}:${businessId}`;
     await this.setProcessed(key, 86400); // 24 hours — INV-S6-11
   }

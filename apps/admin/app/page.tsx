@@ -1,14 +1,14 @@
-import React from "react";
+import { redirect } from 'next/navigation';
+import { getAdminSession } from '../lib/auth';
 
-export default function AdminPage(): React.JSX.Element {
-  return (
-    <main className="flex min-h-screen items-center justify-center p-8">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-[#2563EB]">VyaparNet Admin</h1>
-        <p className="text-[#64748B] mt-2">
-          Sprint 0: Stub. Full admin dashboard in Sprint 7.
-        </p>
-      </div>
-    </main>
-  );
+/**
+ * Root page — redirects to /businesses (KYC queue) if authenticated,
+ * else redirects to /login.
+ */
+export default async function RootPage(): Promise<never> {
+  const session = await getAdminSession();
+  if (!session) {
+    redirect('/login');
+  }
+  redirect('/businesses');
 }

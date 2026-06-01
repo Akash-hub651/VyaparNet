@@ -4,6 +4,7 @@ import {
   S3Client,
   PutObjectCommand,
   HeadObjectCommand,
+  GetObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { AppConfig } from '../../core/config/config.schema';
@@ -16,7 +17,8 @@ export const ALLOWED_DISPATCH_PROOF_MIME_TYPES = [
   'application/pdf',
 ] as const;
 
-export type AllowedMimeType = typeof ALLOWED_DISPATCH_PROOF_MIME_TYPES[number];
+export type AllowedMimeType =
+  (typeof ALLOWED_DISPATCH_PROOF_MIME_TYPES)[number];
 
 /**
  * FIX-4 (FR-4): Maximum allowed dispatch proof file size.
@@ -36,8 +38,8 @@ export const MAX_DISPATCH_PROOF_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 export interface DispatchProofUploadUrlResult {
   uploadUrl: string;
   s3Key: string;
-  expiresAt: string;         // ISO8601
-  maxSizeBytes: number;      // FIX-4: client hint — reject before uploading if > 5MB
+  expiresAt: string; // ISO8601
+  maxSizeBytes: number; // FIX-4: client hint — reject before uploading if > 5MB
   allowedTypes: readonly string[]; // client hint — show accepted file types in UI
 }
 
@@ -89,14 +91,16 @@ export class S3Service {
     });
 
     // URL expires in 5 minutes (300 seconds) — per spec
-    const uploadUrl = await getSignedUrl(this.s3Client, command, { expiresIn: 300 });
+    const uploadUrl = await getSignedUrl(this.s3Client, command, {
+      expiresIn: 300,
+    });
     const expiresAt = new Date(Date.now() + 300_000).toISOString();
 
     return {
       uploadUrl,
       s3Key,
       expiresAt,
-      maxSizeBytes: MAX_DISPATCH_PROOF_SIZE_BYTES,  // FIX-4: client hint
+      maxSizeBytes: MAX_DISPATCH_PROOF_SIZE_BYTES, // FIX-4: client hint
       allowedTypes: ALLOWED_DISPATCH_PROOF_MIME_TYPES, // FIX-4: client hint
     };
   }
@@ -124,13 +128,69 @@ export class S3Service {
       // NoSuchKey or NotFound → file doesn't exist
       if (
         err instanceof Error &&
-        (err.name === 'NoSuchKey' || err.name === 'NotFound' || (err as any).$metadata?.httpStatusCode === 404)
+        (err.name === 'NoSuchKey' ||
+          err.name === 'NotFound' ||
+          (err as any).$metadata?.httpStatusCode === 404)
       ) {
         return null;
       }
       // S3 connectivity failure — re-throw to caller
-      this.logger.error({ s3Key, error: (err as Error).message }, 'S3_HEAD_OBJECT_FAILED');
+      this.logger.error(
+        { s3Key, error: (err as Error).message },
+        'S3_HEAD_OBJECT_FAILED',
+      );
       throw err;
     }
+  }
+
+  /**
+   * Generate a pre-signed GET URL for KYC document access (INV-S7-8, INV-S7-9).
+   *
+   * Security guarantees:
+   *  - TTL is hard-capped at 300 seconds (5 minutes) per INV-S7-9.
+   *    Even if caller passes > 300, this method enforces the cap.
+   *  - s3Key is the stored S3 key ONLY — NEVER the full URL (INV-S7-8).
+   *  - NEVER store the returned URL in DB — use only at response time.
+   *  - KycDocument.publicUrl MUST remain null (INV-S7-8).
+   *
+   * @param s3Key      - S3 object key (e.g. kyc-docs/userId/docId.pdf)
+   * @param ttlSeconds - URL expiry in seconds. Hard-capped at 300 (INV-S7-9).
+   */
+  async getSignedUrl(s3Key: string, ttlSeconds: number): Promise<string> {
+    // Hard cap — prevent accidental > 5min TTL (INV-S7-9)
+    const safeTtl = Math.min(ttlSeconds, 300);
+
+    const command = new GetObjectCommand({
+      Bucket: this.bucketName,
+      Key: s3Key,
+    });
+
+    return getSignedUrl(this.s3Client, command, { expiresIn: safeTtl });
+  }
+
+  /**
+   * Upload a raw Buffer directly to S3 (used for generated PDFs — Phase 7).
+   *
+   * FOOTGUN-7-C: This method stores the OBJECT — callers must store only the
+   * s3Key in DB (never the returned signed URL).
+   *
+   * @param buffer      - PDF or binary buffer to upload
+   * @param s3Key       - Destination S3 key (server-controlled — never client-supplied)
+   * @param contentType - MIME type (e.g. 'application/pdf')
+   */
+  async uploadBuffer(
+    buffer: Buffer,
+    s3Key: string,
+    contentType: string,
+  ): Promise<void> {
+    const command = new PutObjectCommand({
+      Bucket: this.bucketName,
+      Key: s3Key,
+      Body: buffer,
+      ContentType: contentType,
+    });
+
+    await this.s3Client.send(command);
+    this.logger.debug({ s3Key, contentType, bytes: buffer.byteLength }, 'S3_UPLOAD_COMPLETE');
   }
 }

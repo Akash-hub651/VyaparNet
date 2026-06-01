@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { PrismaService } from './prisma.service';
 import { EventStatus } from '@vyaparnet/database';
@@ -43,12 +48,14 @@ export class EventOutboxProcessor implements OnModuleInit, OnModuleDestroy {
 
         if (pendingEvents.length === 0) return;
 
-        this.logger.debug(`Processing ${pendingEvents.length} outbox events...`);
+        this.logger.debug(
+          `Processing ${pendingEvents.length} outbox events...`,
+        );
 
         for (const event of pendingEvents) {
           try {
             await this.dispatchToMessageBroker(event);
-            
+
             // Mark as processed
             await tx.eventOutbox.update({
               where: { id: event.id },
@@ -60,7 +67,7 @@ export class EventOutboxProcessor implements OnModuleInit, OnModuleDestroy {
           } catch (e: any) {
             this.logger.error(`Failed to process outbox event ${event.id}`, e);
             const newRetryCount = event.retryCount + 1;
-            
+
             if (newRetryCount >= 3) {
               await tx.eventOutbox.update({
                 where: { id: event.id },
@@ -70,7 +77,7 @@ export class EventOutboxProcessor implements OnModuleInit, OnModuleDestroy {
                   lastError: e.message || String(e),
                 },
               });
-              
+
               // Create DeadLetterEvent
               await tx.deadLetterEvent.create({
                 data: {
@@ -102,19 +109,28 @@ export class EventOutboxProcessor implements OnModuleInit, OnModuleDestroy {
   private async dispatchToMessageBroker(event: any) {
     // In Sprint 2 Phase 6, we simulate Kafka/RabbitMQ dispatch
     // We can assume it is successful if it reaches here.
-    this.logger.debug(`Simulating dispatch of event ${event.eventType} to broker...`);
+    this.logger.debug(
+      `Simulating dispatch of event ${event.eventType} to broker...`,
+    );
 
     if (event.eventType === 'ProductCreated') {
       try {
         // Dynamically resolve InventoryEventConsumer from module ref to prevent circular module dependencies
-        const consumer = this.moduleRef.get('InventoryEventConsumer', { strict: false });
+        const consumer = this.moduleRef.get('InventoryEventConsumer', {
+          strict: false,
+        });
         if (consumer && typeof consumer.handleProductCreated === 'function') {
           await consumer.handleProductCreated(event.payload);
         } else {
-          this.logger.warn('InventoryEventConsumer is not registered or does not have handleProductCreated method.');
+          this.logger.warn(
+            'InventoryEventConsumer is not registered or does not have handleProductCreated method.',
+          );
         }
       } catch (err) {
-        this.logger.error('Error dispatching ProductCreated event to InventoryEventConsumer', err);
+        this.logger.error(
+          'Error dispatching ProductCreated event to InventoryEventConsumer',
+          err,
+        );
         throw err; // bubble up to trigger retry count and DLQ logic
       }
     }

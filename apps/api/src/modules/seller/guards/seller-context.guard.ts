@@ -1,4 +1,9 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { RedisService } from '../../../core/redis/redis.service';
 import { MetricsService } from '../../observability/metrics.service';
@@ -39,7 +44,12 @@ export class SellerContextGuard implements CanActivate {
       if (business) {
         try {
           const jitteredTtl = 60 + Math.floor(Math.random() * 15);
-          await this.redis.set(cacheKey, JSON.stringify(business), 'EX', jitteredTtl);
+          await this.redis.set(
+            cacheKey,
+            JSON.stringify(business),
+            'EX',
+            jitteredTtl,
+          );
         } catch {
           /* silent */
         }

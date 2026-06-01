@@ -16,7 +16,10 @@ export class MediaRequirementException extends BadRequestException {
 export class MediaClassificationService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async validateForSegment(mediaIds: string[], segment: Segment): Promise<void> {
+  async validateForSegment(
+    mediaIds: string[],
+    segment: Segment,
+  ): Promise<void> {
     // Phase 4 lays out SegmentAttributeSchema, but Phase 3 relies on it for media checks.
     // We fetch the schema for the segment.
     const schemaConfig = await this.prisma.segmentAttributeSchema.findFirst({
@@ -43,10 +46,13 @@ export class MediaClassificationService {
     });
 
     // Count by class
-    const counts = uploadedMedia.reduce((acc, curr) => {
-      acc[curr.mediaClass] = (acc[curr.mediaClass] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const counts = uploadedMedia.reduce(
+      (acc, curr) => {
+        acc[curr.mediaClass] = (acc[curr.mediaClass] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     // Validate against constraints
     for (const req of requiredMedia) {

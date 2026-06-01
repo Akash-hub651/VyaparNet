@@ -82,7 +82,11 @@ describe('OrdersService', () => {
 
     inventoryService = {
       reserve: vi.fn(),
-      release: vi.fn().mockResolvedValue({ alreadyReleased: false, status: 'RELEASED', reservationId: 'res-001' }),
+      release: vi.fn().mockResolvedValue({
+        alreadyReleased: false,
+        status: 'RELEASED',
+        reservationId: 'res-001',
+      }),
       releaseAllForOrder: vi.fn().mockResolvedValue([]),
       consume: vi.fn().mockResolvedValue(undefined),
       getAvailability: vi.fn(),
@@ -161,19 +165,22 @@ describe('OrdersService', () => {
         { provide: PrismaService, useValue: prisma },
         // HARDENED: PaymentService injected via forwardRef — must be in provider list
         { provide: PaymentService, useValue: paymentService },
-        { provide: MetricsService, useValue: { 
-          orderNumberCollisionTotal: { inc: vi.fn() }, 
-          orderCheckoutSuccessTotal: { inc: vi.fn() }, 
-          orderIdempotencyConflictTotal: { inc: vi.fn() }, 
-          orderStuckInPlacedTotal: { set: vi.fn() }, 
-          orderCancelledTotal: { inc: vi.fn() }, 
-          orderCreatedTotal: { inc: vi.fn() },
-          orderConfirmedTotal: { inc: vi.fn() },
-          redisUnavailableTotal: { inc: vi.fn() },
-          checkoutFunnelStepTotal: { inc: vi.fn() },
-          cartCheckoutInitiatedTotal: { inc: vi.fn() },
-          rateLimitAtomicFailureTotal: { inc: vi.fn() }
-        } },
+        {
+          provide: MetricsService,
+          useValue: {
+            orderNumberCollisionTotal: { inc: vi.fn() },
+            orderCheckoutSuccessTotal: { inc: vi.fn() },
+            orderIdempotencyConflictTotal: { inc: vi.fn() },
+            orderStuckInPlacedTotal: { set: vi.fn() },
+            orderCancelledTotal: { inc: vi.fn() },
+            orderCreatedTotal: { inc: vi.fn() },
+            orderConfirmedTotal: { inc: vi.fn() },
+            redisUnavailableTotal: { inc: vi.fn() },
+            checkoutFunnelStepTotal: { inc: vi.fn() },
+            cartCheckoutInitiatedTotal: { inc: vi.fn() },
+            rateLimitAtomicFailureTotal: { inc: vi.fn() },
+          },
+        },
       ],
     })
       .overrideProvider(PaymentService)
@@ -213,22 +220,33 @@ describe('OrdersService', () => {
     it('throws CART_EMPTY if cart has no items', async () => {
       cartRepo.findActiveWithItems.mockResolvedValue(null);
 
-      await expect(service.createOrder(validDto, userId, ipAddress)).rejects.toThrow(BadRequestException);
+      await expect(
+        service.createOrder(validDto, userId, ipAddress),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('throws CART_EMPTY if cart exists but has 0 items', async () => {
       cartRepo.findActiveWithItems.mockResolvedValue({
-        id: 'cart-001', userId, segment: 'TEXTILE', items: [],
+        id: 'cart-001',
+        userId,
+        segment: 'TEXTILE',
+        items: [],
       } as any);
 
-      await expect(service.createOrder(validDto, userId, ipAddress)).rejects.toThrow(BadRequestException);
+      await expect(
+        service.createOrder(validDto, userId, ipAddress),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('releases reservations and rethrows if inventory reserve fails', async () => {
       cartRepo.findActiveWithItems.mockResolvedValue(buildCart() as any);
-      inventoryService.reserve.mockRejectedValue(new ConflictException({ code: 'INSUFFICIENT_STOCK' }));
+      inventoryService.reserve.mockRejectedValue(
+        new ConflictException({ code: 'INSUFFICIENT_STOCK' }),
+      );
 
-      await expect(service.createOrder(validDto, userId, ipAddress)).rejects.toThrow();
+      await expect(
+        service.createOrder(validDto, userId, ipAddress),
+      ).rejects.toThrow();
       expect(inventoryService.release).not.toHaveBeenCalled(); // no reservations made yet
     });
 
@@ -237,8 +255,14 @@ describe('OrdersService', () => {
       inventoryService.reserve.mockResolvedValue(buildReservation() as any);
       prisma.$transaction.mockRejectedValue(new Error('DB timeout'));
 
-      await expect(service.createOrder(validDto, userId, ipAddress)).rejects.toThrow('DB timeout');
-      expect(inventoryService.release).toHaveBeenCalledWith('res-001', 'ORDER_CANCELLED', 'SYSTEM');
+      await expect(
+        service.createOrder(validDto, userId, ipAddress),
+      ).rejects.toThrow('DB timeout');
+      expect(inventoryService.release).toHaveBeenCalledWith(
+        'res-001',
+        'ORDER_CANCELLED',
+        'SYSTEM',
+      );
     });
 
     it('sets idempotency key AFTER $transaction commit (INV-33)', async () => {
@@ -288,7 +312,11 @@ describe('OrdersService', () => {
       await service.createOrder(validDto, userId, ipAddress);
 
       // consume() MUST be called with the tx parameter — NEVER without tx (INV-11)
-      expect(inventoryService.consume).toHaveBeenCalledWith('res-001', userId, expect.anything());
+      expect(inventoryService.consume).toHaveBeenCalledWith(
+        'res-001',
+        userId,
+        expect.anything(),
+      );
     });
 
     it('COD: order status is CONFIRMED — immediate confirmation', async () => {
@@ -332,7 +360,9 @@ describe('OrdersService', () => {
     });
 
     it('Online: order status is PLACED — NOT CONFIRMED (§3.4)', async () => {
-      cartRepo.findActiveWithItems.mockResolvedValue(buildCart('ONLINE_UPI') as any);
+      cartRepo.findActiveWithItems.mockResolvedValue(
+        buildCart('ONLINE_UPI') as any,
+      );
       inventoryService.reserve.mockResolvedValue(buildReservation() as any);
 
       const result = await service.createOrder(onlineDto, userId, ipAddress);
@@ -342,7 +372,9 @@ describe('OrdersService', () => {
     });
 
     it('Online: returns paymentUrl in response (§3.4 Step 11)', async () => {
-      cartRepo.findActiveWithItems.mockResolvedValue(buildCart('ONLINE_UPI') as any);
+      cartRepo.findActiveWithItems.mockResolvedValue(
+        buildCart('ONLINE_UPI') as any,
+      );
       inventoryService.reserve.mockResolvedValue(buildReservation() as any);
 
       const result = await service.createOrder(onlineDto, userId, ipAddress);
@@ -351,7 +383,9 @@ describe('OrdersService', () => {
     });
 
     it('Online: does NOT call consume() inside $transaction (INV-11 — deferred to webhook)', async () => {
-      cartRepo.findActiveWithItems.mockResolvedValue(buildCart('ONLINE_UPI') as any);
+      cartRepo.findActiveWithItems.mockResolvedValue(
+        buildCart('ONLINE_UPI') as any,
+      );
       inventoryService.reserve.mockResolvedValue(buildReservation() as any);
 
       await service.createOrder(onlineDto, userId, ipAddress);
@@ -361,7 +395,9 @@ describe('OrdersService', () => {
     });
 
     it('Online: does NOT create Payment record inside $transaction (§3.4)', async () => {
-      cartRepo.findActiveWithItems.mockResolvedValue(buildCart('ONLINE_UPI') as any);
+      cartRepo.findActiveWithItems.mockResolvedValue(
+        buildCart('ONLINE_UPI') as any,
+      );
       inventoryService.reserve.mockResolvedValue(buildReservation() as any);
 
       let capturedTx: any;
@@ -378,7 +414,9 @@ describe('OrdersService', () => {
     });
 
     it('Online: calls paymentService.initiatePayment() AFTER $transaction commit (INV-12)', async () => {
-      cartRepo.findActiveWithItems.mockResolvedValue(buildCart('ONLINE_UPI') as any);
+      cartRepo.findActiveWithItems.mockResolvedValue(
+        buildCart('ONLINE_UPI') as any,
+      );
       inventoryService.reserve.mockResolvedValue(buildReservation() as any);
 
       const callOrder: string[] = [];
@@ -389,28 +427,39 @@ describe('OrdersService', () => {
       });
       paymentService.initiatePayment.mockImplementation(async () => {
         callOrder.push('initiatePayment');
-        return { paymentUrl: 'https://api.razorpay.com/v1/checkout', razorpayOrderId: 'order_001', paymentId: 'pay-001' };
+        return {
+          paymentUrl: 'https://api.razorpay.com/v1/checkout',
+          razorpayOrderId: 'order_001',
+          paymentId: 'pay-001',
+        };
       });
 
       await service.createOrder(onlineDto, userId, ipAddress);
 
       // initiatePayment MUST come AFTER $transaction (INV-12: no HTTP inside tx)
-      expect(callOrder.indexOf('$transaction')).toBeLessThan(callOrder.indexOf('initiatePayment'));
+      expect(callOrder.indexOf('$transaction')).toBeLessThan(
+        callOrder.indexOf('initiatePayment'),
+      );
     });
 
     it('Online: initiatePayment() receives userId as 5th arg (INV-24)', async () => {
-      cartRepo.findActiveWithItems.mockResolvedValue(buildCart('ONLINE_UPI') as any);
+      cartRepo.findActiveWithItems.mockResolvedValue(
+        buildCart('ONLINE_UPI') as any,
+      );
       inventoryService.reserve.mockResolvedValue(buildReservation() as any);
 
       await service.createOrder(onlineDto, userId, ipAddress);
 
       // 5th argument to initiatePayment MUST be userId from JWT (INV-24)
-      const [, , , , passedUserId] = paymentService.initiatePayment.mock.calls[0];
+      const [, , , , passedUserId] =
+        paymentService.initiatePayment.mock.calls[0];
       expect(passedUserId).toBe(userId);
     });
 
     it('Online: idempotency key uses userId as first namespace (INV-33/INV-24)', async () => {
-      cartRepo.findActiveWithItems.mockResolvedValue(buildCart('ONLINE_UPI') as any);
+      cartRepo.findActiveWithItems.mockResolvedValue(
+        buildCart('ONLINE_UPI') as any,
+      );
       inventoryService.reserve.mockResolvedValue(buildReservation() as any);
 
       await service.createOrder(onlineDto, userId, ipAddress);
@@ -420,9 +469,13 @@ describe('OrdersService', () => {
     });
 
     it('Online: if initiatePayment fails, order is still returned (resilient — buyer can retry)', async () => {
-      cartRepo.findActiveWithItems.mockResolvedValue(buildCart('ONLINE_UPI') as any);
+      cartRepo.findActiveWithItems.mockResolvedValue(
+        buildCart('ONLINE_UPI') as any,
+      );
       inventoryService.reserve.mockResolvedValue(buildReservation() as any);
-      paymentService.initiatePayment.mockRejectedValue(new Error('Razorpay unavailable'));
+      paymentService.initiatePayment.mockRejectedValue(
+        new Error('Razorpay unavailable'),
+      );
 
       // Must NOT throw — order is PLACED and buyer can retry via /payments/retry
       const result = await service.createOrder(onlineDto, userId, ipAddress);
@@ -432,13 +485,19 @@ describe('OrdersService', () => {
     });
 
     it('Online: idempotency key set AFTER payment initiation (INV-33)', async () => {
-      cartRepo.findActiveWithItems.mockResolvedValue(buildCart('ONLINE_UPI') as any);
+      cartRepo.findActiveWithItems.mockResolvedValue(
+        buildCart('ONLINE_UPI') as any,
+      );
       inventoryService.reserve.mockResolvedValue(buildReservation() as any);
 
       const callOrder: string[] = [];
       paymentService.initiatePayment.mockImplementation(async () => {
         callOrder.push('initiatePayment');
-        return { paymentUrl: 'https://pay.rzp.io', razorpayOrderId: 'order_001', paymentId: 'pay-001' };
+        return {
+          paymentUrl: 'https://pay.rzp.io',
+          razorpayOrderId: 'order_001',
+          paymentId: 'pay-001',
+        };
       });
       redis.set.mockImplementation(async (..._args: unknown[]) => {
         callOrder.push('redisSet');
@@ -455,14 +514,22 @@ describe('OrdersService', () => {
     });
 
     it('Online: releases all reservations if $transaction fails (compensation, S4-W6)', async () => {
-      cartRepo.findActiveWithItems.mockResolvedValue(buildCart('ONLINE_UPI') as any);
+      cartRepo.findActiveWithItems.mockResolvedValue(
+        buildCart('ONLINE_UPI') as any,
+      );
       inventoryService.reserve.mockResolvedValue(buildReservation() as any);
       prisma.$transaction.mockRejectedValue(new Error('Online tx failed'));
 
-      await expect(service.createOrder(onlineDto, userId, ipAddress)).rejects.toThrow('Online tx failed');
+      await expect(
+        service.createOrder(onlineDto, userId, ipAddress),
+      ).rejects.toThrow('Online tx failed');
 
       // Sequential release (S4-W6) — not Promise.all
-      expect(inventoryService.release).toHaveBeenCalledWith('res-001', 'ORDER_CANCELLED', 'SYSTEM');
+      expect(inventoryService.release).toHaveBeenCalledWith(
+        'res-001',
+        'ORDER_CANCELLED',
+        'SYSTEM',
+      );
       // paymentService NOT called if tx failed
       expect(paymentService.initiatePayment).not.toHaveBeenCalled();
     });
@@ -474,23 +541,41 @@ describe('OrdersService', () => {
     it('throws ORDER_NOT_FOUND when order does not belong to user', async () => {
       ordersRepo.findById.mockResolvedValue(null);
 
-      await expect(service.cancelOrder('order-999', userId, 'Changed mind')).rejects.toThrow(NotFoundException);
+      await expect(
+        service.cancelOrder('order-999', userId, 'Changed mind'),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('throws ORDER_ALREADY_TERMINAL (422) if order is CANCELLED', async () => {
-      ordersRepo.findById.mockResolvedValue({ id: 'order-1', status: 'CANCELLED' } as any);
-      await expect(service.cancelOrder('order-1', userId, 'reason')).rejects.toThrow(/is in terminal state/);
+      ordersRepo.findById.mockResolvedValue({
+        id: 'order-1',
+        status: 'CANCELLED',
+      } as any);
+      await expect(
+        service.cancelOrder('order-1', userId, 'reason'),
+      ).rejects.toThrow(/is in terminal state/);
     });
 
     it('throws ORDER_ALREADY_TERMINAL (422) if order is COMPLETED', async () => {
-      ordersRepo.findById.mockResolvedValue({ id: 'order-1', status: 'COMPLETED' } as any);
-      await expect(service.cancelOrder('order-1', userId, 'reason')).rejects.toThrow(/is in terminal state/);
+      ordersRepo.findById.mockResolvedValue({
+        id: 'order-1',
+        status: 'COMPLETED',
+      } as any);
+      await expect(
+        service.cancelOrder('order-1', userId, 'reason'),
+      ).rejects.toThrow(/is in terminal state/);
     });
 
     it('cancels a PLACED order, releases inventory, and creates history + event', async () => {
-      ordersRepo.findById.mockResolvedValue({ id: 'order-1', status: 'PLACED', version: 1 } as any);
-      inventoryService.releaseAllForOrder.mockResolvedValue([{ reservationId: 'res-1', status: 'RELEASED', alreadyReleased: false }] as any);
-      
+      ordersRepo.findById.mockResolvedValue({
+        id: 'order-1',
+        status: 'PLACED',
+        version: 1,
+      } as any);
+      inventoryService.releaseAllForOrder.mockResolvedValue([
+        { reservationId: 'res-1', status: 'RELEASED', alreadyReleased: false },
+      ]);
+
       // Setup transaction mock behavior
       const txMock = {
         order: { update: vi.fn() },
@@ -504,30 +589,47 @@ describe('OrdersService', () => {
       await service.cancelOrder('order-1', userId, 'Changed mind');
 
       // Verify sequential release called
-      expect(inventoryService.releaseAllForOrder).toHaveBeenCalledWith('order-1', 'ORDER_CANCELLED', userId);
-      
+      expect(inventoryService.releaseAllForOrder).toHaveBeenCalledWith(
+        'order-1',
+        'ORDER_CANCELLED',
+        userId,
+      );
+
       // Verify order update
-      expect(txMock.order.update).toHaveBeenCalledWith(expect.objectContaining({
-        where: { id: 'order-1' },
-        data: expect.objectContaining({ status: 'CANCELLED', cancellationReason: 'Changed mind' }),
-      }));
+      expect(txMock.order.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'order-1' },
+          data: expect.objectContaining({
+            status: 'CANCELLED',
+            cancellationReason: 'Changed mind',
+          }),
+        }),
+      );
 
       // Verify status history
-      expect(txMock.orderStatusHistory.create).toHaveBeenCalledWith(expect.objectContaining({
-        data: expect.objectContaining({ statusFrom: 'PLACED', statusTo: 'CANCELLED', reason: 'Changed mind' }),
-      }));
+      expect(txMock.orderStatusHistory.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            statusFrom: 'PLACED',
+            statusTo: 'CANCELLED',
+            reason: 'Changed mind',
+          }),
+        }),
+      );
 
       // Verify event outbox
-      expect(txMock.eventOutbox.create).toHaveBeenCalledWith(expect.objectContaining({
-        data: expect.objectContaining({
-          eventType: 'OrderCancelled',
-          eventVersion: '1.0',
-          schemaVersion: '4.3',
-          // HARDENED (MEDIUM-2 fix): orderId alone — CANCELLED is terminal, no double-cancel possible
-          // version suffix was removed because order.version is never incremented on cancellation
-          deduplicationKey: 'order-cancelled-order-1',
+      expect(txMock.eventOutbox.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            eventType: 'OrderCancelled',
+            eventVersion: '1.0',
+            schemaVersion: '4.3',
+            // HARDENED (MEDIUM-2 fix): orderId alone — CANCELLED is terminal, no double-cancel possible
+            // version suffix was removed because order.version is never incremented on cancellation
+            deduplicationKey: 'order-cancelled-order-1',
+          }),
         }),
-      }));
+      );
     });
   });
 });

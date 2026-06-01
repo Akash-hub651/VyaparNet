@@ -17,11 +17,9 @@ import { UserRole } from '@vyaparnet/database';
  */
 @Controller('seller/dashboard')
 @UseGuards(JwtAuthGuard, RolesGuard, SellerContextGuard) // INV-S5-2: SellerContextGuard mandatory
-@Roles(UserRole.SELLER)                                  // INV-S5-21: SELLER role required
+@Roles(UserRole.SELLER) // INV-S5-21: SELLER role required
 export class SellerDashboardController {
-  constructor(
-    private readonly sellerKpiService: SellerKpiService,
-  ) {}
+  constructor(private readonly sellerKpiService: SellerKpiService) {}
 
   /**
    * GET /seller/dashboard/kpis

@@ -1,3 +1,4 @@
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { TemplateService } from '../services/template.service';
 
 /**
@@ -18,7 +19,7 @@ import { TemplateService } from '../services/template.service';
 // metrics=null: @Optional() injection — tests do not need metrics instrumentation.
 function makeService(): TemplateService {
   const mockRepo = {
-    findAllActive: jest.fn().mockResolvedValue([]),
+    findAllActive: vi.fn().mockResolvedValue([]),
   } as never;
   // Pass null for metrics (@Optional()) — safe, render() guards with optional chaining
   return new TemplateService(mockRepo, null);
@@ -87,9 +88,12 @@ describe('TemplateService — Phase 13 Security Hardening (§24.3)', () => {
 
   // Verify unreplaced placeholders do not appear in output
   it('strips unreplaced {{placeholders}} from output (leakage prevention)', () => {
-    const result = service.render('Name: {{name}}, City: {{city}}, Pin: {{pin}}', {
-      name: 'Ravi',
-    });
+    const result = service.render(
+      'Name: {{name}}, City: {{city}}, Pin: {{pin}}',
+      {
+        name: 'Ravi',
+      },
+    );
     // Note: render() calls .trim() — trailing whitespace is stripped from final output
     expect(result).toBe('Name: Ravi, City: , Pin:');
     expect(result).not.toContain('{{city}}');

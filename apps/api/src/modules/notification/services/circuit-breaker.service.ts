@@ -51,7 +51,10 @@ export class CircuitBreakerService {
       if (count === 1) await this.redis.expire(key, 60); // 60s sliding window (§4)
       if (count >= 5) {
         await this.redis.set(`cb:${channel}:open`, '1', 'EX', 120); // 120s cooldown
-        this.logger.warn({ channel, failureCount: count }, 'CIRCUIT_BREAKER_OPENED');
+        this.logger.warn(
+          { channel, failureCount: count },
+          'CIRCUIT_BREAKER_OPENED',
+        );
         // FIX-10: Emit cb_state=1 (OPEN) so Grafana alert can fire immediately
         this.metrics.notificationCbState.set({ channel }, 1);
       }

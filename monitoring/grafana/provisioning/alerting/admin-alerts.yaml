@@ -1,0 +1,98 @@
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: Admin Critical Alerts
+    folder: "VyaparNet System Alerts"
+    interval: 1m
+    rules:
+      - uid: admin_stuck_orders_alert
+        title: "[WARNING] High number of stuck orders"
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: exception_center_stuck_orders > 5
+              intervalMs: 1000
+              maxDataPoints: 43200
+        noDataState: OK
+        execErrState: Error
+        for: 10m
+        annotations:
+          summary: "Stuck orders count > 5 for 10 min"
+          description: "Exception center reports more than 5 orders stuck in PROCESSING state."
+        labels:
+          severity: warning
+          service: admin
+
+      - uid: admin_dlq_depth_alert
+        title: "[WARNING] Admin DLQ Depth Too High"
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 60
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: notification_dlq_size > 100
+              intervalMs: 1000
+              maxDataPoints: 43200
+        noDataState: OK
+        execErrState: Error
+        for: 1m
+        annotations:
+          summary: "DLQ depth > 100"
+          description: "There are more than 100 jobs stuck in the notifications-failed DLQ."
+        labels:
+          severity: warning
+          service: admin
+
+      - uid: admin_audit_failures_alert
+        title: "[CRITICAL] Audit Log Write Failures"
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: sum(increase(admin_audit_log_write_failures_total[5m])) > 10
+              intervalMs: 1000
+              maxDataPoints: 43200
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "AuditLog write failures > 10 in 5 min"
+          description: "SafeWriter is falling back to DLQ too often. Database might be unreachable or schema mismatch."
+        labels:
+          severity: critical
+          service: admin
+
+      - uid: admin_invoice_latency_alert
+        title: "[WARNING] Invoice Generation Latency Too High"
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: histogram_quantile(0.99, sum(rate(admin_invoice_generation_ms_bucket[5m])) by (le)) > 5000
+              intervalMs: 1000
+              maxDataPoints: 43200
+        noDataState: OK
+        execErrState: Error
+        for: 1m
+        annotations:
+          summary: "Invoice generation p99 > 5s"
+          description: "Tax invoice PDF generation is taking longer than 5 seconds at the 99th percentile."
+        labels:
+          severity: warning
+          service: admin

@@ -6,7 +6,10 @@ import { Prisma, Order, OrderItem, OrderStatus } from '@vyaparnet/database';
 export class OrdersRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findById(orderId: string, buyerId: string): Promise<(Order & { items: OrderItem[] }) | null> {
+  async findById(
+    orderId: string,
+    buyerId: string,
+  ): Promise<(Order & { items: OrderItem[] }) | null> {
     // INV-18: always filter by buyerId — no unfenced reads
     return this.prisma.order.findFirst({
       where: { id: orderId, buyerId, isDeleted: false },
@@ -41,7 +44,12 @@ export class OrdersRepository {
   async updateStatus(
     orderId: string,
     status: OrderStatus,
-    additionalData: Partial<Pick<Order, 'cancelledAt' | 'confirmedAt' | 'paymentFailedAt' | 'cancellationReason'>>,
+    additionalData: Partial<
+      Pick<
+        Order,
+        'cancelledAt' | 'confirmedAt' | 'paymentFailedAt' | 'cancellationReason'
+      >
+    >,
     tx: Prisma.TransactionClient,
   ): Promise<Order> {
     return tx.order.update({

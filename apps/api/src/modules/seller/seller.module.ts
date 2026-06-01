@@ -39,7 +39,7 @@ import { AuthModule } from '../identity/auth/auth.module';
     SellerDashboardController,
     SellerOrdersController,
     SellerInventoryController,
-    SellerScorecardController,   // FIX-3: GET /seller/scorecard per spec §8.1
+    SellerScorecardController, // FIX-3: GET /seller/scorecard per spec §8.1
   ],
   providers: [
     SellerContextGuard,

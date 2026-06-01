@@ -53,7 +53,12 @@ export class SellerKpiService {
           ...kpis,
           cachedAt: new Date().toISOString(),
         };
-        await this.redis.set(cacheKey, JSON.stringify(cachedPayload), 'EX', jitteredTtl);
+        await this.redis.set(
+          cacheKey,
+          JSON.stringify(cachedPayload),
+          'EX',
+          jitteredTtl,
+        );
       } catch {
         /* silent — Redis still down, DB result returned */
       }

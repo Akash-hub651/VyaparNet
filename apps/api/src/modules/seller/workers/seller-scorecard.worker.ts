@@ -42,7 +42,7 @@ export class SellerScorecardWorker implements OnModuleInit {
         {},
         {
           repeat: { cron: '0 */6 * * *' }, // every 6 hours at :00
-          jobId: 'seller-scorecard-cron',  // INV-S5-19: stable jobId — NO duplicates on restart
+          jobId: 'seller-scorecard-cron', // INV-S5-19: stable jobId — NO duplicates on restart
           removeOnComplete: true,
           removeOnFail: true,
         },

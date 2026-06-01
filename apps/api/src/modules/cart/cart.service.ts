@@ -33,7 +33,7 @@ export class CartService {
     }
 
     const cart = await this.cartRepo.findActiveWithItems(userId, segment);
-    
+
     if (!cart) {
       const emptyCart: CartType = {
         id: `empty_${userId}_${segment}`,
@@ -71,7 +71,7 @@ export class CartService {
     await this.checkCartAddRate(userId);
 
     // 2. Load or create cart
-    const cart = await this.cartRepo.findOrCreate(userId, dto.segment as Segment);
+    const cart = await this.cartRepo.findOrCreate(userId, dto.segment);
 
     // 3. Load product directly from DB
     const product = await this.prisma.product.findUnique({
@@ -79,7 +79,10 @@ export class CartService {
     });
 
     if (!product) {
-      throw new NotFoundException({ code: 'PRODUCT_NOT_FOUND', message: 'Product not found' });
+      throw new NotFoundException({
+        code: 'PRODUCT_NOT_FOUND',
+        message: 'Product not found',
+      });
     }
     // Assume isActive field isn't explicitly on product in schema, but there's MOQ and segment.
     // We check segment mismatch.
@@ -101,11 +104,14 @@ export class CartService {
     // 6. Soft availability check
     const availability = await this.inventoryService.getAvailability(
       dto.productId,
-      dto.segment as Segment,
+      dto.segment,
     );
 
     if (availability.availableQuantity <= 0) {
-      throw new BadRequestException({ code: 'OUT_OF_STOCK', message: 'Product is out of stock' });
+      throw new BadRequestException({
+        code: 'OUT_OF_STOCK',
+        message: 'Product is out of stock',
+      });
     }
 
     // 7. Upsert CartItem
@@ -119,22 +125,39 @@ export class CartService {
     await this.redis.del(`cart:${userId}:${cart.segment}`);
 
     // 9. Metrics
-    this.metrics.cartItemCountTotal.inc({ segment: cart.segment, action: 'add' });
+    this.metrics.cartItemCountTotal.inc({
+      segment: cart.segment,
+      action: 'add',
+    });
 
     return item;
   }
 
-  async updateItem(userId: string, dto: UpdateCartItemDto & { productId: string; segment: Segment }): Promise<void> {
+  async updateItem(
+    userId: string,
+    dto: UpdateCartItemDto & { productId: string; segment: Segment },
+  ): Promise<void> {
     const cart = await this.cartRepo.findActiveWithItems(userId, dto.segment);
     if (!cart) throw new NotFoundException({ code: 'CART_NOT_FOUND' });
 
-    await this.cartRepo.updateItemQuantity(cart.id, dto.productId, dto.quantity);
+    await this.cartRepo.updateItemQuantity(
+      cart.id,
+      dto.productId,
+      dto.quantity,
+    );
     await this.redis.del(`cart:${userId}:${dto.segment}`);
 
-    this.metrics.cartItemCountTotal.inc({ segment: dto.segment, action: 'update' });
+    this.metrics.cartItemCountTotal.inc({
+      segment: dto.segment,
+      action: 'update',
+    });
   }
 
-  async removeItem(userId: string, productId: string, segment: Segment): Promise<void> {
+  async removeItem(
+    userId: string,
+    productId: string,
+    segment: Segment,
+  ): Promise<void> {
     const cart = await this.cartRepo.findActiveWithItems(userId, segment);
     if (!cart) return;
 
@@ -149,7 +172,12 @@ export class CartService {
   }
 
   // Pure function for totals
-  private computeCartTotals(items: any[]): { subtotal: number; taxAmount: number; discount: number; total: number } {
+  private computeCartTotals(items: any[]): {
+    subtotal: number;
+    taxAmount: number;
+    discount: number;
+    total: number;
+  } {
     let subtotal = new Prisma.Decimal(0);
     const taxAmount = new Prisma.Decimal(0); // Add logic for tax later if needed
     const discount = new Prisma.Decimal(0);
@@ -193,7 +221,9 @@ export class CartService {
 
     // Batch all inventory availability checks in parallel — independent reads, safe to parallelize
     const availabilityResults = await Promise.all(
-      cart.items.map((item: any) => this.inventoryService.getAvailability(item.productId, cart.segment)),
+      cart.items.map((item: any) =>
+        this.inventoryService.getAvailability(item.productId, cart.segment),
+      ),
     );
 
     for (let i = 0; i < cart.items.length; i++) {
@@ -207,7 +237,9 @@ export class CartService {
           message: 'Product is no longer available.',
           productId: item.productId,
         });
-        this.metrics.cartWarningSurfacedTotal.inc({ warning_type: 'OUT_OF_STOCK' });
+        this.metrics.cartWarningSurfacedTotal.inc({
+          warning_type: 'OUT_OF_STOCK',
+        });
       }
 
       if (product && item.quantity < product.moq) {
@@ -216,7 +248,9 @@ export class CartService {
           message: `Minimum order quantity is ${product.moq}`,
           productId: item.productId,
         });
-        this.metrics.cartWarningSurfacedTotal.inc({ warning_type: 'MOQ_VIOLATION' });
+        this.metrics.cartWarningSurfacedTotal.inc({
+          warning_type: 'MOQ_VIOLATION',
+        });
       }
 
       enrichedItems.push({
@@ -255,7 +289,7 @@ export class CartService {
   private async checkCartAddRate(userId: string): Promise<void> {
     const key = `cart_rate:${userId}`;
     const limit = 50;
-    
+
     // Atomic INCR + EXPIRE via Lua script (INV-21)
     const script = `
       local current = redis.call('INCR', KEYS[1])
@@ -264,12 +298,15 @@ export class CartService {
       end
       return current
     `;
-    
-    const count = await this.redis.eval(script, 1, key) as number;
-    
+
+    const count = (await this.redis.eval(script, 1, key)) as number;
+
     if (count > limit) {
       this.logger.warn({ userId }, 'Cart rate limit exceeded');
-      throw new BadRequestException({ code: 'RATE_LIMIT_EXCEEDED', message: 'Too many items added to cart' });
+      throw new BadRequestException({
+        code: 'RATE_LIMIT_EXCEEDED',
+        message: 'Too many items added to cart',
+      });
     }
   }
 }

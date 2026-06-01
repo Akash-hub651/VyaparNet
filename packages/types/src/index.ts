@@ -50,3 +50,7 @@ export * from './events/outbox-payloads.schemas';
 export * from './notification/notification.schemas';
 export * from './notification/preference.schemas';
 export * from './notification/push-subscription.schemas';
+
+// Admin DTOs (Sprint 7)
+export * from './admin';
+

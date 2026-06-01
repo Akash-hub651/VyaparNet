@@ -52,9 +52,14 @@ export class S3StorageService implements StorageService {
     });
 
     try {
-      return await getSignedUrl(this.s3Client, command, { expiresIn: expiresInSeconds });
+      return await getSignedUrl(this.s3Client, command, {
+        expiresIn: expiresInSeconds,
+      });
     } catch (error: any) {
-      this.logger.error(`Failed to generate signed URL for key: ${key}`, error.stack);
+      this.logger.error(
+        `Failed to generate signed URL for key: ${key}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -86,7 +91,10 @@ export class S3StorageService implements StorageService {
       if (error.name === 'NotFound') {
         return false;
       }
-      this.logger.error(`Error checking existence of object in S3: ${key}`, error.stack);
+      this.logger.error(
+        `Error checking existence of object in S3: ${key}`,
+        error.stack,
+      );
       throw error;
     }
   }

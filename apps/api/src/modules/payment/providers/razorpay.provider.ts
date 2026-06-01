@@ -47,9 +47,9 @@ export class RazorpayPaymentProvider implements PaymentProvider {
     );
 
     const response = await this.razorpay.orders.create({
-      amount,                              // in paise
+      amount, // in paise
       currency,
-      receipt: metadata.orderId,          // max 40 chars
+      receipt: metadata.orderId, // max 40 chars
       notes: {
         orderId: metadata.orderId,
         buyerId: metadata.buyerId,
@@ -57,8 +57,11 @@ export class RazorpayPaymentProvider implements PaymentProvider {
     });
 
     return {
-      providerOrderId: response.id,       // razorpay order_xxxxx
-      amount: typeof response.amount === 'number' ? response.amount : Number(response.amount),
+      providerOrderId: response.id, // razorpay order_xxxxx
+      amount:
+        typeof response.amount === 'number'
+          ? response.amount
+          : Number(response.amount),
       currency: response.currency,
       // Checkout URL is constructed client-side using razorpay.js + key_id + providerOrderId
       checkoutUrl: undefined,
@@ -79,7 +82,11 @@ export class RazorpayPaymentProvider implements PaymentProvider {
    * @param signature x-razorpay-signature header value
    * @param secret    RAZORPAY_WEBHOOK_SECRET from config
    */
-  verifyWebhookSignature(payload: Buffer, signature: string, secret: string): boolean {
+  verifyWebhookSignature(
+    payload: Buffer,
+    signature: string,
+    secret: string,
+  ): boolean {
     try {
       const expectedSignature = crypto
         .createHmac('sha256', secret)
@@ -93,14 +100,20 @@ export class RazorpayPaymentProvider implements PaymentProvider {
       );
     } catch (err) {
       // Buffer.from will throw if signature is not valid hex (malformed request)
-      this.logger.warn({ err }, 'SECURITY: Webhook signature verification failed — possible malformed request');
+      this.logger.warn(
+        { err },
+        'SECURITY: Webhook signature verification failed — possible malformed request',
+      );
       return false;
     }
   }
 
   async capturePayment(providerOrderId: string): Promise<PaymentCaptureResult> {
     // Used by reconciliation worker — Razorpay auto-captures on payment.captured webhook
-    this.logger.log({ providerOrderId }, 'Polling Razorpay for payment status (reconciliation path)');
+    this.logger.log(
+      { providerOrderId },
+      'Polling Razorpay for payment status (reconciliation path)',
+    );
 
     const payments = await this.razorpay.orders.fetchPayments(providerOrderId);
     const captured = (payments as any).items?.find(
@@ -108,7 +121,9 @@ export class RazorpayPaymentProvider implements PaymentProvider {
     );
 
     if (!captured) {
-      throw new Error(`No captured payment found for Razorpay order ${providerOrderId}`);
+      throw new Error(
+        `No captured payment found for Razorpay order ${providerOrderId}`,
+      );
     }
 
     return {
@@ -134,7 +149,8 @@ export class RazorpayPaymentProvider implements PaymentProvider {
     failedReason?: string;
   }> {
     try {
-      const payments = await this.razorpay.orders.fetchPayments(providerOrderId);
+      const payments =
+        await this.razorpay.orders.fetchPayments(providerOrderId);
       const items = (payments as any).items ?? [];
 
       const captured = items.find((p: any) => p.status === 'captured');
@@ -155,7 +171,10 @@ export class RazorpayPaymentProvider implements PaymentProvider {
 
       return { status: 'PENDING' };
     } catch (err) {
-      this.logger.error({ providerOrderId, err }, 'Failed to fetch Razorpay payment status');
+      this.logger.error(
+        { providerOrderId, err },
+        'Failed to fetch Razorpay payment status',
+      );
       throw err;
     }
   }

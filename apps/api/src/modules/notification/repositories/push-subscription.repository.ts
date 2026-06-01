@@ -27,7 +27,10 @@ export class PushSubscriptionRepository {
    * If cap is reached: oldest subscription (by createdAt ASC) is deleted first.
    * Log: PUSH_SUB_CAP_EVICTION when eviction occurs.
    */
-  async upsert(userId: string, dto: PushSubscribeDto): Promise<PushSubscription> {
+  async upsert(
+    userId: string,
+    dto: PushSubscribeDto,
+  ): Promise<PushSubscription> {
     return this.prisma.$transaction(
       async (tx) => {
         // Check current active subscription count for this user
@@ -69,7 +72,7 @@ export class PushSubscriptionRepository {
             isActive: true,
           },
           update: {
-            p256dh: dto.keys.p256dh,   // Re-registration: update encryption keys
+            p256dh: dto.keys.p256dh, // Re-registration: update encryption keys
             auth: dto.keys.auth,
             userAgent: dto.userAgent ?? null,
             isActive: true,

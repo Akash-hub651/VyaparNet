@@ -178,7 +178,10 @@ export class InventoryService implements InventoryServicePublicInterface {
       data: { reservedQty: { decrement: reservation.quantity } },
     });
 
-    this.logger.log({ reservationId, actorId, qty: reservation.quantity }, 'Reservation consumed');
+    this.logger.log(
+      { reservationId, actorId, qty: reservation.quantity },
+      'Reservation consumed',
+    );
   }
 
   async getAvailability(
@@ -236,7 +239,8 @@ export class InventoryService implements InventoryServicePublicInterface {
       return new Map();
     }
     // Single DB query for all productIds (INV-S5-27)
-    const inventoryRows = await this.queryService.getBatchAvailability(productIds);
+    const inventoryRows =
+      await this.queryService.getBatchAvailability(productIds);
     const result = new Map<string, InventoryAvailabilityResponse>();
     for (const row of inventoryRows) {
       result.set(row.productId, {

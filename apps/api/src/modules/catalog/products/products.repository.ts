@@ -120,7 +120,10 @@ export class ProductsRepository {
   /**
    * Creates a new product.
    */
-  async create(data: Prisma.ProductCreateInput, tx?: Prisma.TransactionClient): Promise<Product> {
+  async create(
+    data: Prisma.ProductCreateInput,
+    tx?: Prisma.TransactionClient,
+  ): Promise<Product> {
     const client = tx || this.prisma;
     return client.product.create({ data });
   }
@@ -128,7 +131,11 @@ export class ProductsRepository {
   /**
    * Soft deletes a product.
    */
-  async softDelete(id: string, currentVersion: number, tx?: Prisma.TransactionClient): Promise<Product> {
+  async softDelete(
+    id: string,
+    currentVersion: number,
+    tx?: Prisma.TransactionClient,
+  ): Promise<Product> {
     const client = tx || this.prisma;
     return client.product.update({
       where: { id, version: currentVersion },

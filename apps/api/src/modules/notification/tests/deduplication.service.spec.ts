@@ -1,3 +1,4 @@
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { DeduplicationService } from '../services/deduplication.service';
 
 /**
@@ -13,39 +14,45 @@ import { DeduplicationService } from '../services/deduplication.service';
 describe('DeduplicationService', () => {
   let service: DeduplicationService;
   let mockRedis: {
-    exists: jest.Mock;
-    set: jest.Mock;
+    exists: ReturnType<typeof vi.fn>;
+    set: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(() => {
     mockRedis = {
-      exists: jest.fn(),
-      set: jest.fn(),
+      exists: vi.fn(),
+      set: vi.fn(),
     };
     service = new DeduplicationService(mockRedis as any);
   });
 
-  afterEach(() => jest.clearAllMocks());
+  afterEach(() => vi.clearAllMocks());
 
   // ─── isDuplicate ────────────────────────────────────────────────────────────
 
   describe('isDuplicate()', () => {
     it('returns true when Redis exists returns 1', async () => {
       mockRedis.exists.mockResolvedValue(1);
-      const result = await service.isDuplicate('notif:user-1:OrderCreated:order-1');
+      const result = await service.isDuplicate(
+        'notif:user-1:OrderCreated:order-1',
+      );
       expect(result).toBe(true);
     });
 
     it('returns false when Redis exists returns 0', async () => {
       mockRedis.exists.mockResolvedValue(0);
-      const result = await service.isDuplicate('notif:user-1:OrderCreated:order-1');
+      const result = await service.isDuplicate(
+        'notif:user-1:OrderCreated:order-1',
+      );
       expect(result).toBe(false);
     });
 
     it('returns false (NOT duplicate) on Redis failure — INV-S6-6 safe degraded mode', async () => {
       // Safe degraded mode: possible duplicate < missed notification
       mockRedis.exists.mockRejectedValue(new Error('Redis ECONNRESET'));
-      const result = await service.isDuplicate('notif:user-1:OrderCreated:order-1');
+      const result = await service.isDuplicate(
+        'notif:user-1:OrderCreated:order-1',
+      );
       expect(result).toBe(false);
     });
 
@@ -98,7 +105,9 @@ describe('DeduplicationService', () => {
       mockRedis.exists.mockResolvedValue(1);
       const result = await service.isLowStockRateLimited('prod-1', 'biz-1');
       expect(result).toBe(true);
-      expect(mockRedis.exists).toHaveBeenCalledWith('notif:lowstock:prod-1:biz-1');
+      expect(mockRedis.exists).toHaveBeenCalledWith(
+        'notif:lowstock:prod-1:biz-1',
+      );
     });
 
     it('returns false when no rate limit key exists', async () => {
@@ -132,8 +141,20 @@ describe('DeduplicationService', () => {
       mockRedis.set.mockResolvedValue('OK');
       await service.setLowStockRateLimit('prod-A', 'biz-1');
       await service.setLowStockRateLimit('prod-A', 'biz-2');
-      expect(mockRedis.set).toHaveBeenNthCalledWith(1, 'notif:lowstock:prod-A:biz-1', '1', 'EX', 86400);
-      expect(mockRedis.set).toHaveBeenNthCalledWith(2, 'notif:lowstock:prod-A:biz-2', '1', 'EX', 86400);
+      expect(mockRedis.set).toHaveBeenNthCalledWith(
+        1,
+        'notif:lowstock:prod-A:biz-1',
+        '1',
+        'EX',
+        86400,
+      );
+      expect(mockRedis.set).toHaveBeenNthCalledWith(
+        2,
+        'notif:lowstock:prod-A:biz-2',
+        '1',
+        'EX',
+        86400,
+      );
     });
   });
 });

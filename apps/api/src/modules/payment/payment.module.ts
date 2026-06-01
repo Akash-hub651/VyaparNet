@@ -55,10 +55,7 @@ import { PAYMENT_PROVIDER_TOKEN } from '@vyaparnet/types';
     // InventoryModule — for consume() and releaseAllForOrder() in webhook processor
     InventoryModule,
   ],
-  controllers: [
-    PaymentController,
-    WebhookController,
-  ],
+  controllers: [PaymentController, WebhookController],
   providers: [
     PaymentService,
     PaymentRepository,

@@ -1,4 +1,12 @@
-import { Controller, Post, UseInterceptors, UploadedFile, Body, ParseEnumPipe, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  UseInterceptors,
+  UploadedFile,
+  Body,
+  ParseEnumPipe,
+  UseGuards,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { MediaService } from './media.service';
 import { MediaClass, UserRole } from '@vyaparnet/database';
@@ -19,7 +27,8 @@ export class MediaController {
     @UploadedFile() file: Express.Multer.File,
     @Body('productId') productId: string,
     @CurrentUser() user: any,
-    @Body('mediaClass', new ParseEnumPipe(MediaClass, { optional: true })) mediaClass?: MediaClass,
+    @Body('mediaClass', new ParseEnumPipe(MediaClass, { optional: true }))
+    mediaClass?: MediaClass,
   ) {
     return this.mediaService.upload(file, user.id, productId, mediaClass);
   }

@@ -48,7 +48,8 @@ export class PaymentController {
   @HttpCode(HttpStatus.OK)
   async initiatePayment(
     @CurrentUser('id') userId: string,
-    @Body(new ZodValidationPipe(InitiatePaymentSchema)) body: InitiatePaymentDto,
+    @Body(new ZodValidationPipe(InitiatePaymentSchema))
+    body: InitiatePaymentDto,
     @Headers('idempotency-key') idempotencyKey: string,
     @Headers('x-reauth-token') reauthToken: string | undefined,
   ) {
@@ -81,7 +82,10 @@ export class PaymentController {
     @CurrentUser('id') userId: string,
     @Param('orderId') orderId: string,
   ): Promise<Record<string, unknown>> {
-    return this.paymentService.getPaymentStatus(orderId, userId) as unknown as Record<string, unknown>;
+    return this.paymentService.getPaymentStatus(
+      orderId,
+      userId,
+    ) as unknown as Record<string, unknown>;
   }
 
   @Get(':orderId/retry-status')

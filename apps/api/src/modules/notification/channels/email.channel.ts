@@ -28,10 +28,15 @@ export class ResendEmailService implements IEmailService {
 
   constructor(config: ConfigService) {
     this.resend = new Resend(config.get('RESEND_API_KEY'));
-    this.fromAddress = config.get('EMAIL_FROM_ADDRESS') || 'noreply@vyaparnet.com';
+    this.fromAddress =
+      config.get('EMAIL_FROM_ADDRESS') || 'noreply@vyaparnet.com';
   }
 
-  async send(to: string, subject: string, htmlBody: string): Promise<EmailResult> {
+  async send(
+    to: string,
+    subject: string,
+    htmlBody: string,
+  ): Promise<EmailResult> {
     try {
       const { data, error } = await this.resend.emails.send({
         from: this.fromAddress,
@@ -61,7 +66,12 @@ export function htmlEscape(str: string): string {
 
 // Template renders to HTML with VyaparNet branding
 // Mobile-first, Hinglish subject, plain text fallback
-export function buildEmailHtml(title: string, body: string, ctaUrl?: string, ctaText?: string): string {
+export function buildEmailHtml(
+  title: string,
+  body: string,
+  ctaUrl?: string,
+  ctaText?: string,
+): string {
   // INV-S6-23: Escape ALL user-controlled values before injection into HTML
   const safeTitle = htmlEscape(title);
   const safeBody = htmlEscape(body);
@@ -97,7 +107,7 @@ export function buildEmailHtml(title: string, body: string, ctaUrl?: string, cta
 
 /**
  * EmailChannel — implements INotificationChannel for email delivery.
- * 
+ *
  * GOVERNANCE:
  * - INV-S6-16: null email = skip + warn, never throw
  * - INV-S6-21: CircuitBreakerService MUST wrap delivery attempt
@@ -123,25 +133,32 @@ export class EmailChannel implements INotificationChannel {
 
     // INV-S6-21: Circuit Breaker wrapping
     if (await this.circuitBreakerService.isOpen('email')) {
-      this.logger.warn({ userId: job.userId }, 'CIRCUIT_BREAKER_OPEN_EMAIL_SKIPPED');
-      this.metrics.notificationFailedTotal.inc({ 
-        channel: 'email', 
-        reason: 'circuit_open', 
-        eventType: job.eventType ?? 'unknown' 
+      this.logger.warn(
+        { userId: job.userId },
+        'CIRCUIT_BREAKER_OPEN_EMAIL_SKIPPED',
+      );
+      this.metrics.notificationFailedTotal.inc({
+        channel: 'email',
+        reason: 'circuit_open',
+        eventType: job.eventType ?? 'unknown',
       });
       return; // Do NOT throw. Do NOT trigger retry. Silent skip.
     }
 
     // Pre-process HTML — htmlEscape is done inside buildEmailHtml
     const htmlBody = buildEmailHtml(
-      job.title, 
-      job.body, 
-      job.variables?.ctaUrl, 
-      job.variables?.ctaText
+      job.title,
+      job.body,
+      job.variables?.ctaUrl,
+      job.variables?.ctaText,
     );
 
     try {
-      const result = await this.emailService.send(job.email, job.title, htmlBody);
+      const result = await this.emailService.send(
+        job.email,
+        job.title,
+        htmlBody,
+      );
       if (!result.success) {
         // FIX-2: Do NOT call recordFailure() here — the catch block below already does.
         // Calling it twice halved the effective circuit threshold (3 calls instead of 5).

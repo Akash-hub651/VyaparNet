@@ -5,6 +5,7 @@ import { SmsChannel } from '../channels/sms.channel';
 import { EmailChannel } from '../channels/email.channel';
 import { WebPushService } from '../services/web-push.service';
 import { NotificationMetricsService } from '../services/notification-metrics.service';
+import { PrismaService } from '../../../core/prisma/prisma.service';
 import type { NotificationJob } from '../channels/channel.interface';
 
 /**
@@ -29,6 +30,7 @@ export class NotificationWorker {
     private readonly emailChannel: EmailChannel,
     private readonly webPushService: WebPushService,
     private readonly metrics: NotificationMetricsService,
+    private readonly prisma: PrismaService,
   ) {}
 
   /**
@@ -76,6 +78,13 @@ export class NotificationWorker {
         channel: 'push',
         eventType: job.data.eventType ?? 'unknown',
       });
+      // Update status to SENT on successful push delivery
+      if (job.data.notificationId) {
+        await this.prisma.notification.update({
+          where: { id: job.data.notificationId },
+          data: { status: 'SENT' }, // NotificationDeliveryStatus.SENT
+        }).catch(() => {}); // fire and forget
+      }
     } catch (err) {
       // FOOTGUN-10-A avoidance: Push = best-effort. Log WARN, do NOT rethrow.
       // Rethrowing = BullMQ retry = eventual DLQ = DLQ bloat with un-actionable failures.
@@ -101,7 +110,7 @@ export class NotificationWorker {
    * BullMQ auto-moves the job to 'notifications-failed' queue — no manual action needed.
    */
   @OnQueueFailed()
-  onJobFailed(job: Job<NotificationJob>, err: Error): void {
+  async onJobFailed(job: Job<NotificationJob>, err: Error): Promise<void> {
     this.logger.error(
       {
         jobId: job.id,
@@ -117,7 +126,20 @@ export class NotificationWorker {
     // INV-S6-21: after 3 attempts the job lands in DLQ — track size
     if (job.attemptsMade >= 3) {
       this.metrics.notificationDlqSize.inc();
-      this.logger.error({ jobId: job.id, channel: job.data?.channel }, 'NOTIFICATION_DLQ');
+      this.logger.error(
+        { jobId: job.id, channel: job.data?.channel },
+        'NOTIFICATION_DLQ',
+      );
+      
+      // Update status to FAILED on DLQ placement
+      if (job.data?.notificationId) {
+        this.prisma.notification.update({
+          where: { id: job.data.notificationId },
+          data: { status: 'FAILED' }, // NotificationDeliveryStatus.FAILED
+        }).catch((e) => {
+          this.logger.error('Failed to mark Notification FAILED on DLQ', e);
+        });
+      }
     }
   }
 
@@ -144,6 +166,13 @@ export class NotificationWorker {
         eventType: data.eventType ?? 'unknown',
         segment: data.segment,
       });
+      // Update status to SENT on successful delivery
+      if (data.notificationId) {
+        await this.prisma.notification.update({
+          where: { id: data.notificationId },
+          data: { status: 'SENT' }, // NotificationDeliveryStatus.SENT
+        }).catch(() => {});
+      }
     } catch (err) {
       this.metrics.notificationFailedTotal.inc({
         channel,

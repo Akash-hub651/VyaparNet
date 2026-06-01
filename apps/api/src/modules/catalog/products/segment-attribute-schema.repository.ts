@@ -14,7 +14,9 @@ export class SegmentAttributeSchemaRepository {
    * Retrieves the active attribute schema for a specific segment.
    * Caches the result in Redis with a 300s TTL under 'appconfig:{segment}_attr_schema'.
    */
-  async findBySegment(segment: Segment): Promise<SegmentAttributeSchema | null> {
+  async findBySegment(
+    segment: Segment,
+  ): Promise<SegmentAttributeSchema | null> {
     const cacheKey = `appconfig:${segment}_attr_schema`;
     const cached = await this.redis.getJson<SegmentAttributeSchema>(cacheKey);
     if (cached) return cached;

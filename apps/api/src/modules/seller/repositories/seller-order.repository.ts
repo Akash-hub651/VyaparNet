@@ -1,12 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../core/prisma/prisma.service';
-import { OrderStatus } from '@vyaparnet/database';
-import { SellerOrderFilterDto, SellerOrderView, SellerOrderListResponse } from '@vyaparnet/types';
 
-// maskBuyerId: returns BUYER-{first6ofId} (INV-S5-4)
-export function maskBuyerId(buyerId: string): string {
-  return `BUYER-${buyerId.slice(0, 6).toUpperCase()}`;
-}
+import {
+  SellerOrderFilterDto,
+  SellerOrderView,
+  SellerOrderListResponse,
+} from '@vyaparnet/types';
+
+import { maskBuyerId } from '@vyaparnet/utils';
 
 @Injectable()
 export class SellerOrderRepository {
@@ -23,7 +24,7 @@ export class SellerOrderRepository {
       where: {
         sellerId, // MANDATORY — Business.id (INV-S5-3, INV-S5-1)
         isDeleted: false,
-        ...(filter.status && { status: filter.status as OrderStatus }),
+        ...(filter.status && { status: filter.status }),
         ...(filter.cursor && { id: { lt: filter.cursor } }),
       },
       include: {
@@ -87,7 +88,14 @@ export class SellerOrderRepository {
     const statusHistory = await this.prisma.orderStatusHistory.findMany({
       where: { orderId },
       orderBy: { timestamp: 'asc' },
-      select: { id: true, statusFrom: true, statusTo: true, reason: true, timestamp: true, actorRole: true },
+      select: {
+        id: true,
+        statusFrom: true,
+        statusTo: true,
+        reason: true,
+        timestamp: true,
+        actorRole: true,
+      },
     });
 
     const tracking = order.tracking[0] ?? null;
@@ -129,7 +137,8 @@ export class SellerOrderRepository {
         ? {
             carrier: (tracking as any).carrier ?? null,
             trackingNumber: tracking.trackingNumber ?? null,
-            estimatedDelivery: tracking.estimatedDelivery?.toISOString() ?? null,
+            estimatedDelivery:
+              tracking.estimatedDelivery?.toISOString() ?? null,
             dispatchProofUrl: (tracking as any).dispatchProofUrl ?? null,
           }
         : null,

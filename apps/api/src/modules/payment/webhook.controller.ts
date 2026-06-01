@@ -69,7 +69,7 @@ export class WebhookController {
    *   On timeout: idempotency key is DEL'd → Razorpay retry succeeds after BullMQ recovers.
    */
   @Post('webhook')
-  @Public()        // No JwtAuthGuard — security = HMAC (§15.1)
+  @Public() // No JwtAuthGuard — security = HMAC (§15.1)
   @HttpCode(200)
   async handleWebhook(
     @Body() rawBody: Buffer,
@@ -77,7 +77,6 @@ export class WebhookController {
     @Headers('x-razorpay-event') eventType: string,
     @Headers('x-razorpay-event-id') eventId: string,
   ): Promise<{ status: string }> {
-
     // ── STEP 1: HMAC SIGNATURE VERIFICATION — FIRST OPERATION (§15.1) ──
     // HARDENED: timingSafeEqual prevents timing oracle attacks.
     // rawBody is the raw Buffer — JSON parsing would corrupt signature verification.
@@ -103,7 +102,10 @@ export class WebhookController {
     try {
       event = JSON.parse(rawBody.toString('utf-8'));
     } catch {
-      throw new BadRequestException({ code: 'INVALID_WEBHOOK_BODY', message: 'Could not parse webhook body' });
+      throw new BadRequestException({
+        code: 'INVALID_WEBHOOK_BODY',
+        message: 'Could not parse webhook body',
+      });
     }
 
     // ── STEP 3: WEBHOOK IDEMPOTENCY CHECK — ATOMIC SET NX (§13 Redis Registry) ──
@@ -119,13 +121,21 @@ export class WebhookController {
         'NX', // Atomic — prevents race between two simultaneous identical webhooks
       );
     } catch (redisErr) {
-      this.logger.error({ eventId, err: redisErr }, 'Redis unavailable for webhook idempotency — returning 503');
-      throw new ServiceUnavailableException({ code: 'WEBHOOK_QUEUE_UNAVAILABLE' });
+      this.logger.error(
+        { eventId, err: redisErr },
+        'Redis unavailable for webhook idempotency — returning 503',
+      );
+      throw new ServiceUnavailableException({
+        code: 'WEBHOOK_QUEUE_UNAVAILABLE',
+      });
     }
 
     if (alreadyQueued === null) {
       // SET NX returned nil → key already existed → duplicate webhook
-      this.logger.log({ eventId, eventType }, 'Duplicate webhook — returning 200 (idempotent, already queued)');
+      this.logger.log(
+        { eventId, eventType },
+        'Duplicate webhook — returning 200 (idempotent, already queued)',
+      );
       this.metrics.paymentWebhookDuplicateTotal.inc();
       return { status: 'already_processed' };
     }
@@ -149,10 +159,7 @@ export class WebhookController {
         },
       ),
       new Promise<never>((_, reject) =>
-        setTimeout(
-          () => reject(new Error('QUEUE_TIMEOUT')),
-          2000,
-        ),
+        setTimeout(() => reject(new Error('QUEUE_TIMEOUT')), 2000),
       ),
     ]).catch(async (err: Error) => {
       if (err.message === 'QUEUE_TIMEOUT') {
@@ -163,11 +170,16 @@ export class WebhookController {
           'CRITICAL: BullMQ queue.add timed out (2000ms) — idempotency key cleared for Razorpay retry',
         );
         this.metrics.paymentWebhookQueueTimeoutTotal.inc();
-        throw new ServiceUnavailableException({ code: 'WEBHOOK_QUEUE_UNAVAILABLE' });
+        throw new ServiceUnavailableException({
+          code: 'WEBHOOK_QUEUE_UNAVAILABLE',
+        });
       }
       // Unexpected queue error — also clear key for retry safety
       await this.redis.del(`webhook_idem:${eventId}`).catch(() => {});
-      this.logger.error({ eventId, eventType, err }, 'Unexpected BullMQ error — idempotency key cleared');
+      this.logger.error(
+        { eventId, eventType, err },
+        'Unexpected BullMQ error — idempotency key cleared',
+      );
       throw err;
     });
 

@@ -1,6 +1,17 @@
-import { Controller, Get, Patch, Param, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Param,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { UserRole } from '@vyaparnet/database';
-import { NotificationListQuerySchema, NotificationListQuery } from '@vyaparnet/types';
+import {
+  NotificationListQuerySchema,
+  NotificationListQuery,
+} from '@vyaparnet/types';
 import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
 import { RolesGuard } from '../../shared/guards/roles.guard';
 import { Roles } from '../../shared/decorators/roles.decorator';
@@ -11,10 +22,18 @@ import { PushSubscriptionRepository } from './repositories/push-subscription.rep
 import { RedisService } from '../../core/redis/redis.service';
 import { ConfigService } from '@nestjs/config';
 import { Public } from '../../shared/decorators/public.decorator';
-import { PushSubscribeDto, PushSubscribeSchema, PushUnsubscribeDto, PushUnsubscribeSchema } from '@vyaparnet/types';
+import {
+  PushSubscribeDto,
+  PushSubscribeSchema,
+  PushUnsubscribeDto,
+  PushUnsubscribeSchema,
+} from '@vyaparnet/types';
 import { Post, Delete, Body, Put } from '@nestjs/common';
 import { NotificationPreferenceService } from './services/notification-preference.service';
-import { UpdatePreferencesDto, UpdatePreferencesSchema } from '@vyaparnet/types';
+import {
+  UpdatePreferencesDto,
+  UpdatePreferencesSchema,
+} from '@vyaparnet/types';
 
 /**
  * NotificationController — Phase 4 In-App Notification APIs.
@@ -47,7 +66,8 @@ export class NotificationController {
   @Get()
   async getNotifications(
     @Req() req: any,
-    @Query(new ZodValidationPipe(NotificationListQuerySchema)) query: NotificationListQuery,
+    @Query(new ZodValidationPipe(NotificationListQuerySchema))
+    query: NotificationListQuery,
   ) {
     const userId = req.user.id; // JWT — never trust body
     return this.notificationService.getNotifications(userId, query);
@@ -59,9 +79,9 @@ export class NotificationController {
   @Get('unread-count')
   async getUnreadCount(@Req() req: any) {
     const userId = req.user.id;
-    return { 
-      success: true, 
-      data: { count: await this.notificationService.getUnreadCount(userId) } 
+    return {
+      success: true,
+      data: { count: await this.notificationService.getUnreadCount(userId) },
     };
   }
 
@@ -103,7 +123,8 @@ export class NotificationController {
   @Get('preferences')
   async getPreferences(@Req() req: any) {
     const userId = req.user.id; // JWT — never trust body
-    const prefs = await this.notificationPreferenceService.getPreferences(userId);
+    const prefs =
+      await this.notificationPreferenceService.getPreferences(userId);
     return { success: true, data: prefs };
   }
 
@@ -116,10 +137,14 @@ export class NotificationController {
   @Put('preferences')
   async updatePreferences(
     @Req() req: any,
-    @Body(new ZodValidationPipe(UpdatePreferencesSchema)) dto: UpdatePreferencesDto,
+    @Body(new ZodValidationPipe(UpdatePreferencesSchema))
+    dto: UpdatePreferencesDto,
   ) {
     const userId = req.user.id; // JWT — never trust body
-    const updated = await this.notificationPreferenceService.updatePreferences(userId, dto);
+    const updated = await this.notificationPreferenceService.updatePreferences(
+      userId,
+      dto,
+    );
     return { success: true, data: updated };
   }
 
@@ -140,16 +165,23 @@ export class NotificationController {
   async unsubscribe(
     @Req() req: any,
     // INV-S6-29: Zod validation REQUIRED on unsubscribe body
-    @Body(new ZodValidationPipe(PushUnsubscribeSchema)) body: PushUnsubscribeDto,
+    @Body(new ZodValidationPipe(PushUnsubscribeSchema))
+    body: PushUnsubscribeDto,
   ) {
     const userId = req.user.id;
-    await this.pushSubscriptionRepository.deleteByEndpoint(userId, body.endpoint);
+    await this.pushSubscriptionRepository.deleteByEndpoint(
+      userId,
+      body.endpoint,
+    );
     return { success: true };
   }
 
   @Get('push/vapid-public-key')
   @Public() // VAPID public key is public
   async getVapidPublicKey() {
-    return { success: true, data: { publicKey: this.config.get('VAPID_PUBLIC_KEY') } };
+    return {
+      success: true,
+      data: { publicKey: this.config.get('VAPID_PUBLIC_KEY') },
+    };
   }
 }

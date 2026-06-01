@@ -1,4 +1,13 @@
-import { Controller, Get, Delete, Param, Query, Body, UseGuards, Post } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Delete,
+  Param,
+  Query,
+  Body,
+  UseGuards,
+  Post,
+} from '@nestjs/common';
 import { BuyerOrderService } from '../services/buyer-order.service';
 import { BuyerReorderService } from '../services/buyer-reorder.service';
 import { Roles } from '../../../shared/decorators/roles.decorator';
@@ -7,7 +16,12 @@ import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { UserRole } from '@vyaparnet/database';
 import { ZodValidationPipe } from '../../../shared/pipes/zod-validation.pipe';
-import { BuyerOrderFilterSchema, BuyerCancelOrderSchema, BuyerOrderFilter, BuyerCancelOrderDto } from '@vyaparnet/types';
+import {
+  BuyerOrderFilterSchema,
+  BuyerCancelOrderSchema,
+  BuyerOrderFilter,
+  BuyerCancelOrderDto,
+} from '@vyaparnet/types';
 
 @Controller('buyer/orders')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -21,7 +35,8 @@ export class BuyerOrdersController {
   @Get()
   async getOrders(
     @CurrentUser('id') buyerId: string,
-    @Query(new ZodValidationPipe(BuyerOrderFilterSchema)) filter: BuyerOrderFilter,
+    @Query(new ZodValidationPipe(BuyerOrderFilterSchema))
+    filter: BuyerOrderFilter,
   ) {
     return this.buyerOrderService.getOrders(buyerId, filter);
   }
@@ -38,7 +53,8 @@ export class BuyerOrdersController {
   async cancelOrder(
     @CurrentUser('id') buyerId: string,
     @Param('id') orderId: string,
-    @Body(new ZodValidationPipe(BuyerCancelOrderSchema)) body: BuyerCancelOrderDto,
+    @Body(new ZodValidationPipe(BuyerCancelOrderSchema))
+    body: BuyerCancelOrderDto,
   ): Promise<any> {
     return this.buyerOrderService.cancelOrder(orderId, buyerId, body.reason);
   }

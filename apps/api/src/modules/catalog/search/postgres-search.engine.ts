@@ -33,7 +33,11 @@ export const SEARCH_ENGINE = Symbol('SEARCH_ENGINE');
 
 export interface SearchEngine {
   search(params: SearchParams): Promise<SearchResult[]>;
-  fuzzyFallback(rawQuery: string, segment: Segment, limit: number): Promise<SearchResult[]>;
+  fuzzyFallback(
+    rawQuery: string,
+    segment: Segment,
+    limit: number,
+  ): Promise<SearchResult[]>;
   suggest(query: string, segment: Segment): Promise<SearchSuggestionResponse>;
   deindex(productId: string): Promise<void>;
   rebuildIndex(segment: Segment): Promise<void>;
@@ -67,7 +71,7 @@ export class PostgresSearchEngine implements SearchEngine {
     }
     if (params.cursor) {
       conditions.push(
-        Prisma.sql`(spd.created_at, spd.id) < (${params.cursor.createdAt}, ${params.cursor.id})`
+        Prisma.sql`(spd.created_at, spd.id) < (${params.cursor.createdAt}, ${params.cursor.id})`,
       );
     }
 
@@ -78,7 +82,7 @@ export class PostgresSearchEngine implements SearchEngine {
     // For safety and strictly returning what's available without breaking Prisma raw:
     // We execute the search over SearchProductDocument
     // `SearchProductDocument` schema fields: id, productId, name, price, categoryId, segment, sellerId, viewCount, orderCount, lastIndexedAt, needsReindex.
-    
+
     // We use a CTE to define the query.
     // The query returns `rank` from ts_rank.
     const query = Prisma.sql`
@@ -102,7 +106,7 @@ export class PostgresSearchEngine implements SearchEngine {
       const rows = await this.prisma.$queryRaw<any[]>(query);
       if (rows.length === 0) return [];
 
-      const productIds = rows.map(r => r.id);
+      const productIds = rows.map((r) => r.id);
       const productDetails = await this.prisma.product.findMany({
         where: { id: { in: productIds } },
         select: {
@@ -111,16 +115,19 @@ export class PostgresSearchEngine implements SearchEngine {
           media: {
             where: { displayOrder: 0, isDeleted: false },
             select: { media: { select: { url: true, thumbnailUrl: true } } },
-            take: 1
-          }
-        }
+            take: 1,
+          },
+        },
       });
 
-      const detailsMap = new Map(productDetails.map(p => [p.id, p]));
+      const detailsMap = new Map(productDetails.map((p) => [p.id, p]));
 
       return rows.map((r) => {
         const details = detailsMap.get(r.id);
-        const thumb = details?.media?.[0]?.media?.thumbnailUrl || details?.media?.[0]?.media?.url || null;
+        const thumb =
+          details?.media?.[0]?.media?.thumbnailUrl ||
+          details?.media?.[0]?.media?.url ||
+          null;
         const isVerifiedSeller = details?.business?.kycStatus === 'VERIFIED';
 
         return {
@@ -140,7 +147,11 @@ export class PostgresSearchEngine implements SearchEngine {
     }
   }
 
-  async fuzzyFallback(rawQuery: string, segment: Segment, limit: number): Promise<SearchResult[]> {
+  async fuzzyFallback(
+    rawQuery: string,
+    segment: Segment,
+    limit: number,
+  ): Promise<SearchResult[]> {
     if (!rawQuery || rawQuery.trim() === '') return [];
 
     const query = Prisma.sql`
@@ -164,7 +175,7 @@ export class PostgresSearchEngine implements SearchEngine {
       const rows = await this.prisma.$queryRaw<any[]>(query);
       if (rows.length === 0) return [];
 
-      const productIds = rows.map(r => r.id);
+      const productIds = rows.map((r) => r.id);
       const productDetails = await this.prisma.product.findMany({
         where: { id: { in: productIds } },
         select: {
@@ -173,16 +184,19 @@ export class PostgresSearchEngine implements SearchEngine {
           media: {
             where: { displayOrder: 0, isDeleted: false },
             select: { media: { select: { url: true, thumbnailUrl: true } } },
-            take: 1
-          }
-        }
+            take: 1,
+          },
+        },
       });
 
-      const detailsMap = new Map(productDetails.map(p => [p.id, p]));
+      const detailsMap = new Map(productDetails.map((p) => [p.id, p]));
 
       return rows.map((r) => {
         const details = detailsMap.get(r.id);
-        const thumb = details?.media?.[0]?.media?.thumbnailUrl || details?.media?.[0]?.media?.url || null;
+        const thumb =
+          details?.media?.[0]?.media?.thumbnailUrl ||
+          details?.media?.[0]?.media?.url ||
+          null;
         const isVerifiedSeller = details?.business?.kycStatus === 'VERIFIED';
 
         return {
@@ -202,7 +216,10 @@ export class PostgresSearchEngine implements SearchEngine {
     }
   }
 
-  async suggest(_query: string, _segment: Segment): Promise<SearchSuggestionResponse> {
+  async suggest(
+    _query: string,
+    _segment: Segment,
+  ): Promise<SearchSuggestionResponse> {
     // Sprint 2 stub
     return {
       queries: [],

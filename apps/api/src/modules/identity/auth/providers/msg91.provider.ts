@@ -16,7 +16,10 @@ export class Msg91Provider implements ISmsProvider {
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
 
-  async sendTransactional(params: { phone: string; message: string }): Promise<void> {
+  async sendTransactional(params: {
+    phone: string;
+    message: string;
+  }): Promise<void> {
     // Phase 6 MVP: Just log the transactional SMS.
     this.logger.log(
       `[MSG91 Stub] Sending Transactional SMS to ****${params.phone.slice(-4)}: ${params.message}`,

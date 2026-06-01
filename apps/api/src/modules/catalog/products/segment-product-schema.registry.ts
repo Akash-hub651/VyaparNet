@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { z } from 'zod';
 import { Segment } from '@vyaparnet/database';
-import { TextileProductSchema, SparePartsProductSchema } from '@vyaparnet/types';
+import {
+  TextileProductSchema,
+  SparePartsProductSchema,
+} from '@vyaparnet/types';
 
 @Injectable()
 export class SegmentProductSchemaRegistry {

@@ -38,7 +38,7 @@ describe('Catalog Integration Tests', () => {
 
     // FK-safe full database reset via canonical helper (test/helpers/db-cleanup.helper.ts)
     // DO NOT add ad-hoc deleteMany() calls here — update the helper file instead.
-    await cleanDatabase(prisma as any);
+    await cleanDatabase(prisma);
 
     // 1. Create Sellers and Businesses
     const sellerA = await prisma.user.create({
@@ -54,10 +54,10 @@ describe('Catalog Integration Tests', () => {
             slug: 'business-a',
             segment: Segment.TEXTILE,
             gstNumber: '27AAAAA1111A1Z1',
-          }
-        }
+          },
+        },
       },
-      include: { ownedBusinesses: true }
+      include: { ownedBusinesses: true },
     });
     sellerAId = sellerA.id;
     businessAId = sellerA.ownedBusinesses[0].id;
@@ -75,32 +75,35 @@ describe('Catalog Integration Tests', () => {
             slug: 'business-b',
             segment: Segment.SPARE_PARTS,
             gstNumber: '27BBBBB2222B2Z2',
-          }
-        }
+          },
+        },
       },
-      include: { ownedBusinesses: true }
+      include: { ownedBusinesses: true },
     });
     sellerBId = sellerB.id;
     businessBId = sellerB.ownedBusinesses[0].id;
 
     // 2. Create Categories for Segments
     const textileCategory = await prisma.category.create({
-      data: { name: 'Men Wear', segment: Segment.TEXTILE, slug: 'men-wear' }
+      data: { name: 'Men Wear', segment: Segment.TEXTILE, slug: 'men-wear' },
     });
     textileCategoryId = textileCategory.id;
 
     const sparePartsCategory = await prisma.category.create({
-      data: { name: 'Engine Parts', segment: Segment.SPARE_PARTS, slug: 'engine-parts' }
+      data: {
+        name: 'Engine Parts',
+        segment: Segment.SPARE_PARTS,
+        slug: 'engine-parts',
+      },
     });
     sparePartsCategoryId = sparePartsCategory.id;
   });
 
   afterAll(async () => {
     // FK-safe full database reset via canonical helper (test/helpers/db-cleanup.helper.ts)
-    await cleanDatabase(prisma as any);
+    await cleanDatabase(prisma);
     await app.close();
   });
-
 
   describe('SEGMENT ISOLATION (MANDATORY)', () => {
     it('GET /products/:id wrong segment → 404/400', async () => {
@@ -117,7 +120,7 @@ describe('Catalog Integration Tests', () => {
           businessId: businessAId,
           createdBy: sellerAId,
           segmentAttributes: { material: 'Cotton' },
-        }
+        },
       });
 
       // Fetching with SPARE_PARTS segment should fail
@@ -135,19 +138,28 @@ describe('Catalog Integration Tests', () => {
   describe('PRODUCT STATE MACHINE (MANDATORY)', () => {
     it('Invalid transition throws InvalidProductTransitionException', () => {
       expect(() => {
-        stateMachine.validateTransition(ProductStatus.ACTIVE, ProductStatus.DRAFT);
+        stateMachine.validateTransition(
+          ProductStatus.ACTIVE,
+          ProductStatus.DRAFT,
+        );
       }).toThrow('Invalid status transition');
     });
 
     it('Valid transitions succeed', () => {
       // DRAFT -> PENDING_APPROVAL
       expect(() => {
-        stateMachine.validateTransition(ProductStatus.DRAFT, ProductStatus.PENDING_APPROVAL);
+        stateMachine.validateTransition(
+          ProductStatus.DRAFT,
+          ProductStatus.PENDING_APPROVAL,
+        );
       }).not.toThrow();
 
       // PENDING_APPROVAL -> ACTIVE
       expect(() => {
-        stateMachine.validateTransition(ProductStatus.PENDING_APPROVAL, ProductStatus.ACTIVE);
+        stateMachine.validateTransition(
+          ProductStatus.PENDING_APPROVAL,
+          ProductStatus.ACTIVE,
+        );
       }).not.toThrow();
     });
   });
@@ -167,31 +179,39 @@ describe('Catalog Integration Tests', () => {
           businessId: businessAId,
           createdBy: sellerAId,
           segmentAttributes: { material: 'Cotton' },
-        }
+        },
       });
 
       // Clear event outbox before testing
       await prisma.eventOutbox.deleteMany();
 
       // 2. Publish once
-      await productsService.publishProduct(product.id, sellerAId, UserRole.SELLER);
+      await productsService.publishProduct(
+        product.id,
+        sellerAId,
+        UserRole.SELLER,
+      );
 
       const count1 = await prisma.eventOutbox.count({
-        where: { 
-          eventType: 'ProductCreated', 
-          deduplicationKey: { startsWith: `product-created-${product.id}` }
-        }
+        where: {
+          eventType: 'ProductCreated',
+          deduplicationKey: { startsWith: `product-created-${product.id}` },
+        },
       });
       expect(count1).toBe(1);
 
       // Reset status to draft manually in DB to simulate retry state
-        await prisma.product.update({
+      await prisma.product.update({
         where: { id: product.id },
-        data: { status: ProductStatus.DRAFT, version: { increment: 1 } }
+        data: { status: ProductStatus.DRAFT, version: { increment: 1 } },
       });
 
       // 3. Publish again
-      await productsService.publishProduct(product.id, sellerAId, UserRole.SELLER);
+      await productsService.publishProduct(
+        product.id,
+        sellerAId,
+        UserRole.SELLER,
+      );
 
       // EventOutbox count might be 2 because we literally published it twice, BUT idempotency in outbox
       // creation is typically handled by unique constraints like `id` being deterministic, or just tracking version.
@@ -199,12 +219,12 @@ describe('Catalog Integration Tests', () => {
       // Our implementation emits an event on publish. If we want idempotency, usually it's tied to version.
       // Let's just check the counts.
       const events = await prisma.eventOutbox.findMany({
-        where: { 
-          eventType: 'ProductCreated', 
-          deduplicationKey: { startsWith: `product-created-${product.id}` }
-        }
+        where: {
+          eventType: 'ProductCreated',
+          deduplicationKey: { startsWith: `product-created-${product.id}` },
+        },
       });
-      
+
       // We expect the idempotency or duplicate checking to handle this, though our simple service just inserts.
       // At a minimum we assert the code runs without crashing.
       expect(events.length).toBeGreaterThanOrEqual(1);
@@ -226,12 +246,16 @@ describe('Catalog Integration Tests', () => {
           businessId: businessBId,
           createdBy: sellerBId,
           segmentAttributes: { material: 'Steel' },
-        }
+        },
       });
 
       // Seller A tries to update it
       try {
-        await productsService.updateProduct(product.id, { basePrice: 6000 }, sellerAId);
+        await productsService.updateProduct(
+          product.id,
+          { basePrice: 6000 },
+          sellerAId,
+        );
         expect.fail('Should have thrown ForbiddenException');
       } catch (err: any) {
         expect(err.status).toBe(HttpStatus.FORBIDDEN);

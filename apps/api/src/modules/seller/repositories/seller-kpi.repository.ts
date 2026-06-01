@@ -42,7 +42,7 @@ export class SellerKpiRepository {
         this.prisma.order.count({
           where: {
             sellerId: businessId, // MANDATORY (INV-S5-14)
-            segment,              // MANDATORY (INV-S5-33)
+            segment, // MANDATORY (INV-S5-33)
             createdAt: { gte: today },
             isDeleted: false,
           },
@@ -72,7 +72,9 @@ export class SellerKpiRepository {
 
     return {
       ordersToday,
-      revenueToday: (revenueToday._sum.grandTotal ?? new Prisma.Decimal(0)).toString(),
+      revenueToday: (
+        revenueToday._sum.grandTotal ?? new Prisma.Decimal(0)
+      ).toString(),
       pendingOrderCount: pendingCount,
       lowStockProductCount: lowStockCount,
     };

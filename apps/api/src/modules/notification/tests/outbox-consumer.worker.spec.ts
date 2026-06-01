@@ -1,3 +1,4 @@
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { OutboxConsumerWorker } from '../workers/outbox-consumer.worker';
 import { OUTBOX_EVENT_NOTIFICATION_MAP } from '../constants/outbox-event-map.constant';
 
@@ -17,45 +18,56 @@ describe('OutboxConsumerWorker', () => {
   // ── Mocks ──────────────────────────────────────────────────────────────────
   const mockPrisma = {
     eventOutbox: {
-      findMany: jest.fn(),
-      update: jest.fn(),
+      findMany: vi.fn(),
+      update: vi.fn(),
     },
     pushSubscription: {
-      count: jest.fn(),
+      count: vi.fn(),
     },
   };
   const mockRedis = {
-    set: jest.fn(),
-    exists: jest.fn(),
-    del: jest.fn(),
+    set: vi.fn(),
+    exists: vi.fn(),
+    del: vi.fn(),
   };
   const mockQueue = {
-    getJobCounts: jest.fn().mockResolvedValue({ waiting: 0, active: 0 }),
-    add: jest.fn().mockResolvedValue({ id: 'job-1' }),
+    getJobCounts: vi.fn().mockResolvedValue({ waiting: 0, active: 0 }),
+    add: vi.fn().mockResolvedValue({ id: 'job-1' }),
   };
   const mockNotificationService = {
-    createAndEnqueue: jest.fn().mockResolvedValue(undefined),
-    createInAppNotification: jest.fn().mockResolvedValue('notif-id-1'),
+    createAndEnqueue: vi.fn().mockResolvedValue(undefined),
+    createInAppNotification: vi.fn().mockResolvedValue('notif-id-1'),
   };
   const mockUserContactService = {
-    getContact: jest.fn().mockResolvedValue({ userId: 'u1', phone: '+911234567890', email: 'a@b.com', name: 'Test', language: 'hi' }),
-    getBusinessOwnerUserId: jest.fn().mockResolvedValue('seller-user-id'),
+    getContact: vi.fn().mockResolvedValue({
+      userId: 'u1',
+      phone: '+911234567890',
+      email: 'a@b.com',
+      name: 'Test',
+      language: 'hi',
+    }),
+    getBusinessOwnerUserId: vi.fn().mockResolvedValue('seller-user-id'),
   };
   const mockDeduplicationService = {
-    isDuplicate: jest.fn().mockResolvedValue(false),
-    setProcessed: jest.fn().mockResolvedValue(undefined),
-    isLowStockRateLimited: jest.fn().mockResolvedValue(false),
-    setLowStockRateLimit: jest.fn().mockResolvedValue(undefined),
+    isDuplicate: vi.fn().mockResolvedValue(false),
+    setProcessed: vi.fn().mockResolvedValue(undefined),
+    isLowStockRateLimited: vi.fn().mockResolvedValue(false),
+    setLowStockRateLimit: vi.fn().mockResolvedValue(undefined),
   };
   const mockPreferenceService = {
-    getPreferences: jest.fn().mockResolvedValue({ sms: { orderUpdates: true }, email: { orderUpdates: true }, push: { orderUpdates: true }, inApp: { orderUpdates: true } }),
-    isChannelEnabled: jest.fn().mockReturnValue(true),
+    getPreferences: vi.fn().mockResolvedValue({
+      sms: { orderUpdates: true },
+      email: { orderUpdates: true },
+      push: { orderUpdates: true },
+      inApp: { orderUpdates: true },
+    }),
+    isChannelEnabled: vi.fn().mockReturnValue(true),
   };
   const mockMetrics = {
-    notificationOutboxConsumedTotal: { inc: jest.fn() },
-    notificationOutboxFailedTotal: { inc: jest.fn() },
-    notificationQueueDepth: { set: jest.fn() },
-    notificationPushSubscriptionsActive: { set: jest.fn() },
+    notificationOutboxConsumedTotal: { inc: vi.fn() },
+    notificationOutboxFailedTotal: { inc: vi.fn() },
+    notificationQueueDepth: { set: vi.fn() },
+    notificationPushSubscriptionsActive: { set: vi.fn() },
   };
 
   const buildWorker = () =>
@@ -71,7 +83,7 @@ describe('OutboxConsumerWorker', () => {
     );
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // Default: lock acquired
     mockRedis.set.mockResolvedValue('OK');
     // Default: not already processed
@@ -113,8 +125,12 @@ describe('OutboxConsumerWorker', () => {
       schemaVersion: '1',
       createdAt: new Date(),
       payload: {
-        orderId: 'ord-1', orderNumber: 'ORD-001', buyerId: 'buyer-1',
-        sellerId: 'biz-1', segment: 'TEXTILE', grandTotal: 1000,
+        orderId: 'ord-1',
+        orderNumber: 'ORD-001',
+        buyerId: 'buyer-1',
+        sellerId: 'biz-1',
+        segment: 'TEXTILE',
+        grandTotal: 1000,
         timestamp: new Date().toISOString(),
       },
     };
@@ -217,7 +233,13 @@ describe('OutboxConsumerWorker', () => {
   describe('FIX-5/FIX-7: gauge observation', () => {
     it('observes notification_queue_depth on each poll when events exist', async () => {
       mockPrisma.eventOutbox.findMany.mockResolvedValue([
-        { id: 'e1', eventType: 'UnknownSkip', schemaVersion: '1', createdAt: new Date(), payload: {} },
+        {
+          id: 'e1',
+          eventType: 'UnknownSkip',
+          schemaVersion: '1',
+          createdAt: new Date(),
+          payload: {},
+        },
       ]);
       mockQueue.getJobCounts.mockResolvedValue({ waiting: 5, active: 2 });
 
@@ -228,7 +250,13 @@ describe('OutboxConsumerWorker', () => {
 
     it('does NOT crash when getJobCounts() rejects', async () => {
       mockPrisma.eventOutbox.findMany.mockResolvedValue([
-        { id: 'e1', eventType: 'UnknownSkip', schemaVersion: '1', createdAt: new Date(), payload: {} },
+        {
+          id: 'e1',
+          eventType: 'UnknownSkip',
+          schemaVersion: '1',
+          createdAt: new Date(),
+          payload: {},
+        },
       ]);
       mockQueue.getJobCounts.mockRejectedValue(new Error('Bull unavailable'));
 
@@ -245,7 +273,15 @@ describe('OutboxConsumerWorker', () => {
         eventType: 'OrderCreated',
         schemaVersion: '1',
         createdAt: new Date(),
-        payload: { orderId: 'o1', orderNumber: 'ORD-001', buyerId: 'b1', sellerId: 's1', segment: 'TEXTILE', grandTotal: 100, timestamp: new Date().toISOString() },
+        payload: {
+          orderId: 'o1',
+          orderNumber: 'ORD-001',
+          buyerId: 'b1',
+          sellerId: 's1',
+          segment: 'TEXTILE',
+          grandTotal: 100,
+          timestamp: new Date().toISOString(),
+        },
       };
       mockPrisma.eventOutbox.findMany.mockResolvedValue([event]);
       mockRedis.set.mockResolvedValue(null); // NX returns null = lock not acquired

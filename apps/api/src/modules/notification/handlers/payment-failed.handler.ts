@@ -22,7 +22,9 @@ export async function handlePaymentFailed(
   const dedupKey = `notif:${buyerId}:PaymentFailed:${orderId}`;
   if (await ctx.deduplicationService.isDuplicate(dedupKey)) {
     ctx.logger.log({ buyerId, orderId }, 'NOTIFICATION_DEDUP_SKIPPED');
-    ctx.metrics.notificationDedupSkippedTotal.inc({ eventType: 'PaymentFailed' });
+    ctx.metrics.notificationDedupSkippedTotal.inc({
+      eventType: 'PaymentFailed',
+    });
     return;
   }
 
@@ -31,7 +33,10 @@ export async function handlePaymentFailed(
   // §11.1 AUDIT FIX: Extract failure reason from payload.
   // PaymentFailedPayload has both `failureReason` (newer) and `reason` (legacy) — use whichever is set.
   // Defaults to 'Please check your payment method' if neither is provided (safe user-facing fallback).
-  const reason = payload.failureReason ?? payload.reason ?? 'Please check your payment method';
+  const reason =
+    payload.failureReason ??
+    payload.reason ??
+    'Please check your payment method';
 
   const vars: Record<string, string> = {
     orderNumber: orderNumber ?? orderId,

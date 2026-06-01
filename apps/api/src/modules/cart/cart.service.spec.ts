@@ -49,7 +49,14 @@ describe('CartService', () => {
         { provide: RedisService, useValue: redisService },
         { provide: InventoryService, useValue: inventoryService },
         { provide: PrismaService, useValue: prismaService },
-        { provide: MetricsService, useValue: { cartItemCountTotal: { inc: vi.fn() }, cartWarningSurfacedTotal: { inc: vi.fn() }, cartAbandonedTotal: { inc: vi.fn() } } },
+        {
+          provide: MetricsService,
+          useValue: {
+            cartItemCountTotal: { inc: vi.fn() },
+            cartWarningSurfacedTotal: { inc: vi.fn() },
+            cartAbandonedTotal: { inc: vi.fn() },
+          },
+        },
       ],
     }).compile();
 
@@ -58,39 +65,100 @@ describe('CartService', () => {
 
   describe('addItem', () => {
     it('throws SEGMENT_MISMATCH if product segment differs from cart segment', async () => {
-      cartRepo.findOrCreate.mockResolvedValue({ id: 'cart1', segment: 'B2B' } as any);
-      prismaService.product.findUnique.mockResolvedValue({ id: 'prod1', segment: 'B2C', moq: 1, basePrice: new Prisma.Decimal(100) } as any);
+      cartRepo.findOrCreate.mockResolvedValue({
+        id: 'cart1',
+        segment: 'B2B',
+      } as any);
+      prismaService.product.findUnique.mockResolvedValue({
+        id: 'prod1',
+        segment: 'B2C',
+        moq: 1,
+        basePrice: new Prisma.Decimal(100),
+      } as any);
 
-      await expect(service.addItem('user1', { productId: 'prod1', quantity: 1, segment: 'B2B' as Segment }))
-        .rejects.toThrow(BadRequestException);
+      await expect(
+        service.addItem('user1', {
+          productId: 'prod1',
+          quantity: 1,
+          segment: 'B2B' as Segment,
+        }),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('throws MOQ_VIOLATION if quantity is less than product MOQ', async () => {
-      cartRepo.findOrCreate.mockResolvedValue({ id: 'cart1', segment: 'B2B' } as any);
-      prismaService.product.findUnique.mockResolvedValue({ id: 'prod1', segment: 'B2B', moq: 10, basePrice: new Prisma.Decimal(100) } as any);
+      cartRepo.findOrCreate.mockResolvedValue({
+        id: 'cart1',
+        segment: 'B2B',
+      } as any);
+      prismaService.product.findUnique.mockResolvedValue({
+        id: 'prod1',
+        segment: 'B2B',
+        moq: 10,
+        basePrice: new Prisma.Decimal(100),
+      } as any);
 
-      await expect(service.addItem('user1', { productId: 'prod1', quantity: 5, segment: 'B2B' as Segment }))
-        .rejects.toThrow(BadRequestException);
+      await expect(
+        service.addItem('user1', {
+          productId: 'prod1',
+          quantity: 5,
+          segment: 'B2B' as Segment,
+        }),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('throws OUT_OF_STOCK if inventory service returns 0 available quantity', async () => {
-      cartRepo.findOrCreate.mockResolvedValue({ id: 'cart1', segment: 'B2B' } as any);
-      prismaService.product.findUnique.mockResolvedValue({ id: 'prod1', segment: 'B2B', moq: 1, basePrice: new Prisma.Decimal(100) } as any);
-      inventoryService.getAvailability.mockResolvedValue({ availableQuantity: 0 } as any);
+      cartRepo.findOrCreate.mockResolvedValue({
+        id: 'cart1',
+        segment: 'B2B',
+      } as any);
+      prismaService.product.findUnique.mockResolvedValue({
+        id: 'prod1',
+        segment: 'B2B',
+        moq: 1,
+        basePrice: new Prisma.Decimal(100),
+      } as any);
+      inventoryService.getAvailability.mockResolvedValue({
+        availableQuantity: 0,
+      } as any);
 
-      await expect(service.addItem('user1', { productId: 'prod1', quantity: 2, segment: 'B2B' as Segment }))
-        .rejects.toThrow(BadRequestException);
+      await expect(
+        service.addItem('user1', {
+          productId: 'prod1',
+          quantity: 2,
+          segment: 'B2B' as Segment,
+        }),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('adds item successfully if validations pass', async () => {
-      cartRepo.findOrCreate.mockResolvedValue({ id: 'cart1', segment: 'B2B' } as any);
-      prismaService.product.findUnique.mockResolvedValue({ id: 'prod1', segment: 'B2B', moq: 1, basePrice: new Prisma.Decimal(100) } as any);
-      inventoryService.getAvailability.mockResolvedValue({ availableQuantity: 10 } as any);
-      cartRepo.upsertItem.mockResolvedValue({ id: 'item1', quantity: 2 } as any);
+      cartRepo.findOrCreate.mockResolvedValue({
+        id: 'cart1',
+        segment: 'B2B',
+      } as any);
+      prismaService.product.findUnique.mockResolvedValue({
+        id: 'prod1',
+        segment: 'B2B',
+        moq: 1,
+        basePrice: new Prisma.Decimal(100),
+      } as any);
+      inventoryService.getAvailability.mockResolvedValue({
+        availableQuantity: 10,
+      } as any);
+      cartRepo.upsertItem.mockResolvedValue({
+        id: 'item1',
+        quantity: 2,
+      } as any);
 
-      const result = await service.addItem('user1', { productId: 'prod1', quantity: 2, segment: 'B2B' as Segment });
+      const result = await service.addItem('user1', {
+        productId: 'prod1',
+        quantity: 2,
+        segment: 'B2B' as Segment,
+      });
       expect(result.id).toEqual('item1');
-      expect(cartRepo.upsertItem).toHaveBeenCalledWith('cart1', expect.objectContaining({ quantity: 2, unitPrice: 100 }));
+      expect(cartRepo.upsertItem).toHaveBeenCalledWith(
+        'cart1',
+        expect.objectContaining({ quantity: 2, unitPrice: 100 }),
+      );
       expect(redisService.del).toHaveBeenCalledWith('cart:user1:B2B');
     });
   });

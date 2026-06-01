@@ -1,4 +1,4 @@
-// Jest globals: describe, it, expect — no import needed (Jest provides them automatically)
+import { describe, it, expect } from 'vitest';
 import {
   OrderCreatedPayloadSchema,
   StockLowPayloadSchema,
@@ -33,14 +33,20 @@ describe('Phase 1 — Shared Contracts & DTOs', () => {
       orderNumber: 'ORD-987654',
       buyerId: 'buyer-777',
       segment: 'SPARE_PARTS',
-      grandTotal: 1500.50, // number type in real outbox!
+      grandTotal: 1500.5, // number type in real outbox!
       paymentMethod: 'ONLINE_UPI',
       placedAt: new Date().toISOString(),
       orderMonth: '2026-05',
       items: [
-        { productId: 'p1', productName: 'Gear', quantity: 2, unitPrice: 750.25, totalPrice: 1500.50 }
+        {
+          productId: 'p1',
+          productName: 'Gear',
+          quantity: 2,
+          unitPrice: 750.25,
+          totalPrice: 1500.5,
+        },
       ],
-      shippingAddress: { name: 'Acme', line1: 'Road 1' }
+      shippingAddress: { name: 'Acme', line1: 'Road 1' },
     };
 
     const parsed = OrderCreatedPayloadSchema.parse(actualOutboxPayload);
@@ -67,13 +73,17 @@ describe('Phase 1 — Shared Contracts & DTOs', () => {
   });
 
   it('NotificationPreferenceSchema.parse(DEFAULT_NOTIFICATION_PREFERENCES) succeeds', () => {
-    const parsed = NotificationPreferenceSchema.parse(DEFAULT_NOTIFICATION_PREFERENCES);
+    const parsed = NotificationPreferenceSchema.parse(
+      DEFAULT_NOTIFICATION_PREFERENCES,
+    );
     expect(parsed.sms.orderUpdates).toBe(true);
     expect(parsed.inApp.scorecard).toBe(true);
   });
 
   it('PushUnsubscribeSchema.parse({ endpoint: "https://..." }) succeeds', () => {
-    const validPayload = { endpoint: 'https://updates.vyaparnet.in/push/sub-123' };
+    const validPayload = {
+      endpoint: 'https://updates.vyaparnet.in/push/sub-123',
+    };
     const parsed = PushUnsubscribeSchema.parse(validPayload);
     expect(parsed.endpoint).toBe('https://updates.vyaparnet.in/push/sub-123');
   });

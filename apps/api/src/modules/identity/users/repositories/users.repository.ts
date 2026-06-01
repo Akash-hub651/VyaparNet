@@ -55,7 +55,9 @@ export class UsersRepository {
     return this.prisma.business.create({ data });
   }
 
-  async createAddress(data: Prisma.AddressUncheckedCreateInput): Promise<Address> {
+  async createAddress(
+    data: Prisma.AddressUncheckedCreateInput,
+  ): Promise<Address> {
     return this.prisma.address.create({ data });
   }
 

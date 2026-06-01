@@ -65,20 +65,70 @@ import { InventoryEventConsumer } from './inventory-event.consumer';
   controllers: [InventoryController],
   providers: [
     // Phase 8: Metrics providers
-    makeCounterProvider({ name: 'inventory_reservation_success_total', help: 'Successful reservations', labelNames: ['segment'] }),
-    makeCounterProvider({ name: 'inventory_reservation_failure_total', help: 'Failed reservations', labelNames: ['reason', 'segment'] }),
-    makeCounterProvider({ name: 'inventory_idempotency_hit_total', help: 'Idempotency hits' }),
-    makeCounterProvider({ name: 'inventory_optimistic_lock_retry_total', help: 'Optimistic lock retries', labelNames: ['attempt'] }),
-    makeCounterProvider({ name: 'inventory_oversell_prevented_total', help: 'Oversells prevented' }),
-    makeCounterProvider({ name: 'inventory_reservation_released_total', help: 'Reservations released', labelNames: ['reason'] }),
-    makeCounterProvider({ name: 'inventory_expiry_processed_total', help: 'Expiries processed' }),
-    makeCounterProvider({ name: 'inventory_drift_detected', help: 'Drift detected', labelNames: ['isCritical'] }),
-    makeCounterProvider({ name: 'inventory_abuse_violation_total', help: 'Abuse violations', labelNames: ['type', 'segment'] }),
-    makeCounterProvider({ name: 'inventory_protection_mode_changes', help: 'Protection mode changes', labelNames: ['mode'] }),
-    makeCounterProvider({ name: 'inventory_hot_product_detected', help: 'Hot product detected', labelNames: ['inventoryId'] }),
-    makeHistogramProvider({ name: 'inventory_reservation_latency_ms', help: 'Reservation latency in ms' }),
-    makeGaugeProvider({ name: 'inventory_active_reservations', help: 'Active reservations' }),
-    makeGaugeProvider({ name: 'inventory_low_stock_products', help: 'Low stock products' }),
+    makeCounterProvider({
+      name: 'inventory_reservation_success_total',
+      help: 'Successful reservations',
+      labelNames: ['segment'],
+    }),
+    makeCounterProvider({
+      name: 'inventory_reservation_failure_total',
+      help: 'Failed reservations',
+      labelNames: ['reason', 'segment'],
+    }),
+    makeCounterProvider({
+      name: 'inventory_idempotency_hit_total',
+      help: 'Idempotency hits',
+    }),
+    makeCounterProvider({
+      name: 'inventory_optimistic_lock_retry_total',
+      help: 'Optimistic lock retries',
+      labelNames: ['attempt'],
+    }),
+    makeCounterProvider({
+      name: 'inventory_oversell_prevented_total',
+      help: 'Oversells prevented',
+    }),
+    makeCounterProvider({
+      name: 'inventory_reservation_released_total',
+      help: 'Reservations released',
+      labelNames: ['reason'],
+    }),
+    makeCounterProvider({
+      name: 'inventory_expiry_processed_total',
+      help: 'Expiries processed',
+    }),
+    makeCounterProvider({
+      name: 'inventory_drift_detected',
+      help: 'Drift detected',
+      labelNames: ['isCritical'],
+    }),
+    makeCounterProvider({
+      name: 'inventory_abuse_violation_total',
+      help: 'Abuse violations',
+      labelNames: ['type', 'segment'],
+    }),
+    makeCounterProvider({
+      name: 'inventory_protection_mode_changes',
+      help: 'Protection mode changes',
+      labelNames: ['mode'],
+    }),
+    makeCounterProvider({
+      name: 'inventory_hot_product_detected',
+      help: 'Hot product detected',
+      labelNames: ['inventoryId'],
+    }),
+    makeHistogramProvider({
+      name: 'inventory_reservation_latency_ms',
+      help: 'Reservation latency in ms',
+    }),
+    makeGaugeProvider({
+      name: 'inventory_active_reservations',
+      help: 'Active reservations',
+    }),
+    makeGaugeProvider({
+      name: 'inventory_low_stock_products',
+      help: 'Low stock products',
+    }),
 
     // Phase 2: Observability
     InventoryMetrics,

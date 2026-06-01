@@ -47,7 +47,9 @@ export class CartCleanupWorker implements OnModuleInit {
 
     if (abandonedCarts.length === 0) return;
 
-    this.logger.log(`Found ${abandonedCarts.length} abandoned carts for cleanup`);
+    this.logger.log(
+      `Found ${abandonedCarts.length} abandoned carts for cleanup`,
+    );
 
     for (const cart of abandonedCarts) {
       try {
@@ -79,7 +81,10 @@ export class CartCleanupWorker implements OnModuleInit {
           { timeout: 5000, isolationLevel: 'ReadCommitted' },
         );
       } catch (err) {
-        this.logger.error({ cartId: cart.id, err }, 'Failed to process cart cleanup for cart');
+        this.logger.error(
+          { cartId: cart.id, err },
+          'Failed to process cart cleanup for cart',
+        );
       }
     }
   }

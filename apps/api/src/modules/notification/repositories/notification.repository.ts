@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { NotificationChannel, NotificationType, Prisma } from '@vyaparnet/database';
 import {
-  NotificationDto,
-  NotificationListQuery,
-} from '@vyaparnet/types';
+  NotificationChannel,
+  NotificationType,
+  Prisma,
+} from '@vyaparnet/database';
+import { NotificationDto, NotificationListQuery } from '@vyaparnet/types';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 
 // ─── Internal Types ────────────────────────────────────────────────────────────
@@ -56,23 +57,27 @@ export class NotificationRepository {
    * INV-S6-4: userId passed explicitly — never derived from context.
    * INV-S6-30: notificationMonth computed in UTC to prevent timezone-drift partition errors.
    */
-  async create(userId: string, data: CreateNotificationData): Promise<{ id: string }> {
+  async create(
+    userId: string,
+    data: CreateNotificationData,
+  ): Promise<{ id: string }> {
     // INV-S6-30: UTC partition key — prevents IST timezone drift creating wrong monthly buckets
     const notificationMonth = new Date().toISOString().slice(0, 7); // 'YYYY-MM' UTC
 
     return this.prisma.notification.create({
       data: {
-        userId,                              // INV-S6-4: always explicit
+        userId, // INV-S6-4: always explicit
         type: data.type,
         title: data.title,
         body: data.body,
         channels: data.channels,
         // Prisma requires explicit cast for nullable JSON fields.
         // Pattern from product-events.service.ts: `as unknown as Prisma.InputJsonValue`
-        metadata: data.metadata !== undefined && data.metadata !== null
-          ? (data.metadata as unknown as Prisma.InputJsonValue)
-          : Prisma.JsonNull,
-        notificationMonth,                   // INV-S6-30: UTC partition key
+        metadata:
+          data.metadata !== undefined && data.metadata !== null
+            ? (data.metadata as unknown as Prisma.InputJsonValue)
+            : Prisma.JsonNull,
+        notificationMonth, // INV-S6-30: UTC partition key
         isRead: false,
       },
       select: { id: true },
@@ -98,7 +103,7 @@ export class NotificationRepository {
 
     const rows = await this.prisma.notification.findMany({
       where: {
-        userId,              // INV-S6-18: userId MANDATORY — no unscoped queries ever
+        userId, // INV-S6-18: userId MANDATORY — no unscoped queries ever
         isDeleted: false,
         ...(query.isRead !== undefined && { isRead: query.isRead }),
         // INV-S6-24: cursor is notification `id` (CUID), NOT createdAt
@@ -106,7 +111,7 @@ export class NotificationRepository {
         ...(query.cursor && { id: { lt: query.cursor } }),
       },
       orderBy: { id: 'desc' }, // INV-S6-24: sort by CUID (monotonic), not createdAt
-      take: limit + 1,         // Fetch one extra to detect hasMore
+      take: limit + 1, // Fetch one extra to detect hasMore
       select: {
         id: true,
         type: true,
@@ -140,7 +145,7 @@ export class NotificationRepository {
   async markRead(notificationId: string, userId: string): Promise<void> {
     // INV-S6-18: userId in where clause makes this atomic + ownership-safe
     await this.prisma.notification.updateMany({
-      where: { id: notificationId, userId },   // userId MANDATORY — cross-user mark = P0
+      where: { id: notificationId, userId }, // userId MANDATORY — cross-user mark = P0
       data: { isRead: true, readAt: new Date() },
     });
   }
@@ -151,7 +156,7 @@ export class NotificationRepository {
    */
   async markAllRead(userId: string): Promise<void> {
     await this.prisma.notification.updateMany({
-      where: { userId, isRead: false, isDeleted: false },  // INV-S6-18
+      where: { userId, isRead: false, isDeleted: false }, // INV-S6-18
       data: { isRead: true, readAt: new Date() },
     });
   }
@@ -164,7 +169,7 @@ export class NotificationRepository {
    */
   async countUnread(userId: string): Promise<number> {
     const result = await this.prisma.notification.count({
-      where: { userId, isRead: false, isDeleted: false },  // INV-S6-18
+      where: { userId, isRead: false, isDeleted: false }, // INV-S6-18
     });
     return Math.min(result, 100); // Cap at 100 — prevents full-table scan for badge
   }

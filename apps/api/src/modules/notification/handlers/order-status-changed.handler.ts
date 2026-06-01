@@ -12,15 +12,27 @@ import type { HandlerContext } from '../channels/channel.interface';
  *
  * INV-S6-12: Record, not switch/case — O(1) lookup, no fall-through risk.
  */
-const ORDER_STATUS_NOTIFICATION_CONFIG: Record<string, {
-  templateName: string;
-  channels: string[];
-}> = {
-  CONFIRMED:  { templateName: 'OrderConfirmed_BUYER_hi',        channels: ['sms', 'inApp'] },
-  PROCESSING: { templateName: 'OrderProcessing_BUYER_hi',       channels: ['inApp'] },       // In-App only
-  SHIPPED:    { templateName: 'OrderShipped_BUYER_hi',          channels: ['sms', 'inApp'] },
-  OUT_FOR_DELIVERY: { templateName: 'OrderOutForDelivery_BUYER_hi', channels: ['inApp'] },
-  CANCELLED:  { templateName: 'OrderCancelled_BUYER_hi',        channels: ['inApp'] },       // In-App only
+const ORDER_STATUS_NOTIFICATION_CONFIG: Record<
+  string,
+  {
+    templateName: string;
+    channels: string[];
+  }
+> = {
+  CONFIRMED: {
+    templateName: 'OrderConfirmed_BUYER_hi',
+    channels: ['sms', 'inApp'],
+  },
+  PROCESSING: { templateName: 'OrderProcessing_BUYER_hi', channels: ['inApp'] }, // In-App only
+  SHIPPED: {
+    templateName: 'OrderShipped_BUYER_hi',
+    channels: ['sms', 'inApp'],
+  },
+  OUT_FOR_DELIVERY: {
+    templateName: 'OrderOutForDelivery_BUYER_hi',
+    channels: ['inApp'],
+  },
+  CANCELLED: { templateName: 'OrderCancelled_BUYER_hi', channels: ['inApp'] }, // In-App only
   // DELIVERED — Sprint 7 Admin; excluded here
   // COMPLETED — No notification; end state
 };
@@ -53,15 +65,23 @@ export async function handleOrderStatusChanged(
   const config = ORDER_STATUS_NOTIFICATION_CONFIG[statusTo];
   if (!config) {
     // Status has no notification config — valid end-state (DELIVERED, COMPLETED, etc.)
-    ctx.logger.debug({ statusTo, orderId }, 'ORDER_STATUS_NO_NOTIFICATION_CONFIG');
+    ctx.logger.debug(
+      { statusTo, orderId },
+      'ORDER_STATUS_NO_NOTIFICATION_CONFIG',
+    );
     return;
   }
 
   // Dedup key: includes statusTo to avoid dedup collision across status transitions
   const dedupKey = `notif:${buyerId}:OrderStatusChanged_${statusTo}:${orderId}`;
   if (await ctx.deduplicationService.isDuplicate(dedupKey)) {
-    ctx.logger.log({ buyerId, orderId, statusTo }, 'NOTIFICATION_DEDUP_SKIPPED');
-    ctx.metrics.notificationDedupSkippedTotal.inc({ eventType: `OrderStatusChanged_${statusTo}` });
+    ctx.logger.log(
+      { buyerId, orderId, statusTo },
+      'NOTIFICATION_DEDUP_SKIPPED',
+    );
+    ctx.metrics.notificationDedupSkippedTotal.inc({
+      eventType: `OrderStatusChanged_${statusTo}`,
+    });
     return;
   }
 

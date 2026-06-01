@@ -206,6 +206,13 @@ enum NotificationChannel {
   IN_APP
 }
 
+// Sprint 7 — INV-S7-32: Notification delivery status tracking
+enum NotificationDeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
 enum MediaType {
   IMAGE
   VIDEO
@@ -847,6 +854,7 @@ model Order {
   @@index([sellerId, createdAt], map: "idx_order_seller_date")
   @@index([orderNumber], map: "idx_order_num")
   @@index([orderMonth], map: "idx_order_month")
+  @@index([status, updatedAt], map: "idx_order_status_updated")  // Sprint 7: exception center stuck-orders query (H-P1-1 REQUIRED)
 }
 
 model OrderItem {
@@ -930,6 +938,7 @@ model Payment {
   @@index([gatewayRef], map: "idx_pay_gate_ref")
   @@index([createdAt], map: "idx_pay_date")
   @@index([idempotencyKey], map: "idx_pay_idem_key")
+  @@index([status, orderId], map: "idx_payment_status_order")  // Sprint 7: failed payments exception query
 }
 
 // =============================================================================
@@ -988,6 +997,9 @@ model Notification {
   isRead Boolean   @default(false)
   readAt DateTime?
 
+  // Sprint 7 — INV-S7-32: Delivery status tracking (defaults PENDING, updated by NotificationWorker)
+  status NotificationDeliveryStatus @default(PENDING)
+
   createdAt DateTime @default(now())
   isDeleted Boolean  @default(false)
 
@@ -997,6 +1009,7 @@ model Notification {
   user User @relation(fields: [userId], references: [id])
 
   @@index([userId, isRead, createdAt], map: "idx_notif_user_read_date")
+  @@index([userId, status], map: "idx_notif_user_status")  // Sprint 7: admin audit query (INV-S7-31)
 }
 
 model NotificationTemplate {
@@ -1100,10 +1113,12 @@ model SupportTicket {
   orderId    String?
   assignedTo String?
 
-  subject     String
-  description String
-  priority    SupportTicketPriority @default(MEDIUM)
-  status      SupportTicketStatus   @default(OPEN)
+  subject      String
+  description  String
+  priority     SupportTicketPriority @default(MEDIUM)
+  status       SupportTicketStatus   @default(OPEN)
+  // Sprint 7: AUDIT-P1-B — admin resolution message (different from user's description)
+  resolvedNote String?
 
   // FIX #15: SLA tracking
   firstResponseAt DateTime?
@@ -1119,6 +1134,7 @@ model SupportTicket {
 
   @@index([userId, status], map: "idx_st_user_stat")
   @@index([assignedTo, status], map: "idx_st_assign_stat")
+  @@index([status, priority, createdAt], map: "idx_st_stat_pri_date")  // Sprint 7: admin ticket queue
 }
 
 model Dispute {
@@ -1178,6 +1194,8 @@ model FeatureFlag {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([name, env, segment], map: "idx_ff_name_env_seg")  // Sprint 7: flag cache lookups (INV-S7-18)
 }
 
 // =============================================================================
@@ -1323,6 +1341,7 @@ model SellerPayout {
 
   @@index([sellerId, status], map: "idx_sp_seller_stat")
   @@index([orderId], map: "idx_sp_order")
+  @@index([status, sellerId], map: "idx_payout_status_seller")  // Sprint 7: admin payout list
 }
 
 // =============================================================================

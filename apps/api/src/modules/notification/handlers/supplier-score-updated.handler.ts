@@ -27,12 +27,16 @@ export async function handleSupplierScoreUpdated(
   // INV-S6-10: Only notify when score changes >= 5 points
   const scoreDelta = Math.abs(compositeScore - previousCompositeScore);
   if (scoreDelta < 5) {
-    ctx.logger.debug({ businessId, scoreDelta }, 'SCORE_CHANGE_BELOW_THRESHOLD');
+    ctx.logger.debug(
+      { businessId, scoreDelta },
+      'SCORE_CHANGE_BELOW_THRESHOLD',
+    );
     return;
   }
 
   // Resolve seller user ID via Business owner
-  const sellerUserId = await ctx.userContactService.getBusinessOwnerUserId(businessId);
+  const sellerUserId =
+    await ctx.userContactService.getBusinessOwnerUserId(businessId);
   if (!sellerUserId) {
     ctx.logger.warn({ businessId }, 'SCORE_SELLER_USER_NOT_FOUND');
     return;
@@ -41,12 +45,16 @@ export async function handleSupplierScoreUpdated(
   const dedupKey = `notif:${sellerUserId}:SupplierScoreUpdated:${businessId}`;
   if (await ctx.deduplicationService.isDuplicate(dedupKey)) {
     ctx.logger.log({ sellerUserId, businessId }, 'NOTIFICATION_DEDUP_SKIPPED');
-    ctx.metrics.notificationDedupSkippedTotal.inc({ eventType: 'SupplierScoreUpdated' });
+    ctx.metrics.notificationDedupSkippedTotal.inc({
+      eventType: 'SupplierScoreUpdated',
+    });
     return;
   }
 
   const isImprovement = compositeScore > previousCompositeScore;
-  const templateName = isImprovement ? 'ScoreImproved_SELLER_hi' : 'ScoreDropped_SELLER_hi';
+  const templateName = isImprovement
+    ? 'ScoreImproved_SELLER_hi'
+    : 'ScoreDropped_SELLER_hi';
   // INV-S6-10: Score drop → SMS (urgent); Score improvement → In-App only
   const channels = isImprovement ? ['inApp'] : ['sms', 'inApp'];
 

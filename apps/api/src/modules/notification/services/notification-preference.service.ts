@@ -48,7 +48,9 @@ export class NotificationPreferenceService {
     try {
       const cached = await this.redis.get(cacheKey);
       if (cached) {
-        const parsed = NotificationPreferenceSchema.safeParse(JSON.parse(cached));
+        const parsed = NotificationPreferenceSchema.safeParse(
+          JSON.parse(cached),
+        );
         if (parsed.success) return parsed.data;
       }
     } catch {
@@ -65,16 +67,26 @@ export class NotificationPreferenceService {
       });
       dbPrefs = user?.notificationPreferences ?? null;
     } catch (err) {
-      this.logger.error({ userId, error: (err as Error).message }, 'PREF_DB_READ_FAILED');
+      this.logger.error(
+        { userId, error: (err as Error).message },
+        'PREF_DB_READ_FAILED',
+      );
     }
 
     // 3. Validate DB result — JSONB may have old/partial shape (safeParse guards this)
     const parsed = NotificationPreferenceSchema.safeParse(dbPrefs);
-    const validated = parsed.success ? parsed.data : DEFAULT_NOTIFICATION_PREFERENCES;
+    const validated = parsed.success
+      ? parsed.data
+      : DEFAULT_NOTIFICATION_PREFERENCES;
 
     // 4. Populate Redis cache
     try {
-      await this.redis.set(cacheKey, JSON.stringify(validated), 'EX', this.CACHE_TTL);
+      await this.redis.set(
+        cacheKey,
+        JSON.stringify(validated),
+        'EX',
+        this.CACHE_TTL,
+      );
     } catch {
       // Redis failure: proceed without caching — not critical
     }
@@ -89,12 +101,15 @@ export class NotificationPreferenceService {
    * @param userId - Target user
    * @param dto - Validated UpdatePreferencesDto (full preference object)
    */
-  async updatePreferences(userId: string, dto: UpdatePreferencesDto): Promise<NotificationPreference> {
+  async updatePreferences(
+    userId: string,
+    dto: UpdatePreferencesDto,
+  ): Promise<NotificationPreference> {
     await this.prisma.user.update({
       where: { id: userId },
       // IMPROVEMENT: Prisma 5 Json field requires Prisma.InputJsonValue cast.
       // `as unknown as Prisma.InputJsonValue` is the idiomatic pattern — avoids `any`.
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       data: { notificationPreferences: JSON.parse(JSON.stringify(dto)) },
     });
 

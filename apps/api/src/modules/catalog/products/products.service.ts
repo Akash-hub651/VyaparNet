@@ -34,43 +34,64 @@ export class ProductsService {
    * Generates a unique slug for the product, always appending a random suffix to avoid collisions.
    */
   private async generateSlug(name: string): Promise<string> {
-    const baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    const baseSlug = name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '');
     return `${baseSlug}-${randomBytes(3).toString('hex')}`;
   }
 
-  private async validateCategorySegmentMatch(categoryId: string, segment: Segment) {
+  private async validateCategorySegmentMatch(
+    categoryId: string,
+    segment: Segment,
+  ) {
     const category = await this.prisma.category.findUnique({
       where: { id: categoryId },
-      select: { segment: true }
+      select: { segment: true },
     });
     if (!category) {
       throw new BadRequestException('Category not found');
     }
     if (category.segment !== segment) {
-      throw new BadRequestException(`Category segment ${category.segment} does not match product segment ${segment}`);
+      throw new BadRequestException(
+        `Category segment ${category.segment} does not match product segment ${segment}`,
+      );
     }
   }
 
-  async createProduct(dto: BaseProductDto & { segment: Segment }, userId: string, _userRole: UserRole): Promise<Product> {
+  async createProduct(
+    dto: BaseProductDto & { segment: Segment },
+    userId: string,
+    _userRole: UserRole,
+  ): Promise<Product> {
     const startTime = performance.now();
     const business = await this.ownershipService.resolveSellerBusiness(userId);
-    const schema = this.schemaRegistry.getSchema(dto.segment as Segment);
+    const schema = this.schemaRegistry.getSchema(dto.segment);
 
     const validationResult = schema.safeParse(dto);
     if (!validationResult.success) {
-      this.metrics.segmentAttrValidationFailure(dto.segment as Segment);
+      this.metrics.segmentAttrValidationFailure(dto.segment);
       throw new BadRequestException(validationResult.error.format());
     }
 
     const validData = validationResult.data as any;
 
     // Validate Category-Segment match
-    await this.validateCategorySegmentMatch(validData.categoryId, validData.segment);
+    await this.validateCategorySegmentMatch(
+      validData.categoryId,
+      validData.segment,
+    );
 
     // Validate media
-    await this.ownershipService.verifyMediaOwnership(userId, validData.mediaIds || []);
+    await this.ownershipService.verifyMediaOwnership(
+      userId,
+      validData.mediaIds || [],
+    );
     if (validData.mediaIds && validData.mediaIds.length > 0) {
-      await this.mediaClassification.validateForSegment(validData.mediaIds, validData.segment);
+      await this.mediaClassification.validateForSegment(
+        validData.mediaIds,
+        validData.segment,
+      );
     }
 
     const status = ProductStatus.DRAFT;
@@ -83,41 +104,48 @@ export class ProductsService {
     while (attempts < 3 && !product) {
       try {
         slug = await this.generateSlug(validData.name);
-        
+
         product = await this.prisma.$transaction(async (tx) => {
-          const created = await this.productRepository.create({
-            name: validData.name,
-            slug,
-            description: validData.description,
-            basePrice: validData.basePrice,
-            mrp: validData.mrp,
-            moq: validData.moq,
-            unit: validData.unit,
-            hsnCode: validData.hsnCode,
-            gstPercent: validData.gstPercent,
-            tags: validData.tags || [],
-            segmentAttributes: validData.segmentAttributes || {},
-            segment: validData.segment,
-            status,
-            category: { connect: { id: validData.categoryId } },
-            business: { connect: { id: business.id } },
-            createdBy: userId,
-          }, tx);
+          const created = await this.productRepository.create(
+            {
+              name: validData.name,
+              slug,
+              description: validData.description,
+              basePrice: validData.basePrice,
+              mrp: validData.mrp,
+              moq: validData.moq,
+              unit: validData.unit,
+              hsnCode: validData.hsnCode,
+              gstPercent: validData.gstPercent,
+              tags: validData.tags || [],
+              segmentAttributes: validData.segmentAttributes || {},
+              segment: validData.segment,
+              status,
+              category: { connect: { id: validData.categoryId } },
+              business: { connect: { id: business.id } },
+              createdBy: userId,
+            },
+            tx,
+          );
 
           // ProductMedia links
           if (validData.mediaIds && validData.mediaIds.length > 0) {
             await tx.productMedia.createMany({
-              data: validData.mediaIds.map((mediaId: string, index: number) => ({
-                productId: created.id,
-                mediaId,
-                displayOrder: index,
-              })),
+              data: validData.mediaIds.map(
+                (mediaId: string, index: number) => ({
+                  productId: created.id,
+                  mediaId,
+                  displayOrder: index,
+                }),
+              ),
             });
           }
 
           // SearchReindexJob + AuditLog
           // Emit ProductUpdated instead of Created for DRAFT so it doesn't trigger notification systems
-          await this.eventsService.emitProductUpdated(tx, created, userId, { status: created.status });
+          await this.eventsService.emitProductUpdated(tx, created, userId, {
+            status: created.status,
+          });
           return created;
         });
       } catch (err: any) {
@@ -140,19 +168,31 @@ export class ProductsService {
     return product;
   }
 
-  async publishProduct(productId: string, userId: string, userRole: UserRole): Promise<Product> {
-    const { product, business } = await this.ownershipService.verifyProductOwnership(userId, productId);
-    
-    this.stateMachine.validateTransition(product.status, ProductStatus.PENDING_APPROVAL);
+  async publishProduct(
+    productId: string,
+    userId: string,
+    userRole: UserRole,
+  ): Promise<Product> {
+    const { product, business } =
+      await this.ownershipService.verifyProductOwnership(userId, productId);
 
-    const nextStatus = await this.approvalService.determineInitialStatus(business, userRole, product.segment);
+    this.stateMachine.validateTransition(
+      product.status,
+      ProductStatus.PENDING_APPROVAL,
+    );
+
+    const nextStatus = await this.approvalService.determineInitialStatus(
+      business,
+      userRole,
+      product.segment,
+    );
 
     return this.prisma.$transaction(async (tx) => {
       const updated = await this.productRepository.update(
         product.id,
         product.version,
         { status: nextStatus, updatedBy: userId },
-        tx
+        tx,
       );
 
       // We emit created since it is now published and commercially visible
@@ -162,14 +202,21 @@ export class ProductsService {
     });
   }
 
-  async updateProduct(productId: string, dto: Partial<BaseProductDto & { segment: Segment }>, userId: string): Promise<Product> {
-    const { product } = await this.ownershipService.verifyProductOwnership(userId, productId);
-    
+  async updateProduct(
+    productId: string,
+    dto: Partial<BaseProductDto & { segment: Segment }>,
+    userId: string,
+  ): Promise<Product> {
+    const { product } = await this.ownershipService.verifyProductOwnership(
+      userId,
+      productId,
+    );
+
     const schema = this.schemaRegistry.getSchema(product.segment);
     // Merge existing attributes with new dto to partial validation
     const payload = { ...product, ...dto };
     const validationResult = schema.safeParse(payload);
-    
+
     if (!validationResult.success) {
       this.metrics.segmentAttrValidationFailure(product.segment);
       throw new BadRequestException(validationResult.error.format());
@@ -189,7 +236,7 @@ export class ProductsService {
           segmentAttributes: validData.segmentAttributes,
           updatedBy: userId,
         },
-        tx
+        tx,
       );
 
       await this.eventsService.emitProductUpdated(tx, updated, userId, dto);
@@ -200,12 +247,22 @@ export class ProductsService {
   }
 
   async deleteProduct(productId: string, userId: string): Promise<Product> {
-    const { product } = await this.ownershipService.verifyProductOwnership(userId, productId);
-    
-    this.stateMachine.validateTransition(product.status, ProductStatus.ARCHIVED);
+    const { product } = await this.ownershipService.verifyProductOwnership(
+      userId,
+      productId,
+    );
+
+    this.stateMachine.validateTransition(
+      product.status,
+      ProductStatus.ARCHIVED,
+    );
 
     return this.prisma.$transaction(async (tx) => {
-      const deleted = await this.productRepository.softDelete(product.id, product.version, tx);
+      const deleted = await this.productRepository.softDelete(
+        product.id,
+        product.version,
+        tx,
+      );
       await this.eventsService.emitProductDeleted(tx, deleted, userId);
       await this.redis.del(`product:${product.id}`);
       this.metrics.productDeleted(deleted.segment);

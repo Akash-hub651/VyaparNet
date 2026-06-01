@@ -32,4 +32,3 @@ export class BusinessQueryService {
     await this.redis.del(cacheKey);
   }
 }
-

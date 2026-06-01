@@ -7,7 +7,16 @@ export default defineConfig({
     environment: 'node',
     setupFiles: ['./test/setup.ts'],
     include: ['src/**/*.spec.ts', 'test/**/*.spec.ts'],
-    exclude: ['node_modules', 'dist'],
+    exclude: [
+      'node_modules',
+      'dist',
+      // Integration tests require live DB + Redis + external services (Resend, etc.)
+      // Run these with: pnpm test:integration
+      'test/auth.integration.spec.ts',
+      'test/health.spec.ts',
+      'test/integration/**/*.spec.ts',
+      'src/modules/inventory/tests/inventory-concurrency.spec.ts',
+    ],
     // NestJS integration tests bootstrap a full app including DB + Redis.
     // 30 seconds prevents silent hangs during slow CI provisioning.
     testTimeout: 30000,

@@ -62,7 +62,10 @@ export class MetricsGaugeScannerWorker implements OnModuleInit {
       ]);
     } catch (err) {
       // Non-fatal — metric update failure must never impact business operations
-      this.logger.warn({ err }, 'metrics-gauge-scan encountered an error — gauges may be stale');
+      this.logger.warn(
+        { err },
+        'metrics-gauge-scan encountered an error — gauges may be stale',
+      );
     }
   }
 

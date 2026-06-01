@@ -89,7 +89,10 @@ export class PaymentService {
       cached = await this.redis.get(idemKey);
     } catch (redisErr) {
       // Redis degraded: §18.1 — return 503 (cannot risk duplicate payments without idempotency)
-      this.logger.error({ idemKey, err: redisErr }, 'Redis unavailable for payment idempotency check — returning 503');
+      this.logger.error(
+        { idemKey, err: redisErr },
+        'Redis unavailable for payment idempotency check — returning 503',
+      );
       throw new ServiceUnavailableException({
         code: 'PAYMENT_GATEWAY_UNAVAILABLE',
         message: 'Payment service temporarily unavailable — please retry',
@@ -98,7 +101,10 @@ export class PaymentService {
     }
 
     if (cached) {
-      this.logger.log({ userId, orderId }, 'Payment idempotency hit — returning cached response');
+      this.logger.log(
+        { userId, orderId },
+        'Payment idempotency hit — returning cached response',
+      );
       return JSON.parse(cached) as InitiatePaymentResult;
     }
 
@@ -111,9 +117,8 @@ export class PaymentService {
     // ── STEP 3: DERIVE AMOUNT FROM ORDER (server-side — never trust client-provided amount) ──
     // If caller passed amount=0 (from controller), derive from order.grandTotal
     // HARDENED: No client-provided price trusted for financial calculations
-    const amountInPaise = amount > 0
-      ? amount
-      : Math.round(order.grandTotal.toNumber() * 100); // INR decimal → paise
+    const amountInPaise =
+      amount > 0 ? amount : Math.round(order.grandTotal.toNumber() * 100); // INR decimal → paise
 
     // ── STEP 4: HIGH-VALUE PAYMENT RE-AUTH CHECK (§15.5) ──
     // ₹50,000 = 5,000,000 paise
@@ -161,40 +166,43 @@ export class PaymentService {
     // the PaymentInitiated event — downstream consumers (Sprint 6, Sprint 9) depend on it.
     // NOTE: providerOrder HTTP call is CORRECTLY outside this transaction (§3.1).
     const eventMonth = formatYearMonth(new Date());
-    const payment = await this.prisma.$transaction(async (tx) => {
-      const p = await tx.payment.create({
-        data: {
-          orderId,
-          amount: amountInPaise,
-          method: method as any,
-          gateway: 'RAZORPAY',
-          gatewayRef: providerOrder.providerOrderId,
-          idempotencyKey: `${userId}:${clientIdempotencyKey}`, // userId-scoped
-          status: 'PENDING',
-        },
-      });
-
-      // HARDENED (INV-20): eventVersion + schemaVersion MANDATORY
-      await tx.eventOutbox.create({
-        data: {
-          eventType: 'PaymentInitiated',
-          eventVersion: '1.0',     // HARDENED (INV-20)
-          schemaVersion: '4.3',    // HARDENED (INV-20)
-          payload: {
+    const payment = await this.prisma.$transaction(
+      async (tx) => {
+        const p = await tx.payment.create({
+          data: {
             orderId,
-            paymentId: p.id,
             amount: amountInPaise,
-            method,
-            gatewayOrderId: providerOrder.providerOrderId,
+            method: method as any,
+            gateway: 'RAZORPAY',
+            gatewayRef: providerOrder.providerOrderId,
+            idempotencyKey: `${userId}:${clientIdempotencyKey}`, // userId-scoped
+            status: 'PENDING',
           },
-          deduplicationKey: `payment-initiated-${p.id}`, // deterministic (INV-17)
-          eventMonth,
-          status: 'PENDING',
-        },
-      });
+        });
 
-      return p;
-    }, { timeout: 5000, isolationLevel: 'ReadCommitted' });
+        // HARDENED (INV-20): eventVersion + schemaVersion MANDATORY
+        await tx.eventOutbox.create({
+          data: {
+            eventType: 'PaymentInitiated',
+            eventVersion: '1.0', // HARDENED (INV-20)
+            schemaVersion: '4.3', // HARDENED (INV-20)
+            payload: {
+              orderId,
+              paymentId: p.id,
+              amount: amountInPaise,
+              method,
+              gatewayOrderId: providerOrder.providerOrderId,
+            },
+            deduplicationKey: `payment-initiated-${p.id}`, // deterministic (INV-17)
+            eventMonth,
+            status: 'PENDING',
+          },
+        });
+
+        return p;
+      },
+      { timeout: 5000, isolationLevel: 'ReadCommitted' },
+    );
 
     const result: InitiatePaymentResult = {
       paymentUrl: providerOrder.checkoutUrl,
@@ -208,7 +216,10 @@ export class PaymentService {
       .set(idemKey, JSON.stringify(result), 'EX', 86400)
       .catch((err) => {
         // Non-fatal — payment already created. Log and continue.
-        this.logger.warn({ idemKey, err }, 'Failed to cache payment idempotency key — degraded idempotency');
+        this.logger.warn(
+          { idemKey, err },
+          'Failed to cache payment idempotency key — degraded idempotency',
+        );
       });
 
     this.logger.log(
@@ -219,7 +230,10 @@ export class PaymentService {
     return result;
   }
 
-  async getPaymentStatus(orderId: string, userId: string): Promise<PaymentStatusResult> {
+  async getPaymentStatus(
+    orderId: string,
+    userId: string,
+  ): Promise<PaymentStatusResult> {
     // INV-18: ownership enforced via ordersRepo (includes buyerId filter)
     const order = await this.ordersRepo.findById(orderId, userId);
     if (!order) throw new NotFoundException({ code: 'ORDER_NOT_FOUND' });
@@ -238,11 +252,18 @@ export class PaymentService {
     };
   }
 
-  async getRetryStatus(orderId: string, userId: string): Promise<RetryStatusDto> {
+  async getRetryStatus(
+    orderId: string,
+    userId: string,
+  ): Promise<RetryStatusDto> {
     const order = await this.ordersRepo.findById(orderId, userId);
 
     if (!order || order.status !== 'PAYMENT_FAILED') {
-      return { retryAllowed: false, retryWindowRemainingMs: null, attemptCount: 0 };
+      return {
+        retryAllowed: false,
+        retryWindowRemainingMs: null,
+        attemptCount: 0,
+      };
     }
 
     // Dual authority check (INV-23)
@@ -281,13 +302,20 @@ export class PaymentService {
 
     // 2. Validate state
     if (order.status !== 'PAYMENT_FAILED') {
-      throw new UnprocessableEntityException({ code: 'ORDER_NOT_IN_PAYMENT_FAILED_STATE' });
+      throw new UnprocessableEntityException({
+        code: 'ORDER_NOT_IN_PAYMENT_FAILED_STATE',
+      });
     }
 
     // HARDENED (INV-23): DUAL-AUTHORITY retry window check
     const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
-    const redisKeyExists = (await this.redis.exists(`payment_retry_window:${orderId}`).catch(() => 0)) > 0;
-    const dbWindowOpen = order.paymentFailedAt !== null && order.paymentFailedAt > thirtyMinutesAgo;
+    const redisKeyExists =
+      (await this.redis
+        .exists(`payment_retry_window:${orderId}`)
+        .catch(() => 0)) > 0;
+    const dbWindowOpen =
+      order.paymentFailedAt !== null &&
+      order.paymentFailedAt > thirtyMinutesAgo;
 
     if (!redisKeyExists && !dbWindowOpen) {
       // BOTH authorities confirm expired — window is closed
@@ -313,7 +341,8 @@ export class PaymentService {
     // 4. Deterministic retry idempotency key (includes attempt number)
     // HARDENED (MEDIUM-3): client-provided key takes priority — prevents double-tap race.
     // If client provides Idempotency-Key header, use it. Otherwise use internal deterministic key.
-    const retryIdempotencyKey = clientIdempotencyKey ?? `payment-retry-${orderId}-${attemptNumber}`;
+    const retryIdempotencyKey =
+      clientIdempotencyKey ?? `payment-retry-${orderId}-${attemptNumber}`;
 
     // 5. Initiate new payment — HARDENED (INV-24): userId passed as 5th arg
     return this.initiatePayment(

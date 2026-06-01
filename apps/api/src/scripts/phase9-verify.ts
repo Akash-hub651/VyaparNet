@@ -1,4 +1,7 @@
-import { OrderStatusChangedPayloadSchema, SupplierScoreUpdatedPayloadSchema } from '@vyaparnet/types';
+import {
+  OrderStatusChangedPayloadSchema,
+  SupplierScoreUpdatedPayloadSchema,
+} from '@vyaparnet/types';
 import { PrismaClient } from '@vyaparnet/database';
 
 async function verifyPhase9() {
@@ -7,7 +10,12 @@ async function verifyPhase9() {
   // Verify OrderStatusChanged payload structure for Sprint 6 requirements
   const orderStatusSchemaShape = OrderStatusChangedPayloadSchema.shape;
   const missingOrderFields = [];
-  const requiredOrderFields = ['buyerId', 'sellerId', 'statusTo', 'orderNumber'];
+  const requiredOrderFields = [
+    'buyerId',
+    'sellerId',
+    'statusTo',
+    'orderNumber',
+  ];
   for (const field of requiredOrderFields) {
     if (!orderStatusSchemaShape[field as keyof typeof orderStatusSchemaShape]) {
       missingOrderFields.push(field);
@@ -20,10 +28,15 @@ async function verifyPhase9() {
   }
 
   if (missingOrderFields.length > 0) {
-    console.error('❌ OrderStatusChanged missing required fields:', missingOrderFields);
+    console.error(
+      '❌ OrderStatusChanged missing required fields:',
+      missingOrderFields,
+    );
     process.exit(1);
   } else {
-    console.log('✅ Unit test: OrderStatusChanged payload has all required fields for Sprint 6');
+    console.log(
+      '✅ Unit test: OrderStatusChanged payload has all required fields for Sprint 6',
+    );
   }
 
   // Verify SupplierScoreUpdated payload structure for Sprint 6 requirements
@@ -37,10 +50,15 @@ async function verifyPhase9() {
   }
 
   if (missingScoreFields.length > 0) {
-    console.error('❌ SupplierScoreUpdated missing required fields:', missingScoreFields);
+    console.error(
+      '❌ SupplierScoreUpdated missing required fields:',
+      missingScoreFields,
+    );
     process.exit(1);
   } else {
-    console.log('✅ Unit test: SupplierScoreUpdated payload has compositeScore + previousCompositeScore');
+    console.log(
+      '✅ Unit test: SupplierScoreUpdated payload has compositeScore + previousCompositeScore',
+    );
   }
 
   console.log('\n=== PHASE 9 DB VERIFICATION ===');
@@ -54,8 +72,12 @@ async function verifyPhase9() {
       take: 5,
     });
 
-    console.log(`Found ${pendingEvents.length} PENDING Sprint 5 events in the EventOutbox.`);
-    console.log('✅ DB verify: Sprint 5 EventOutbox events appear in PENDING status (existing relay worker picks them up)');
+    console.log(
+      `Found ${pendingEvents.length} PENDING Sprint 5 events in the EventOutbox.`,
+    );
+    console.log(
+      '✅ DB verify: Sprint 5 EventOutbox events appear in PENDING status (existing relay worker picks them up)',
+    );
   } catch (error) {
     console.error('Database query failed:', error);
   } finally {

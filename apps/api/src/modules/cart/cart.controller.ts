@@ -21,7 +21,6 @@ import {
 } from '@vyaparnet/types';
 import { Segment } from '@vyaparnet/database';
 
-
 @Controller('cart')
 export class CartController {
   constructor(private readonly cartService: CartService) {}

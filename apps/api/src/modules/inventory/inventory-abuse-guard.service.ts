@@ -148,7 +148,10 @@ export class InventoryAbuseGuard {
       }
     } catch (err: any) {
       if (err instanceof HttpException) throw err;
-      this.logger.error('Redis error during user velocity check — allowing request in degraded mode', err.message);
+      this.logger.error(
+        'Redis error during user velocity check — allowing request in degraded mode',
+        err.message,
+      );
     }
   }
 
@@ -192,7 +195,10 @@ export class InventoryAbuseGuard {
       }
     } catch (err: any) {
       if (err instanceof HttpException) throw err;
-      this.logger.error('Redis error during IP velocity check — allowing request in degraded mode', err.message);
+      this.logger.error(
+        'Redis error during IP velocity check — allowing request in degraded mode',
+        err.message,
+      );
     }
   }
 
@@ -227,7 +233,10 @@ export class InventoryAbuseGuard {
       }
     } catch (err: any) {
       if (err instanceof HttpException) throw err;
-      this.logger.error('Redis error during business velocity check — allowing request in degraded mode', err.message);
+      this.logger.error(
+        'Redis error during business velocity check — allowing request in degraded mode',
+        err.message,
+      );
     }
   }
 

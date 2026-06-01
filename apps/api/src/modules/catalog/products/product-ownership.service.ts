@@ -1,4 +1,8 @@
-import { Injectable, ForbiddenException, PreconditionFailedException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  PreconditionFailedException,
+} from '@nestjs/common';
 import { BusinessQueryService } from '../../identity/users/business-query.service';
 import { RedisService } from '../../../core/redis/redis.service';
 import { ProductsRepository } from './products.repository';
@@ -26,7 +30,9 @@ export class ProductOwnershipService {
 
     const business = await this.businessQueryService.findByOwnerId(userId);
     if (!business) {
-      throw new PreconditionFailedException('User does not have an active business profile.');
+      throw new PreconditionFailedException(
+        'User does not have an active business profile.',
+      );
     }
 
     await this.redis.setJson(cacheKey, business, 300);
@@ -36,7 +42,10 @@ export class ProductOwnershipService {
   /**
    * Verifies that the given product belongs to the seller's business.
    */
-  async verifyProductOwnership(userId: string, productId: string): Promise<{ product: Product; business: Business }> {
+  async verifyProductOwnership(
+    userId: string,
+    productId: string,
+  ): Promise<{ product: Product; business: Business }> {
     const business = await this.resolveSellerBusiness(userId);
     const product = await this.productRepository.findById(productId);
 
@@ -45,7 +54,9 @@ export class ProductOwnershipService {
     }
 
     if (product.businessId !== business.id) {
-      throw new ForbiddenException('You do not have permission to modify this product.');
+      throw new ForbiddenException(
+        'You do not have permission to modify this product.',
+      );
     }
 
     return { product, business };
@@ -54,7 +65,10 @@ export class ProductOwnershipService {
   /**
    * Verifies that the media assets were uploaded by the same user.
    */
-  async verifyMediaOwnership(userId: string, mediaIds: string[]): Promise<Media[]> {
+  async verifyMediaOwnership(
+    userId: string,
+    mediaIds: string[],
+  ): Promise<Media[]> {
     if (!mediaIds.length) return [];
 
     const mediaList = await this.mediaRepository.findByIds(mediaIds);
@@ -68,11 +82,12 @@ export class ProductOwnershipService {
         throw new ForbiddenException('One or more media items not found.');
       }
       if (media.uploadedBy !== userId) {
-        throw new ForbiddenException(`Media access denied for item: ${media.id}`);
+        throw new ForbiddenException(
+          `Media access denied for item: ${media.id}`,
+        );
       }
     }
 
     return mediaList.filter((m): m is Media => !!m);
   }
 }
-

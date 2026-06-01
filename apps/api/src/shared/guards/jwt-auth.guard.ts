@@ -100,11 +100,29 @@ export class JwtAuthGuard implements CanActivate {
 
   private extractToken(request: Request): string | null {
     const authHeader = request.headers.authorization;
-    if (!authHeader) return null;
+    if (authHeader) {
+      const [type, token] = authHeader.split(' ');
+      if (type === 'Bearer' && token) {
+        return token;
+      }
+    }
 
-    const [type, token] = authHeader.split(' ');
-    if (type !== 'Bearer' || !token) return null;
+    // Fallback: Check for admin_token cookie (for Admin Panel)
+    const cookieHeader = request.headers.cookie;
+    if (cookieHeader) {
+      const cookies = cookieHeader.split(';').reduce((acc, cookieString) => {
+        const [key, value] = cookieString.split('=').map((c) => c.trim());
+        if (key && value) {
+          acc[key] = value;
+        }
+        return acc;
+      }, {} as Record<string, string>);
 
-    return token;
+      if (cookies['admin_token']) {
+        return cookies['admin_token'];
+      }
+    }
+
+    return null;
   }
 }

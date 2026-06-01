@@ -24,7 +24,9 @@ export async function handlePaymentReceived(
   const dedupKey = `notif:${buyerId}:PaymentReceived:${orderId}`;
   if (await ctx.deduplicationService.isDuplicate(dedupKey)) {
     ctx.logger.log({ buyerId, orderId }, 'NOTIFICATION_DEDUP_SKIPPED');
-    ctx.metrics.notificationDedupSkippedTotal.inc({ eventType: 'PaymentReceived' });
+    ctx.metrics.notificationDedupSkippedTotal.inc({
+      eventType: 'PaymentReceived',
+    });
     return;
   }
 

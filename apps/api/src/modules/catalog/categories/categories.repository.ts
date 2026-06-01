@@ -22,7 +22,9 @@ export class CategoriesRepository {
       try {
         return JSON.parse(cached) as Category[];
       } catch (error) {
-        this.logger.warn(`Failed to parse cached category tree for segment: ${segment}`);
+        this.logger.warn(
+          `Failed to parse cached category tree for segment: ${segment}`,
+        );
       }
     }
 
@@ -30,7 +32,8 @@ export class CategoriesRepository {
     // SECURITY REVIEW COMPLIANT: segment parameter is parameterized ($1). No SQL injection possible here.
     // $queryRawUnsafe is used because Prisma.sql cannot cleanly represent this recursive CTE yet.
     // MAX_RECURSION_DEPTH of 10 prevents cyclic tree infinite loops (SCALE-3 Fix).
-    const categories = await this.prisma.$queryRawUnsafe<Category[]>(`
+    const categories = await this.prisma.$queryRawUnsafe<Category[]>(
+      `
       WITH RECURSIVE category_tree AS (
         SELECT *, 1 as depth FROM "Category" WHERE parent_id IS NULL AND segment = $1::"Segment" AND is_active = true AND is_deleted = false
         UNION ALL
@@ -38,7 +41,9 @@ export class CategoriesRepository {
         WHERE c.is_active = true AND c.is_deleted = false AND ct.depth < 10
       )
       SELECT id, name, parent_id, slug, is_active, is_deleted, created_at, updated_at, filter_config, segment FROM category_tree;
-    `, segment);
+    `,
+      segment,
+    );
 
     // 3. Set Cache (TTL 3600s)
     await this.redis.setex(cacheKey, 3600, JSON.stringify(categories));

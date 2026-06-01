@@ -54,6 +54,7 @@ import type { AppConfig } from '../config/config.schema';
       { name: 'dead-letter' }, // DLQ — Sprint 3 (other domains)
       { name: 'notifications-failed' }, // Notification DLQ — Sprint 6 §21.2 LOCKED name (AF-3)
       { name: 'scorecard' }, // Seller scorecard cron — Sprint 5 Phase 7
+      { name: 'invoice-generation' }, // Low priority — Sprint 7 Admin async PDF generation (INV-S7-16)
     ),
   ],
   exports: [BullModule],

@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
-import { Prisma, Payment, PaymentMethod, PaymentStatus } from '@vyaparnet/database';
+import {
+  Prisma,
+  Payment,
+  PaymentMethod,
+  PaymentStatus,
+} from '@vyaparnet/database';
 
 export interface CreatePaymentData {
   orderId: string;

@@ -55,13 +55,18 @@ export class PaymentRetryExpiryWorker implements OnModuleInit {
       try {
         // HARDENED (INV-23): Authority 1 — DB timestamp check (primary authority)
         if (!order.paymentFailedAt) {
-          this.logger.warn({ orderId: order.id }, 'HARDENED: PAYMENT_FAILED order has no paymentFailedAt timestamp — skipping until populated');
+          this.logger.warn(
+            { orderId: order.id },
+            'HARDENED: PAYMENT_FAILED order has no paymentFailedAt timestamp — skipping until populated',
+          );
           continue;
         }
         const dbWindowExpired = order.paymentFailedAt < thirtyMinutesAgo;
 
         // HARDENED (INV-23): Authority 2 — Redis key check (secondary authority)
-        const windowKey = await this.redis.get(`payment_retry_window:${order.id}`);
+        const windowKey = await this.redis.get(
+          `payment_retry_window:${order.id}`,
+        );
         const redisWindowExpired = !windowKey; // true if key missing/expired
 
         // HARDENED (INV-23): Only cancel if BOTH authorities confirm expiry
@@ -80,11 +85,18 @@ export class PaymentRetryExpiryWorker implements OnModuleInit {
         if (!redisWindowExpired) {
           // Redis says window open but DB says expired — Redis has stale key (clock skew edge case)
           // Log and proceed with cancellation (DB is the authority)
-          this.logger.warn({ orderId: order.id }, 'HARDENED (INV-23): DB says expired but Redis key still present — proceeding with DB authority');
+          this.logger.warn(
+            { orderId: order.id },
+            'HARDENED (INV-23): DB says expired but Redis key still present — proceeding with DB authority',
+          );
         }
 
         // Both authorities (or DB alone) confirm window expired — cancel
-        await this.inventoryService.releaseAllForOrder(order.id, 'ORDER_CANCELLED', 'SYSTEM');
+        await this.inventoryService.releaseAllForOrder(
+          order.id,
+          'ORDER_CANCELLED',
+          'SYSTEM',
+        );
 
         await this.prisma.$transaction(
           async (tx) => {
@@ -124,9 +136,15 @@ export class PaymentRetryExpiryWorker implements OnModuleInit {
           { timeout: 8000, isolationLevel: 'ReadCommitted' },
         );
 
-        this.logger.log({ orderId: order.id }, 'Cancelled PAYMENT_FAILED order due to retry window expiry');
+        this.logger.log(
+          { orderId: order.id },
+          'Cancelled PAYMENT_FAILED order due to retry window expiry',
+        );
       } catch (err) {
-        this.logger.error({ orderId: order.id, err }, 'Failed to process payment retry expiry for order');
+        this.logger.error(
+          { orderId: order.id, err },
+          'Failed to process payment retry expiry for order',
+        );
       }
     }
   }

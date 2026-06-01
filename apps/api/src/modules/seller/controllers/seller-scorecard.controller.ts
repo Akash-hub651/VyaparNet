@@ -20,9 +20,11 @@ import { UserRole } from '@vyaparnet/database';
  */
 @Controller('seller/scorecard')
 @UseGuards(JwtAuthGuard, RolesGuard, SellerContextGuard) // INV-S5-2: SellerContextGuard mandatory
-@Roles(UserRole.SELLER)                                  // INV-S5-21: SELLER role required
+@Roles(UserRole.SELLER) // INV-S5-21: SELLER role required
 export class SellerScorecardController {
-  constructor(private readonly sellerScorecardService: SellerScorecardService) {}
+  constructor(
+    private readonly sellerScorecardService: SellerScorecardService,
+  ) {}
 
   /**
    * GET /seller/scorecard

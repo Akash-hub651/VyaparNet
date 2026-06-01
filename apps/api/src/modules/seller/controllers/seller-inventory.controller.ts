@@ -10,7 +10,7 @@ import { InventoryListQuerySchema, InventoryListQuery } from '@vyaparnet/types';
 
 @Controller('seller/inventory')
 @UseGuards(JwtAuthGuard, RolesGuard, SellerContextGuard) // INV-S5-2: SellerContextGuard on EVERY seller controller class
-@Roles(UserRole.SELLER)                                  // INV-S5-21: SELLER role required
+@Roles(UserRole.SELLER) // INV-S5-21: SELLER role required
 export class SellerInventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 
@@ -22,7 +22,8 @@ export class SellerInventoryController {
   @Get()
   async getInventory(
     @Req() req: any,
-    @Query(new ZodValidationPipe(InventoryListQuerySchema)) query: InventoryListQuery,
+    @Query(new ZodValidationPipe(InventoryListQuerySchema))
+    query: InventoryListQuery,
   ) {
     const { businessId } = req.seller; // Enforces seller context isolation (INV-S5-3 / INV-S5-33)
     return this.inventoryService.listInventory({

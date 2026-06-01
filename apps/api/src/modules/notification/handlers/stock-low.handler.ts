@@ -16,7 +16,14 @@ export async function handleStockLow(
   payload: StockLowPayload,
   ctx: HandlerContext,
 ): Promise<void> {
-  const { productId, businessId, productName, currentStock, quantity, threshold } = payload;
+  const {
+    productId,
+    businessId,
+    productName,
+    currentStock,
+    quantity,
+    threshold,
+  } = payload;
 
   // businessId is optional in payload — guard before proceeding
   if (!businessId) {
@@ -28,7 +35,8 @@ export async function handleStockLow(
   const stockQty = currentStock ?? quantity ?? 0;
 
   // Resolve seller user ID via Business owner (INV-S6-15: direct Prisma read)
-  const sellerUserId = await ctx.userContactService.getBusinessOwnerUserId(businessId);
+  const sellerUserId =
+    await ctx.userContactService.getBusinessOwnerUserId(businessId);
   if (!sellerUserId) {
     ctx.logger.warn({ businessId, productId }, 'STOCK_LOW_SELLER_NOT_FOUND');
     return;
@@ -45,7 +53,10 @@ export async function handleStockLow(
   const sellerContact = await ctx.userContactService.getContact(sellerUserId);
 
   // INV-S6-11: Check SMS rate limit (24h per productId+businessId pair)
-  const smsRateLimited = await ctx.deduplicationService.isLowStockRateLimited(productId, businessId);
+  const smsRateLimited = await ctx.deduplicationService.isLowStockRateLimited(
+    productId,
+    businessId,
+  );
   // If SMS is rate-limited: In-App only. If not: SMS + In-App.
   const channels = smsRateLimited ? ['inApp'] : ['sms', 'inApp'];
 

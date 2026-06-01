@@ -1,7 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CatalogMetrics } from '../catalog-metrics.service';
-import { Segment, ProductStatus, ApprovalPolicyType, MediaClass } from '@vyaparnet/database';
+import {
+  Segment,
+  ProductStatus,
+  ApprovalPolicyType,
+  MediaClass,
+} from '@vyaparnet/database';
 
 describe('CatalogMetrics', () => {
   let service: CatalogMetrics;
@@ -38,13 +43,22 @@ describe('CatalogMetrics', () => {
     it('should support productCreated named helper', () => {
       service.productCreated(Segment.TEXTILE, ProductStatus.ACTIVE);
       const counters = service.getAllCounters();
-      expect(counters['product_created_total{segment="TEXTILE",status="ACTIVE"}']).toBe(1);
+      expect(
+        counters['product_created_total{segment="TEXTILE",status="ACTIVE"}'],
+      ).toBe(1);
     });
 
     it('should support productPublished named helper', () => {
-      service.productPublished(Segment.SPARE_PARTS, ProductStatus.PENDING_APPROVAL);
+      service.productPublished(
+        Segment.SPARE_PARTS,
+        ProductStatus.PENDING_APPROVAL,
+      );
       const counters = service.getAllCounters();
-      expect(counters['product_published_total{segment="SPARE_PARTS",status="PENDING_APPROVAL"}']).toBe(1);
+      expect(
+        counters[
+          'product_published_total{segment="SPARE_PARTS",status="PENDING_APPROVAL"}'
+        ],
+      ).toBe(1);
     });
 
     it('should support productUpdated named helper', () => {
@@ -62,7 +76,9 @@ describe('CatalogMetrics', () => {
     it('should support searchQuery named helper', () => {
       service.searchQuery(Segment.TEXTILE, 'postgres');
       const counters = service.getAllCounters();
-      expect(counters['search_query_total{segment="TEXTILE",engine="postgres"}']).toBe(1);
+      expect(
+        counters['search_query_total{segment="TEXTILE",engine="postgres"}'],
+      ).toBe(1);
     });
 
     it('should support searchFallback named helper', () => {
@@ -80,25 +96,40 @@ describe('CatalogMetrics', () => {
     it('should support searchCacheHit named helper', () => {
       service.searchCacheHit(Segment.TEXTILE, 'buyer');
       const counters = service.getAllCounters();
-      expect(counters['search_cache_hit_total{segment="TEXTILE",scope="buyer"}']).toBe(1);
+      expect(
+        counters['search_cache_hit_total{segment="TEXTILE",scope="buyer"}'],
+      ).toBe(1);
     });
 
     it('should support mediaUpload named helper', () => {
       service.mediaUpload('success', MediaClass.PRODUCT_IMAGE);
       const counters = service.getAllCounters();
-      expect(counters['media_upload_total{status="success",mediaClass="PRODUCT_IMAGE"}']).toBe(1);
+      expect(
+        counters[
+          'media_upload_total{status="success",mediaClass="PRODUCT_IMAGE"}'
+        ],
+      ).toBe(1);
     });
 
     it('should support segmentAttrValidationFailure named helper', () => {
       service.segmentAttrValidationFailure(Segment.TEXTILE);
       const counters = service.getAllCounters();
-      expect(counters['segment_attr_validation_failure_total{segment="TEXTILE"}']).toBe(1);
+      expect(
+        counters['segment_attr_validation_failure_total{segment="TEXTILE"}'],
+      ).toBe(1);
     });
 
     it('should support approvalPolicyType named helper', () => {
-      service.approvalPolicyType(Segment.SPARE_PARTS, ApprovalPolicyType.AUTO_APPROVE);
+      service.approvalPolicyType(
+        Segment.SPARE_PARTS,
+        ApprovalPolicyType.AUTO_APPROVE,
+      );
       const counters = service.getAllCounters();
-      expect(counters['approval_policy_type_total{segment="SPARE_PARTS",policyType="AUTO_APPROVE"}']).toBe(1);
+      expect(
+        counters[
+          'approval_policy_type_total{segment="SPARE_PARTS",policyType="AUTO_APPROVE"}'
+        ],
+      ).toBe(1);
     });
   });
 
@@ -111,14 +142,16 @@ describe('CatalogMetrics', () => {
       const histograms = service.getAllHistograms();
       expect(histograms['product_create_duration_ms']).toEqual([142.5]);
       expect(histograms['media_upload_duration_ms']).toEqual([580]);
-      expect(histograms['search_query_duration_ms{segment="TEXTILE"}']).toEqual([45]);
+      expect(histograms['search_query_duration_ms{segment="TEXTILE"}']).toEqual(
+        [45],
+      );
     });
 
     it('should warn when search query duration exceeds 150ms threshold', () => {
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       service.recordSearchQueryDuration(Segment.TEXTILE, 200);
       expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[ALERT] search p95 > 150ms triggered!')
+        expect.stringContaining('[ALERT] search p95 > 150ms triggered!'),
       );
       warnSpy.mockRestore();
     });

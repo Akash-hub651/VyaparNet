@@ -15,9 +15,11 @@ export class CategoriesService {
   async getById(id: string, segment: Segment): Promise<CategoryTreeResponse> {
     const category = await this.categoriesRepository.findById(id, segment);
     if (!category) {
-      throw new NotFoundException(`Category with id ${id} not found in segment ${segment}`);
+      throw new NotFoundException(
+        `Category with id ${id} not found in segment ${segment}`,
+      );
     }
-    
+
     // Convert to response type
     return this.mapToResponse(category);
   }

@@ -64,11 +64,10 @@ export class SellerScorecardService {
       this.logger.error(
         { businessCount: businesses.length },
         'SCORECARD_SCALE_LIMIT_EXCEEDED: Business count exceeds 5K safe threshold. ' +
-        'Migrate to chunked BullMQ child jobs (Sprint 7 SC-2 backlog). ' +
-        'Continuing this run — but performance degradation expected.',
+          'Migrate to chunked BullMQ child jobs (Sprint 7 SC-2 backlog). ' +
+          'Continuing this run — but performance degradation expected.',
       );
     }
-
 
     for (const business of businesses) {
       try {
@@ -109,7 +108,7 @@ export class SellerScorecardService {
     const orders = await this.prisma.order.findMany({
       where: {
         sellerId: businessId, // MANDATORY (INV-S5-14, INV-S5-33)
-        segment,              // MANDATORY (INV-S5-33)
+        segment, // MANDATORY (INV-S5-33)
         createdAt: { gte: windowStart },
         isDeleted: false,
       },
@@ -237,8 +236,7 @@ export class SellerScorecardService {
 
       if (ratings.length >= 3) {
         const totalQuality = ratings.reduce(
-          (sum, r) =>
-            sum + (r.deliverySpeed + r.productQuality) / 2,
+          (sum, r) => sum + (r.deliverySpeed + r.productQuality) / 2,
           0,
         );
         // SellerRating scores are 1-5 scale; normalize to 0-100
@@ -260,8 +258,13 @@ export class SellerScorecardService {
     const allOrdersInWindow = orders; // already fetched above (all orders 90d window)
     const placedOrCancelledOrders = allOrdersInWindow.filter((o) =>
       [
-        'PLACED', 'CONFIRMED', 'PROCESSING', 'SHIPPED',
-        'DELIVERED', 'COMPLETED', 'CANCELLED',
+        'PLACED',
+        'CONFIRMED',
+        'PROCESSING',
+        'SHIPPED',
+        'DELIVERED',
+        'COMPLETED',
+        'CANCELLED',
       ].includes(o.status),
     );
 
@@ -284,8 +287,8 @@ export class SellerScorecardService {
     // ─────────────────────────────────────────────────────────────────
     const compositeScore = Math.round(
       dispatchSpeedScore * 0.4 +
-      deliveryQualityScore * 0.4 +
-      acceptanceRate * 0.2,
+        deliveryQualityScore * 0.4 +
+        acceptanceRate * 0.2,
     );
 
     // ── Get previous score for delta comparison and previousCompositeScore field
@@ -332,8 +335,8 @@ export class SellerScorecardService {
       await this.prisma.eventOutbox.create({
         data: {
           eventType: 'SupplierScoreUpdated',
-          eventVersion: '1.0',         // INV-20: eventVersion required
-          schemaVersion: '5.0',         // INV-S5-23: Sprint 5 schema version
+          eventVersion: '1.0', // INV-20: eventVersion required
+          schemaVersion: '5.0', // INV-S5-23: Sprint 5 schema version
           deduplicationKey: `supplier-score-updated-${businessId}-${hour}`, // INV-S5-17
           payload: {
             businessId,

@@ -1,3 +1,4 @@
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { CircuitBreakerService } from '../services/circuit-breaker.service';
 
 /**
@@ -13,31 +14,31 @@ import { CircuitBreakerService } from '../services/circuit-breaker.service';
 describe('CircuitBreakerService', () => {
   let service: CircuitBreakerService;
   let mockRedis: {
-    exists: jest.Mock;
-    incr: jest.Mock;
-    expire: jest.Mock;
-    set: jest.Mock;
-    del: jest.Mock;
+    exists: ReturnType<typeof vi.fn>;
+    incr: ReturnType<typeof vi.fn>;
+    expire: ReturnType<typeof vi.fn>;
+    set: ReturnType<typeof vi.fn>;
+    del: ReturnType<typeof vi.fn>;
   };
   let mockMetrics: {
-    notificationCbState: { set: jest.Mock };
+    notificationCbState: { set: ReturnType<typeof vi.fn> };
   };
 
   beforeEach(() => {
     mockRedis = {
-      exists: jest.fn(),
-      incr: jest.fn(),
-      expire: jest.fn(),
-      set: jest.fn(),
-      del: jest.fn(),
+      exists: vi.fn(),
+      incr: vi.fn(),
+      expire: vi.fn(),
+      set: vi.fn(),
+      del: vi.fn(),
     };
     mockMetrics = {
-      notificationCbState: { set: jest.fn() },
+      notificationCbState: { set: vi.fn() },
     };
     service = new CircuitBreakerService(mockRedis as any, mockMetrics as any);
   });
 
-  afterEach(() => jest.clearAllMocks());
+  afterEach(() => vi.clearAllMocks());
 
   // ─── isOpen ─────────────────────────────────────────────────────────────────
 
@@ -84,7 +85,10 @@ describe('CircuitBreakerService', () => {
       mockRedis.incr.mockResolvedValue(5);
       await service.recordFailure('sms');
       expect(mockRedis.set).toHaveBeenCalledWith('cb:sms:open', '1', 'EX', 120);
-      expect(mockMetrics.notificationCbState.set).toHaveBeenCalledWith({ channel: 'sms' }, 1);
+      expect(mockMetrics.notificationCbState.set).toHaveBeenCalledWith(
+        { channel: 'sms' },
+        1,
+      );
     });
 
     it('does NOT open circuit at count 4 — threshold is exactly 5', async () => {
@@ -97,7 +101,12 @@ describe('CircuitBreakerService', () => {
     it('opens circuit at count 6 (>=5 check, not ===5)', async () => {
       mockRedis.incr.mockResolvedValue(6);
       await service.recordFailure('email');
-      expect(mockRedis.set).toHaveBeenCalledWith('cb:email:open', '1', 'EX', 120);
+      expect(mockRedis.set).toHaveBeenCalledWith(
+        'cb:email:open',
+        '1',
+        'EX',
+        120,
+      );
     });
 
     it('swallows Redis failures silently — never throws', async () => {
@@ -119,14 +128,20 @@ describe('CircuitBreakerService', () => {
     it('deletes both failures and open keys on success', async () => {
       mockRedis.exists.mockResolvedValue(0); // was not open
       await service.recordSuccess('sms');
-      expect(mockRedis.del).toHaveBeenCalledWith('cb:sms:failures', 'cb:sms:open');
+      expect(mockRedis.del).toHaveBeenCalledWith(
+        'cb:sms:failures',
+        'cb:sms:open',
+      );
     });
 
     it('emits cb_state=0 when circuit was previously OPEN', async () => {
       mockRedis.exists.mockResolvedValue(1); // was open
       mockRedis.del.mockResolvedValue(2);
       await service.recordSuccess('email');
-      expect(mockMetrics.notificationCbState.set).toHaveBeenCalledWith({ channel: 'email' }, 0);
+      expect(mockMetrics.notificationCbState.set).toHaveBeenCalledWith(
+        { channel: 'email' },
+        0,
+      );
     });
 
     it('does NOT emit cb_state=0 when circuit was already CLOSED', async () => {

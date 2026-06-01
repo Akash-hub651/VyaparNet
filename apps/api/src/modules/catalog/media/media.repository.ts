@@ -18,7 +18,10 @@ export class MediaRepository {
     });
   }
 
-  async findByChecksum(checksum: string, uploadedBy: string): Promise<Media | null> {
+  async findByChecksum(
+    checksum: string,
+    uploadedBy: string,
+  ): Promise<Media | null> {
     return this.prisma.media.findFirst({
       where: {
         checksum,
@@ -46,7 +49,11 @@ export class MediaRepository {
     });
   }
 
-  async markProcessed(id: string, thumbnailUrl: string, mediaClass: MediaClass): Promise<Media> {
+  async markProcessed(
+    id: string,
+    thumbnailUrl: string,
+    mediaClass: MediaClass,
+  ): Promise<Media> {
     return this.prisma.media.update({
       where: { id },
       data: {

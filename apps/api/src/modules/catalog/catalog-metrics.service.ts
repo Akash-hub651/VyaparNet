@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { Segment, ProductStatus, ApprovalPolicyType, MediaClass } from '@vyaparnet/database';
+import {
+  Segment,
+  ProductStatus,
+  ApprovalPolicyType,
+  MediaClass,
+} from '@vyaparnet/database';
 
 /**
  * CatalogMetrics — Prometheus-compatible metrics register for catalog events.
@@ -19,7 +24,11 @@ export class CatalogMetrics {
     this.counters.set(key, (this.counters.get(key) ?? 0) + 1);
   }
 
-  observe(metric: string, value: number, labels?: Record<string, string>): void {
+  observe(
+    metric: string,
+    value: number,
+    labels?: Record<string, string>,
+  ): void {
     const key = this.formatKey(metric, labels);
     if (!this.histograms.has(key)) {
       this.histograms.set(key, []);
@@ -28,10 +37,16 @@ export class CatalogMetrics {
     this.evaluateAlertRules(metric, value, labels);
   }
 
-  private evaluateAlertRules(metric: string, value: number, labels?: Record<string, string>): void {
+  private evaluateAlertRules(
+    metric: string,
+    value: number,
+    labels?: Record<string, string>,
+  ): void {
     // Alert threshold checks (Simulating Prometheus Alertmanager rules locally)
     if (metric === 'search_query_duration_ms' && value > 150) {
-      console.warn(`[ALERT] search p95 > 150ms triggered! Latency check: ${value}ms for segment: ${labels?.segment}`);
+      console.warn(
+        `[ALERT] search p95 > 150ms triggered! Latency check: ${value}ms for segment: ${labels?.segment}`,
+      );
     }
   }
 

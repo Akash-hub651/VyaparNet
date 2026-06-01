@@ -16,7 +16,7 @@ export class SearchNormalizerService implements OnModuleInit {
 
   private async loadSynonyms() {
     this.logger.debug('Loading search synonyms from config...');
-    
+
     try {
       const dbSynonyms = await this.prisma.appConfig.findMany({
         where: { key: { startsWith: 'search_synonym_' } },
@@ -26,7 +26,7 @@ export class SearchNormalizerService implements OnModuleInit {
         const parsedSynonyms = new Map<string, string[]>();
         for (const config of dbSynonyms) {
           const key = config.key.replace('search_synonym_', '');
-          const values = config.value.split(',').map(v => v.trim());
+          const values = config.value.split(',').map((v) => v.trim());
           parsedSynonyms.set(key, values);
         }
         this.synonyms = parsedSynonyms;
@@ -38,10 +38,10 @@ export class SearchNormalizerService implements OnModuleInit {
 
     // Fallback if DB fetch fails or is empty
     const initialSynonyms = {
-      'kurti': ['kurtee', 'kurta set', 'kurta-set'],
-      'saree': ['sari', 'sarees'],
-      'brake': ['break', 'breakes'],
-      'splendor': ['splender', 'splendour'],
+      kurti: ['kurtee', 'kurta set', 'kurta-set'],
+      saree: ['sari', 'sarees'],
+      brake: ['break', 'breakes'],
+      splendor: ['splender', 'splendour'],
     };
     this.synonyms = new Map(Object.entries(initialSynonyms));
   }
@@ -84,13 +84,13 @@ export class SearchNormalizerService implements OnModuleInit {
       if (isLastTerm && !currentTermClause.includes('|')) {
         currentTermClause = `${currentTermClause}:*`;
       } else if (isLastTerm && currentTermClause.includes('|')) {
-         // apply :* to all options inside the OR clause
-         const expandedTerms = [term, ...synonyms].map((t) => {
-            const parts = t.split(' ');
-            parts[parts.length - 1] = `${parts[parts.length - 1]}:*`;
-            return parts.join(' & ');
-         });
-         currentTermClause = `(${expandedTerms.join(' | ')})`;
+        // apply :* to all options inside the OR clause
+        const expandedTerms = [term, ...synonyms].map((t) => {
+          const parts = t.split(' ');
+          parts[parts.length - 1] = `${parts[parts.length - 1]}:*`;
+          return parts.join(' & ');
+        });
+        currentTermClause = `(${expandedTerms.join(' | ')})`;
       }
 
       return currentTermClause;

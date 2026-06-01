@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { ProductStatus, Prisma } from '@vyaparnet/database';
 
@@ -41,13 +46,14 @@ export class SearchReindexWorker implements OnModuleInit, OnModuleDestroy {
           return;
         }
 
-        this.logger.debug(`Found ${pendingJobs.length} pending search reindex jobs.`);
+        this.logger.debug(
+          `Found ${pendingJobs.length} pending search reindex jobs.`,
+        );
 
         for (const job of pendingJobs) {
           await this.processJob(tx, job.id, job.entityId);
         }
       });
-
     } catch (e) {
       this.logger.error('Error processing search reindex jobs', e);
     } finally {
@@ -55,7 +61,11 @@ export class SearchReindexWorker implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private async processJob(tx: Prisma.TransactionClient, jobId: string, productId: string) {
+  private async processJob(
+    tx: Prisma.TransactionClient,
+    jobId: string,
+    productId: string,
+  ) {
     try {
       // 1. Load product
       const product = await tx.product.findUnique({
@@ -84,7 +94,7 @@ export class SearchReindexWorker implements OnModuleInit, OnModuleDestroy {
       // Ensure SPD exists before we can update its search vector
       // If product is active but not in SPD, we need to create the row first.
       const spd = await tx.searchProductDocument.findUnique({
-        where: { productId: product.id }
+        where: { productId: product.id },
       });
 
       if (!spd) {
@@ -97,28 +107,28 @@ export class SearchReindexWorker implements OnModuleInit, OnModuleDestroy {
             segment: product.segment,
             sellerId: product.businessId,
             needsReindex: true,
-          }
+          },
         });
       } else {
         // Update basic fields just in case they changed (name, price, etc.)
         await tx.searchProductDocument.update({
           where: { productId: product.id },
           data: {
-             name: product.name,
-             price: product.basePrice,
-             categoryId: product.categoryId,
-          }
+            name: product.name,
+            price: product.basePrice,
+            categoryId: product.categoryId,
+          },
         });
       }
 
       // 3. Compute tsvector
       // Flatten segment attributes logic here (simplified JSON flatten for now)
-      const attrStr = product.segmentAttributes 
-        ? Object.values(product.segmentAttributes).join(' ') 
+      const attrStr = product.segmentAttributes
+        ? Object.values(product.segmentAttributes).join(' ')
         : '';
-        
+
       const rawText = `${product.name} ${product.description || ''} ${attrStr}`;
-      
+
       // 4. Update SearchProductDocument using Prisma.sql to safely inject `to_tsvector`
       // The tsvector updates natively inside the db using Postgres text search functions
       await tx.$executeRaw`
@@ -132,9 +142,11 @@ export class SearchReindexWorker implements OnModuleInit, OnModuleDestroy {
 
       // 6. Mark SearchReindexJob.processedAt = now()
       await this.markJobProcessed(tx, jobId);
-
     } catch (e: any) {
-      this.logger.error(`Error processing job ${jobId} for product ${productId}`, e);
+      this.logger.error(
+        `Error processing job ${jobId} for product ${productId}`,
+        e,
+      );
       // Dead letter event creation
       await tx.deadLetterEvent.create({
         data: {
@@ -142,7 +154,7 @@ export class SearchReindexWorker implements OnModuleInit, OnModuleDestroy {
           eventType: 'SearchReindexJob_Failed',
           payload: { productId },
           error: e.message || String(e),
-        }
+        },
       });
       await this.markJobProcessed(tx, jobId);
     }

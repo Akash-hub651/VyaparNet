@@ -1,3 +1,4 @@
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { NotificationController } from '../notification.controller';
 
 /**
@@ -18,30 +19,36 @@ describe('NotificationController', () => {
 
   // ── Mocks ──────────────────────────────────────────────────────────────────
   const mockNotificationService = {
-    getNotifications: jest.fn().mockResolvedValue({ items: [], nextCursor: null, hasMore: false }),
-    getUnreadCount: jest.fn().mockResolvedValue(5),
+    getNotifications: vi
+      .fn()
+      .mockResolvedValue({ items: [], nextCursor: null, hasMore: false }),
+    getUnreadCount: vi.fn().mockResolvedValue(5),
   };
   const mockNotificationRepository = {
-    markRead: jest.fn().mockResolvedValue(undefined),
-    markAllRead: jest.fn().mockResolvedValue(undefined),
+    markRead: vi.fn().mockResolvedValue(undefined),
+    markAllRead: vi.fn().mockResolvedValue(undefined),
   };
   const mockPushSubscriptionRepository = {
-    upsert: jest.fn().mockResolvedValue({ id: 'sub-1' }),
-    deleteByEndpoint: jest.fn().mockResolvedValue(undefined),
+    upsert: vi.fn().mockResolvedValue({ id: 'sub-1' }),
+    deleteByEndpoint: vi.fn().mockResolvedValue(undefined),
   };
   const mockPreferenceService = {
-    getPreferences: jest.fn().mockResolvedValue({ sms: {}, email: {}, push: {}, inApp: {} }),
-    updatePreferences: jest.fn().mockResolvedValue({ sms: {}, email: {}, push: {}, inApp: {} }),
+    getPreferences: vi
+      .fn()
+      .mockResolvedValue({ sms: {}, email: {}, push: {}, inApp: {} }),
+    updatePreferences: vi
+      .fn()
+      .mockResolvedValue({ sms: {}, email: {}, push: {}, inApp: {} }),
   };
   const mockConfig = {
-    get: jest.fn().mockReturnValue('test-vapid-public-key'),
+    get: vi.fn().mockReturnValue('test-vapid-public-key'),
   };
   const mockRedis = {
-    del: jest.fn().mockResolvedValue(1),
+    del: vi.fn().mockResolvedValue(1),
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     controller = new NotificationController(
       mockNotificationService as any,
       mockNotificationRepository as any,
@@ -57,19 +64,29 @@ describe('NotificationController', () => {
   describe('getNotifications()', () => {
     it('extracts userId from req.user.id — INV-S6-18', async () => {
       const req = mockReq('user-123');
-      await controller.getNotifications(req, { limit: 20 } as any);
-      expect(mockNotificationService.getNotifications).toHaveBeenCalledWith('user-123', expect.any(Object));
+      await controller.getNotifications(req, { limit: 20 });
+      expect(mockNotificationService.getNotifications).toHaveBeenCalledWith(
+        'user-123',
+        expect.any(Object),
+      );
     });
 
     it('passes query params to service unchanged', async () => {
       const req = mockReq();
       const query = { limit: 10, cursor: 'cur-abc', isRead: false } as any;
       await controller.getNotifications(req, query);
-      expect(mockNotificationService.getNotifications).toHaveBeenCalledWith('user-abc', query);
+      expect(mockNotificationService.getNotifications).toHaveBeenCalledWith(
+        'user-abc',
+        query,
+      );
     });
 
     it('returns service response directly', async () => {
-      const expected = { items: [{ id: 'n1' }], nextCursor: 'c1', hasMore: true };
+      const expected = {
+        items: [{ id: 'n1' }],
+        nextCursor: 'c1',
+        hasMore: true,
+      };
       mockNotificationService.getNotifications.mockResolvedValue(expected);
       const result = await controller.getNotifications(mockReq(), {} as any);
       expect(result).toBe(expected);
@@ -87,7 +104,9 @@ describe('NotificationController', () => {
 
     it('uses userId from JWT — INV-S6-18', async () => {
       await controller.getUnreadCount(mockReq('jwt-user'));
-      expect(mockNotificationService.getUnreadCount).toHaveBeenCalledWith('jwt-user');
+      expect(mockNotificationService.getUnreadCount).toHaveBeenCalledWith(
+        'jwt-user',
+      );
     });
   });
 
@@ -96,7 +115,9 @@ describe('NotificationController', () => {
   describe('markAllRead()', () => {
     it('marks all read for requesting user only — INV-S6-18', async () => {
       await controller.markAllRead(mockReq('user-abc'));
-      expect(mockNotificationRepository.markAllRead).toHaveBeenCalledWith('user-abc');
+      expect(mockNotificationRepository.markAllRead).toHaveBeenCalledWith(
+        'user-abc',
+      );
     });
 
     it('invalidates unread-count cache key for the user', async () => {
@@ -115,7 +136,10 @@ describe('NotificationController', () => {
   describe('markRead()', () => {
     it('passes notificationId + userId to repository — ownership enforced at DB level', async () => {
       await controller.markRead(mockReq('user-abc'), 'notif-123');
-      expect(mockNotificationRepository.markRead).toHaveBeenCalledWith('notif-123', 'user-abc');
+      expect(mockNotificationRepository.markRead).toHaveBeenCalledWith(
+        'notif-123',
+        'user-abc',
+      );
     });
 
     it('invalidates unread-count cache after marking read', async () => {
@@ -145,11 +169,18 @@ describe('NotificationController', () => {
   describe('getPreferences()', () => {
     it('fetches preferences for JWT user — INV-S6-18', async () => {
       await controller.getPreferences(mockReq('pref-user'));
-      expect(mockPreferenceService.getPreferences).toHaveBeenCalledWith('pref-user');
+      expect(mockPreferenceService.getPreferences).toHaveBeenCalledWith(
+        'pref-user',
+      );
     });
 
     it('returns preferences wrapped in success envelope', async () => {
-      const prefs = { sms: { orderUpdates: true }, email: {}, push: {}, inApp: {} };
+      const prefs = {
+        sms: { orderUpdates: true },
+        email: {},
+        push: {},
+        inApp: {},
+      };
       mockPreferenceService.getPreferences.mockResolvedValue(prefs);
       const result = await controller.getPreferences(mockReq());
       expect(result).toEqual({ success: true, data: prefs });
@@ -160,20 +191,43 @@ describe('NotificationController', () => {
 
   describe('updatePreferences()', () => {
     const validPrefs = {
-      sms: { orderUpdates: true, paymentUpdates: true, scorecard: true, lowStock: true },
-      email: { orderUpdates: true, paymentUpdates: true, scorecard: false, lowStock: false },
-      push: { orderUpdates: true, paymentUpdates: true, scorecard: false, lowStock: false },
-      inApp: { orderUpdates: true, paymentUpdates: true, scorecard: true, lowStock: true },
+      sms: {
+        orderUpdates: true,
+        paymentUpdates: true,
+        scorecard: true,
+        lowStock: true,
+      },
+      email: {
+        orderUpdates: true,
+        paymentUpdates: true,
+        scorecard: false,
+        lowStock: false,
+      },
+      push: {
+        orderUpdates: true,
+        paymentUpdates: true,
+        scorecard: false,
+        lowStock: false,
+      },
+      inApp: {
+        orderUpdates: true,
+        paymentUpdates: true,
+        scorecard: true,
+        lowStock: true,
+      },
     };
 
     it('persists preferences via service for JWT user', async () => {
-      await controller.updatePreferences(mockReq('pref-user'), validPrefs as any);
-      expect(mockPreferenceService.updatePreferences).toHaveBeenCalledWith('pref-user', validPrefs);
+      await controller.updatePreferences(mockReq('pref-user'), validPrefs);
+      expect(mockPreferenceService.updatePreferences).toHaveBeenCalledWith(
+        'pref-user',
+        validPrefs,
+      );
     });
 
     it('returns updated preferences in success envelope', async () => {
       mockPreferenceService.updatePreferences.mockResolvedValue(validPrefs);
-      const result = await controller.updatePreferences(mockReq(), validPrefs as any);
+      const result = await controller.updatePreferences(mockReq(), validPrefs);
       expect(result).toEqual({ success: true, data: validPrefs });
     });
   });
@@ -187,12 +241,15 @@ describe('NotificationController', () => {
     };
 
     it('upserts subscription scoped to JWT user — INV-S6-22', async () => {
-      await controller.subscribe(mockReq('push-user'), subscribeDto as any);
-      expect(mockPushSubscriptionRepository.upsert).toHaveBeenCalledWith('push-user', subscribeDto);
+      await controller.subscribe(mockReq('push-user'), subscribeDto);
+      expect(mockPushSubscriptionRepository.upsert).toHaveBeenCalledWith(
+        'push-user',
+        subscribeDto,
+      );
     });
 
     it('returns { success: true }', async () => {
-      const result = await controller.subscribe(mockReq(), subscribeDto as any);
+      const result = await controller.subscribe(mockReq(), subscribeDto);
       expect(result).toEqual({ success: true });
     });
   });
@@ -202,15 +259,16 @@ describe('NotificationController', () => {
   describe('unsubscribe()', () => {
     it('deletes subscription by endpoint scoped to JWT user — INV-S6-29', async () => {
       const body = { endpoint: 'https://push.example.com/456' };
-      await controller.unsubscribe(mockReq('push-user'), body as any);
-      expect(mockPushSubscriptionRepository.deleteByEndpoint).toHaveBeenCalledWith(
-        'push-user',
-        'https://push.example.com/456',
-      );
+      await controller.unsubscribe(mockReq('push-user'), body);
+      expect(
+        mockPushSubscriptionRepository.deleteByEndpoint,
+      ).toHaveBeenCalledWith('push-user', 'https://push.example.com/456');
     });
 
     it('returns { success: true }', async () => {
-      const result = await controller.unsubscribe(mockReq(), { endpoint: 'ep' } as any);
+      const result = await controller.unsubscribe(mockReq(), {
+        endpoint: 'ep',
+      });
       expect(result).toEqual({ success: true });
     });
   });
@@ -221,7 +279,10 @@ describe('NotificationController', () => {
     it('returns VAPID public key from config — never private key', async () => {
       mockConfig.get.mockReturnValue('BPublicVapidKeyHere');
       const result = await controller.getVapidPublicKey();
-      expect(result).toEqual({ success: true, data: { publicKey: 'BPublicVapidKeyHere' } });
+      expect(result).toEqual({
+        success: true,
+        data: { publicKey: 'BPublicVapidKeyHere' },
+      });
       expect(mockConfig.get).toHaveBeenCalledWith('VAPID_PUBLIC_KEY');
     });
   });

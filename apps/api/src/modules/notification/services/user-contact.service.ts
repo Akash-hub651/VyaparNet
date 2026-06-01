@@ -39,7 +39,13 @@ export class UserContactService {
   }> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, phone: true, email: true, name: true, language: true },
+      select: {
+        id: true,
+        phone: true,
+        email: true,
+        name: true,
+        language: true,
+      },
     });
 
     if (!user) {
@@ -52,7 +58,7 @@ export class UserContactService {
       phone: user.phone ?? null,
       email: user.email ?? null,
       name: user.name ?? null,
-      language: (user.language === 'en' ? 'en' : 'hi') as 'hi' | 'en',
+      language: user.language === 'en' ? 'en' : 'hi',
     };
   }
 

@@ -24,4 +24,3 @@ import { CatalogMetricsModule } from '../catalog-metrics.module';
   exports: [SearchService],
 })
 export class SearchModule {}
-

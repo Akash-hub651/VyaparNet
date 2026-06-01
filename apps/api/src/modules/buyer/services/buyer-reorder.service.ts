@@ -1,4 +1,10 @@
-import { Injectable, Logger, ServiceUnavailableException, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { RedisService } from '../../../core/redis/redis.service';
 import { InventoryService } from '../../inventory/inventory.service';
@@ -55,9 +61,9 @@ export class BuyerReorderService {
 
       const rateLimitResult = await this.redis.eval(
         RATE_LIMIT_LUA_SCRIPT,
-        1,             // numberOfKeys
-        rateLimitKey,  // KEYS[1]
-        '3600',        // ARGV[1] — TTL in seconds (1 hour)
+        1, // numberOfKeys
+        rateLimitKey, // KEYS[1]
+        '3600', // ARGV[1] — TTL in seconds (1 hour)
       );
 
       if (Number(rateLimitResult) > 5) {
@@ -67,7 +73,10 @@ export class BuyerReorderService {
         );
       }
     } catch (err) {
-      if (err instanceof HttpException && err.getStatus() === HttpStatus.TOO_MANY_REQUESTS) {
+      if (
+        err instanceof HttpException &&
+        err.getStatus() === HttpStatus.TOO_MANY_REQUESTS
+      ) {
         throw err; // re-throw rate limit rejection
       }
 
@@ -86,7 +95,10 @@ export class BuyerReorderService {
     // STEP 2: Load original order (with buyerId ownership check) (INV-18)
     // findByIdForBuyer throws NotFoundException if not found/not owned
     // ─────────────────────────────────────────────────────────────────
-    const originalOrder = await this.buyerOrderRepo.findByIdForBuyer(orderId, buyerId);
+    const originalOrder = await this.buyerOrderRepo.findByIdForBuyer(
+      orderId,
+      buyerId,
+    );
 
     const originalItems = await this.prisma.orderItem.findMany({
       where: { orderId },
@@ -116,10 +128,10 @@ export class BuyerReorderService {
     // FIX-8 (SC-1): Batch inventory check — single DB query for all products.
     // Previously N sequential getAvailability() calls — now 1 getBatchAvailability() call.
     // ─────────────────────────────────────────────────────────────────
-    const productIds = originalItems.map(item => item.productId);
+    const productIds = originalItems.map((item) => item.productId);
     const availabilityMap = await this.inventoryService.getBatchAvailability(
       productIds,
-      originalOrder.segment as any, // Segment string from typed repo
+      originalOrder.segment, // Segment string from typed repo
     );
     for (const item of originalItems) {
       const product = item.product;
@@ -202,7 +214,9 @@ export class BuyerReorderService {
         warnings.push({
           type: 'PRODUCT_UNAVAILABLE',
           productId: itemData.productId,
-          productName: originalItems.find(i => i.productId === itemData.productId)?.productName || 'Unknown',
+          productName:
+            originalItems.find((i) => i.productId === itemData.productId)
+              ?.productName || 'Unknown',
           reason: error.message || 'Could not add to cart',
         });
         // AI-3 Fix: no splice() — counter simply not incremented for this item
@@ -226,7 +240,7 @@ export class BuyerReorderService {
 
     return {
       cartId: cart.id,
-      addedCount: successfullyAddedCount,                         // AI-3 Fix: accurate counter
+      addedCount: successfullyAddedCount, // AI-3 Fix: accurate counter
       skippedCount: originalItems.length - successfullyAddedCount, // accurate total skips
       warnings, // INV-S5-13: ALL skipped items present here
     };

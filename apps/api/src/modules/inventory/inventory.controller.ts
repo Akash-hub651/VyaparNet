@@ -141,7 +141,7 @@ export class InventoryController {
       dto.reason as any,
       user.sub,
       user.role,
-      businessId
+      businessId,
     );
   }
 

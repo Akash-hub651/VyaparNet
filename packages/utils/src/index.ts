@@ -6,3 +6,4 @@
  */
 
 export * from "./phone/normalize-indian-phone";
+export * from "./mask-buyer-id";

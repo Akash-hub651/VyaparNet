@@ -16,6 +16,7 @@ import { BuyerModule } from './modules/buyer/buyer.module';
 import { SellerModule } from './modules/seller/seller.module';
 import { ObservabilityModule } from './modules/observability/observability.module';
 import { NotificationModule } from './modules/notification/notification.module';
+import { AdminModule } from './modules/admin/admin.module';
 import { JwtAuthGuard } from './shared/guards/jwt-auth.guard';
 import { RolesGuard } from './shared/guards/roles.guard';
 import { PermissionsGuard } from './shared/guards/permissions.guard';
@@ -46,22 +47,22 @@ import { PermissionsGuard } from './shared/guards/permissions.guard';
     RedisModule, // Global cache/session client
     BullMQModule, // Queue registration
     HealthModule, // Health check endpoints
- 
+
     // ─── Sprint 1 ──────────────────────────────────────────
     IdentityModule, // Authentication + User management
 
     // ─── Sprint 2+ ───────────────────────────────────────────────────────
-    CatalogModule,       // Sprint 2
-    InventoryModule,     // Sprint 3
-    OrderModule,         // Sprint 4
-    PaymentModule,       // Sprint 4
+    CatalogModule, // Sprint 2
+    InventoryModule, // Sprint 3
+    OrderModule, // Sprint 4
+    PaymentModule, // Sprint 4
     ObservabilityModule, // Sprint 4 Observability
-    BuyerModule,         // Sprint 5
-    SellerModule,        // Sprint 5
+    BuyerModule, // Sprint 5
+    SellerModule, // Sprint 5
     // INV-S6-1: Pure consumer — NEVER writes EventOutbox. Registered in Sprint 6.
-    NotificationModule,  // Sprint 6
+    NotificationModule, // Sprint 6
     // AuditModule,         // Sprint 7
-    // AdminModule,         // Sprint 7
+    AdminModule, // Sprint 7
     // ProcurementModule,   // Sprint 8
   ],
   providers: [

@@ -1,6 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { SegmentApprovalPolicyRepository } from './segment-approval-policy.repository';
-import { Segment, SegmentApprovalPolicy, ProductStatus, ApprovalPolicyType, Business, UserRole } from '@vyaparnet/database';
+import {
+  Segment,
+  SegmentApprovalPolicy,
+  ProductStatus,
+  ApprovalPolicyType,
+  Business,
+  UserRole,
+} from '@vyaparnet/database';
 import { CatalogMetrics } from '../catalog-metrics.service';
 
 @Injectable()
@@ -19,7 +26,6 @@ export class ProductApprovalService {
     return this.policyRepository.findBySegment(segment);
   }
 
-
   /**
    * Determines the initial status of a product upon publishing.
    */
@@ -37,8 +43,13 @@ export class ProductApprovalService {
 
     // 2. Safe default if no policy defined
     if (!policy) {
-      this.logger.warn(`No approval policy found for segment: ${segment}. Falling back to MANUAL_REVIEW (PENDING_APPROVAL).`);
-      this.metrics.approvalPolicyType(segment, ApprovalPolicyType.MANUAL_REVIEW);
+      this.logger.warn(
+        `No approval policy found for segment: ${segment}. Falling back to MANUAL_REVIEW (PENDING_APPROVAL).`,
+      );
+      this.metrics.approvalPolicyType(
+        segment,
+        ApprovalPolicyType.MANUAL_REVIEW,
+      );
       return ProductStatus.PENDING_APPROVAL;
     }
 

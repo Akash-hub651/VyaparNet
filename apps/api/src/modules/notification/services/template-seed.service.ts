@@ -75,21 +75,33 @@ export class TemplateSeedService implements OnModuleInit {
       {
         name: 'OrderCreated_BUYER_hi',
         type: NotificationType.ORDER,
-        channels: [NotificationChannel.SMS, NotificationChannel.IN_APP, NotificationChannel.EMAIL],
+        channels: [
+          NotificationChannel.SMS,
+          NotificationChannel.IN_APP,
+          NotificationChannel.EMAIL,
+        ],
         titleHi: 'Order place ho gaya!',
-        bodyHi: 'Aapka order #{{orderNumber}} place ho gaya hai. Amount: ₹{{grandTotal}}',
+        bodyHi:
+          'Aapka order #{{orderNumber}} place ho gaya hai. Amount: ₹{{grandTotal}}',
         titleEn: 'Order Placed!',
-        bodyEn: 'Your order #{{orderNumber}} has been placed. Amount: ₹{{grandTotal}}',
+        bodyEn:
+          'Your order #{{orderNumber}} has been placed. Amount: ₹{{grandTotal}}',
         isActive: true,
       },
       {
         name: 'OrderCreated_SELLER_hi',
         type: NotificationType.ORDER,
-        channels: [NotificationChannel.SMS, NotificationChannel.IN_APP, NotificationChannel.EMAIL],
+        channels: [
+          NotificationChannel.SMS,
+          NotificationChannel.IN_APP,
+          NotificationChannel.EMAIL,
+        ],
         titleHi: 'Naya order aaya!',
-        bodyHi: 'Order #{{orderNumber}} aaya hai. Amount: ₹{{grandTotal}}. Abhi confirm karein.',
+        bodyHi:
+          'Buyer ({{buyerCode}}) se order #{{orderNumber}} aaya hai. Amount: ₹{{grandTotal}}. Abhi confirm karein.',
         titleEn: 'New Order Received!',
-        bodyEn: 'Order #{{orderNumber}} received. Amount: ₹{{grandTotal}}. Please confirm now.',
+        bodyEn:
+          'Order #{{orderNumber}} received from buyer ({{buyerCode}}). Amount: ₹{{grandTotal}}. Please confirm now.',
         isActive: true,
       },
 
@@ -101,7 +113,8 @@ export class TemplateSeedService implements OnModuleInit {
         titleHi: 'Order confirm ho gaya!',
         bodyHi: '#{{orderNumber}} - Seller ne aapka order accept kar liya!',
         titleEn: 'Order Confirmed!',
-        bodyEn: '#{{orderNumber}} - Your order has been confirmed by the seller!',
+        bodyEn:
+          '#{{orderNumber}} - Your order has been confirmed by the seller!',
         isActive: true,
       },
 
@@ -125,7 +138,8 @@ export class TemplateSeedService implements OnModuleInit {
         titleHi: 'Order ship ho gaya!',
         bodyHi: '#{{orderNumber}} ship ho gaya! Tracking: {{trackingNumber}}',
         titleEn: 'Order Shipped!',
-        bodyEn: '#{{orderNumber}} has been shipped! Tracking: {{trackingNumber}}',
+        bodyEn:
+          '#{{orderNumber}} has been shipped! Tracking: {{trackingNumber}}',
         isActive: true,
       },
 
@@ -147,7 +161,8 @@ export class TemplateSeedService implements OnModuleInit {
         type: NotificationType.ORDER,
         channels: [NotificationChannel.IN_APP],
         titleHi: 'Order deliver ho gaya!',
-        bodyHi: '#{{orderNumber}} aapko deliver ho gaya. Seller ko rate karein!',
+        bodyHi:
+          '#{{orderNumber}} aapko deliver ho gaya. Seller ko rate karein!',
         titleEn: 'Order Delivered!',
         bodyEn: '#{{orderNumber}} has been delivered. Please rate the seller!',
         isActive: true,
@@ -157,9 +172,14 @@ export class TemplateSeedService implements OnModuleInit {
       {
         name: 'PaymentReceived_BUYER_hi',
         type: NotificationType.PAYMENT,
-        channels: [NotificationChannel.SMS, NotificationChannel.IN_APP, NotificationChannel.EMAIL],
+        channels: [
+          NotificationChannel.SMS,
+          NotificationChannel.IN_APP,
+          NotificationChannel.EMAIL,
+        ],
         titleHi: 'Payment successful!',
-        bodyHi: '#{{orderNumber}} ke liye ₹{{amount}} ka payment receive ho gaya.',
+        bodyHi:
+          '#{{orderNumber}} ke liye ₹{{amount}} ka payment receive ho gaya.',
         titleEn: 'Payment Successful!',
         bodyEn: 'Payment of ₹{{amount}} received for order #{{orderNumber}}.',
         isActive: true,
@@ -169,12 +189,18 @@ export class TemplateSeedService implements OnModuleInit {
       {
         name: 'PaymentFailed_BUYER_hi',
         type: NotificationType.PAYMENT,
-        channels: [NotificationChannel.SMS, NotificationChannel.IN_APP, NotificationChannel.EMAIL],
+        channels: [
+          NotificationChannel.SMS,
+          NotificationChannel.IN_APP,
+          NotificationChannel.EMAIL,
+        ],
         titleHi: 'Payment fail ho gayi',
         // §11.1 AUDIT FIX: {{reason}} added so buyer sees why payment failed (INV-S6-14: safe substitution)
-        bodyHi: '#{{orderNumber}} ka payment fail ho gaya. Reason: {{reason}}. Retry karein.',
+        bodyHi:
+          '#{{orderNumber}} ka payment fail ho gaya. Reason: {{reason}}. Retry karein.',
         titleEn: 'Payment Failed',
-        bodyEn: 'Payment for order #{{orderNumber}} failed. Reason: {{reason}}. Please retry.',
+        bodyEn:
+          'Payment for order #{{orderNumber}} failed. Reason: {{reason}}. Please retry.',
         isActive: true,
       },
 
@@ -185,9 +211,11 @@ export class TemplateSeedService implements OnModuleInit {
         type: NotificationType.SYSTEM,
         channels: [NotificationChannel.IN_APP],
         titleHi: 'Score badh gaya!',
-        bodyHi: 'Aapka supplier score {{compositeScore}} ho gaya! Pehle {{previousCompositeScore}} tha.',
+        bodyHi:
+          'Aapka supplier score {{compositeScore}} ho gaya! Pehle {{previousCompositeScore}} tha.',
         titleEn: 'Score Improved!',
-        bodyEn: 'Your supplier score improved to {{compositeScore}} from {{previousCompositeScore}}.',
+        bodyEn:
+          'Your supplier score improved to {{compositeScore}} from {{previousCompositeScore}}.',
         isActive: true,
       },
 
@@ -197,9 +225,11 @@ export class TemplateSeedService implements OnModuleInit {
         type: NotificationType.SYSTEM,
         channels: [NotificationChannel.SMS, NotificationChannel.IN_APP],
         titleHi: 'Score gir gaya',
-        bodyHi: 'Aapka score {{previousCompositeScore}} se {{compositeScore}} ho gaya. Improvement karein!',
+        bodyHi:
+          'Aapka score {{previousCompositeScore}} se {{compositeScore}} ho gaya. Improvement karein!',
         titleEn: 'Score Dropped',
-        bodyEn: 'Your supplier score dropped from {{previousCompositeScore}} to {{compositeScore}}. Please improve!',
+        bodyEn:
+          'Your supplier score dropped from {{previousCompositeScore}} to {{compositeScore}}. Please improve!',
         isActive: true,
       },
 
@@ -210,9 +240,11 @@ export class TemplateSeedService implements OnModuleInit {
         type: NotificationType.INVENTORY,
         channels: [NotificationChannel.SMS, NotificationChannel.IN_APP],
         titleHi: 'Stock kam ho raha hai',
-        bodyHi: '{{productName}} ka stock sirf {{stockQty}} reh gaya hai. Update karein.',
+        bodyHi:
+          '{{productName}} ka stock sirf {{stockQty}} reh gaya hai. Update karein.',
         titleEn: 'Low Stock Alert',
-        bodyEn: '{{productName}} stock is down to {{stockQty}} units. Please restock.',
+        bodyEn:
+          '{{productName}} stock is down to {{stockQty}} units. Please restock.',
         isActive: true,
       },
 
@@ -220,11 +252,17 @@ export class TemplateSeedService implements OnModuleInit {
       {
         name: 'OrderCreated_BUYER_en',
         type: NotificationType.ORDER,
-        channels: [NotificationChannel.SMS, NotificationChannel.IN_APP, NotificationChannel.EMAIL],
+        channels: [
+          NotificationChannel.SMS,
+          NotificationChannel.IN_APP,
+          NotificationChannel.EMAIL,
+        ],
         titleHi: 'Order place ho gaya!',
-        bodyHi: 'Aapka order #{{orderNumber}} place ho gaya hai. Amount: ₹{{grandTotal}}',
+        bodyHi:
+          'Aapka order #{{orderNumber}} place ho gaya hai. Amount: ₹{{grandTotal}}',
         titleEn: 'Order Placed!',
-        bodyEn: 'Your order #{{orderNumber}} has been placed. Amount: ₹{{grandTotal}}',
+        bodyEn:
+          'Your order #{{orderNumber}} has been placed. Amount: ₹{{grandTotal}}',
         isActive: true,
       },
       {
@@ -234,17 +272,293 @@ export class TemplateSeedService implements OnModuleInit {
         titleHi: 'Order ship ho gaya!',
         bodyHi: '#{{orderNumber}} ship ho gaya! Tracking: {{trackingNumber}}',
         titleEn: 'Order Shipped!',
-        bodyEn: '#{{orderNumber}} has been shipped! Tracking: {{trackingNumber}}',
+        bodyEn:
+          '#{{orderNumber}} has been shipped! Tracking: {{trackingNumber}}',
         isActive: true,
       },
       {
         name: 'PaymentFailed_BUYER_en',
         type: NotificationType.PAYMENT,
-        channels: [NotificationChannel.SMS, NotificationChannel.IN_APP, NotificationChannel.EMAIL],
+        channels: [
+          NotificationChannel.SMS,
+          NotificationChannel.IN_APP,
+          NotificationChannel.EMAIL,
+        ],
         titleHi: 'Payment fail ho gayi',
         bodyHi: '#{{orderNumber}} ka payment fail ho gaya. Retry karein.',
         titleEn: 'Payment Failed',
         bodyEn: 'Payment for order #{{orderNumber}} failed. Please retry.',
+        isActive: true,
+      },
+
+      // ─── SPRINT 7 PHASE 3: KYC Events ───────────────────────────────────────
+      // KycApproved_SELLER_hi — sent when admin verifies business KYC
+      {
+        name: 'KycApproved_SELLER_hi',
+        type: NotificationType.KYC,
+        channels: [
+          NotificationChannel.SMS,
+          NotificationChannel.IN_APP,
+          NotificationChannel.EMAIL,
+        ],
+        titleHi: 'KYC verify ho gaya!',
+        bodyHi:
+          'Badhai ho! Aapki dukaan {{businessName}} VyaparNet par verified ho gayi hai. Ab aap orders receive kar sakte hain.',
+        titleEn: 'KYC Verified!',
+        bodyEn:
+          'Congratulations! Your business {{businessName}} has been verified on VyaparNet. You can now receive orders.',
+        isActive: true,
+      },
+
+      // KycApproved_SELLER_en — English fallback for KYC approval
+      {
+        name: 'KycApproved_SELLER_en',
+        type: NotificationType.KYC,
+        channels: [
+          NotificationChannel.SMS,
+          NotificationChannel.IN_APP,
+          NotificationChannel.EMAIL,
+        ],
+        titleHi: 'KYC verify ho gaya!',
+        bodyHi:
+          'Badhai ho! Aapki dukaan {{businessName}} VyaparNet par verified ho gayi hai.',
+        titleEn: 'KYC Verified!',
+        bodyEn:
+          'Congratulations! Your business {{businessName}} has been verified on VyaparNet. You can now receive orders.',
+        isActive: true,
+      },
+
+      // KycRejected_SELLER_hi — sent when admin rejects business KYC
+      {
+        name: 'KycRejected_SELLER_hi',
+        type: NotificationType.KYC,
+        channels: [
+          NotificationChannel.SMS,
+          NotificationChannel.IN_APP,
+          NotificationChannel.EMAIL,
+        ],
+        titleHi: 'KYC reject ho gaya',
+        bodyHi:
+          'Aapki dukaan {{businessName}} ka KYC reject ho gaya hai. Reason: {{reason}}. Kripya documents resubmit karein.',
+        titleEn: 'KYC Rejected',
+        bodyEn:
+          'Your business {{businessName}} KYC was rejected. Reason: {{reason}}. Please resubmit your documents.',
+        isActive: true,
+      },
+
+      // KycRejected_SELLER_en — English fallback for KYC rejection
+      {
+        name: 'KycRejected_SELLER_en',
+        type: NotificationType.KYC,
+        channels: [
+          NotificationChannel.SMS,
+          NotificationChannel.IN_APP,
+          NotificationChannel.EMAIL,
+        ],
+        titleHi: 'KYC reject ho gaya',
+        bodyHi:
+          'Aapki dukaan {{businessName}} ka KYC reject ho gaya. Reason: {{reason}}.',
+        titleEn: 'KYC Rejected',
+        bodyEn:
+          'Your business {{businessName}} KYC was rejected. Reason: {{reason}}. Please resubmit your documents.',
+        isActive: true,
+      },
+
+      // ─── SPRINT 7 PHASE 4: Product Approval Events ──────────────────────────
+      // ProductApproved_SELLER_hi — sent when admin approves a product
+      {
+        name: 'ProductApproved_SELLER_hi',
+        type: NotificationType.SYSTEM,
+        channels: [
+          NotificationChannel.SMS,
+          NotificationChannel.IN_APP,
+          NotificationChannel.EMAIL,
+        ],
+        titleHi: 'Product approved ho gaya!',
+        bodyHi:
+          'Badhai ho! Aapka product "{{productName}}" VyaparNet marketplace par live ho gaya hai.',
+        titleEn: 'Product Approved!',
+        bodyEn:
+          'Congratulations! Your product "{{productName}}" is now live on VyaparNet marketplace.',
+        isActive: true,
+      },
+
+      // ProductApproved_SELLER_en — English fallback for product approval
+      {
+        name: 'ProductApproved_SELLER_en',
+        type: NotificationType.SYSTEM,
+        channels: [
+          NotificationChannel.SMS,
+          NotificationChannel.IN_APP,
+          NotificationChannel.EMAIL,
+        ],
+        titleHi: 'Product approved ho gaya!',
+        bodyHi: 'Badhai ho! Aapka product "{{productName}}" live ho gaya hai.',
+        titleEn: 'Product Approved!',
+        bodyEn:
+          'Congratulations! Your product "{{productName}}" is now live on VyaparNet marketplace.',
+        isActive: true,
+      },
+
+      // ProductRejected_SELLER_hi — sent when admin rejects a product
+      {
+        name: 'ProductRejected_SELLER_hi',
+        type: NotificationType.SYSTEM,
+        channels: [
+          NotificationChannel.SMS,
+          NotificationChannel.IN_APP,
+          NotificationChannel.EMAIL,
+        ],
+        titleHi: 'Product reject ho gaya',
+        bodyHi:
+          'Aapka product "{{productName}}" reject ho gaya hai. Reason: {{reason}}. Kripya product update karke dobara submit karein.',
+        titleEn: 'Product Rejected',
+        bodyEn:
+          'Your product "{{productName}}" was rejected. Reason: {{reason}}. Please update your product and resubmit.',
+        isActive: true,
+      },
+
+      // ProductRejected_SELLER_en — English fallback for product rejection
+      {
+        name: 'ProductRejected_SELLER_en',
+        type: NotificationType.SYSTEM,
+        channels: [
+          NotificationChannel.SMS,
+          NotificationChannel.IN_APP,
+          NotificationChannel.EMAIL,
+        ],
+        titleHi: 'Product reject ho gaya',
+        bodyHi:
+          'Aapka product "{{productName}}" reject ho gaya. Reason: {{reason}}.',
+        titleEn: 'Product Rejected',
+        bodyEn:
+          'Your product "{{productName}}" was rejected. Reason: {{reason}}. Please update and resubmit.',
+        isActive: true,
+      },
+
+      // ─── SPRINT 7 PHASE 5: User Suspension Events ────────────────────────────
+      // AccountSuspended_SELLER_hi — sent when admin suspends a user account
+      {
+        name: 'AccountSuspended_SELLER_hi',
+        type: NotificationType.SYSTEM,
+        channels: [
+          NotificationChannel.SMS,
+          NotificationChannel.IN_APP,
+          NotificationChannel.EMAIL,
+        ],
+        titleHi: 'Account suspend ho gaya',
+        bodyHi:
+          'Aapka VyaparNet account temporary suspend ho gaya hai. Adhik jaankari ke liye support se sampark karein.',
+        titleEn: 'Account Suspended',
+        bodyEn:
+          'Your VyaparNet account has been temporarily suspended. Please contact support for more information.',
+        isActive: true,
+      },
+
+      // AccountSuspended_SELLER_en — English fallback for account suspension
+      {
+        name: 'AccountSuspended_SELLER_en',
+        type: NotificationType.SYSTEM,
+        channels: [
+          NotificationChannel.SMS,
+          NotificationChannel.IN_APP,
+          NotificationChannel.EMAIL,
+        ],
+        titleHi: 'Account suspend ho gaya',
+        bodyHi: 'Aapka account suspend ho gaya hai. Support se sampark karein.',
+        titleEn: 'Account Suspended',
+        bodyEn:
+          'Your VyaparNet account has been temporarily suspended. Please contact support.',
+        isActive: true,
+      },
+
+      // AccountActivated_SELLER_hi — sent when admin activates/reinstates a user account
+      {
+        name: 'AccountActivated_SELLER_hi',
+        type: NotificationType.SYSTEM,
+        channels: [
+          NotificationChannel.SMS,
+          NotificationChannel.IN_APP,
+          NotificationChannel.EMAIL,
+        ],
+        titleHi: 'Account active ho gaya!',
+        bodyHi:
+          'Aapka VyaparNet account dobara active ho gaya hai. Aap ab marketplace use kar sakte hain.',
+        titleEn: 'Account Reactivated!',
+        bodyEn:
+          'Your VyaparNet account has been reactivated. You can now use the marketplace again.',
+        isActive: true,
+      },
+
+      // AccountActivated_SELLER_en — English fallback for account reactivation
+      {
+        name: 'AccountActivated_SELLER_en',
+        type: NotificationType.SYSTEM,
+        channels: [
+          NotificationChannel.SMS,
+          NotificationChannel.IN_APP,
+          NotificationChannel.EMAIL,
+        ],
+        titleHi: 'Account active ho gaya!',
+        bodyHi: 'Aapka account dobara active ho gaya hai.',
+        titleEn: 'Account Reactivated!',
+        bodyEn:
+          'Your VyaparNet account has been reactivated. You can now use the marketplace again.',
+        isActive: true,
+      },
+
+      // ─── SPRINT 7 PHASE 6: Order Lifecycle Events ────────────────────────────
+      // OrderDelivered_BUYER_hi — admin marks SHIPPED → DELIVERED
+      {
+        name: 'OrderDelivered_BUYER_hi',
+        type: NotificationType.ORDER,
+        channels: [
+          NotificationChannel.SMS,
+          NotificationChannel.IN_APP,
+          NotificationChannel.PUSH,
+        ],
+        titleHi: 'Order deliver ho gaya! 📦',
+        bodyHi:
+          'Aapka order #{{orderNumber}} deliver ho gaya hai. Please review karein.',
+        titleEn: 'Order Delivered! 📦',
+        bodyEn:
+          'Your order #{{orderNumber}} has been delivered. Please review your purchase.',
+        isActive: true,
+      },
+
+      // OrderCompleted_BUYER_hi — admin marks DELIVERED → COMPLETED
+      {
+        name: 'OrderCompleted_BUYER_hi',
+        type: NotificationType.ORDER,
+        channels: [
+          NotificationChannel.SMS,
+          NotificationChannel.IN_APP,
+          NotificationChannel.EMAIL,
+        ],
+        titleHi: 'Order complete ho gaya! ✅',
+        bodyHi:
+          'Aapka order #{{orderNumber}} successfully complete ho gaya hai. VyaparNet use karne ke liye shukriya!',
+        titleEn: 'Order Completed! ✅',
+        bodyEn:
+          'Your order #{{orderNumber}} has been completed. Thank you for shopping with VyaparNet!',
+        isActive: true,
+      },
+
+      // OrderCancelled_BUYER_hi — admin force-cancels order
+      {
+        name: 'OrderCancelled_BUYER_hi',
+        type: NotificationType.ORDER,
+        channels: [
+          NotificationChannel.SMS,
+          NotificationChannel.IN_APP,
+          NotificationChannel.EMAIL,
+        ],
+        titleHi: 'Order cancel ho gaya',
+        bodyHi:
+          'Aapka order #{{orderNumber}} cancel ho gaya hai. Reason: {{reason}}. Refund process ho raha hai.',
+        titleEn: 'Order Cancelled',
+        bodyEn:
+          'Your order #{{orderNumber}} has been cancelled. Reason: {{reason}}. Refund will be processed shortly.',
         isActive: true,
       },
     ];

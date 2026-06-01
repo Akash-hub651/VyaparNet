@@ -14,14 +14,14 @@ export interface BuyerOrderItemShape {
   productSlug: string;
   productImage: string | null;
   quantity: number;
-  unitPrice: string;   // Decimal serialized to string
-  totalPrice: string;  // Decimal serialized to string
+  unitPrice: string; // Decimal serialized to string
+  totalPrice: string; // Decimal serialized to string
 }
 
 export interface BuyerOrderTrackingShape {
   carrier: string | null;
   trackingNumber: string | null;
-  trackingUrl: string | null;   // FIX-2: mapped from OrderTracking.carrierUrl (INV-S5 FU-1)
+  trackingUrl: string | null; // FIX-2: mapped from OrderTracking.carrierUrl (INV-S5 FU-1)
   estimatedDelivery: string | null; // ISO8601
   dispatchProofUrl: string | null;
 }
@@ -68,7 +68,7 @@ export interface BuyerOrderDetailShape {
   discount: string;
   createdAt: string;
   confirmedAt: string | null; // Exposed internally for service grace-window check (INV-S5-24)
-  sellerId: string;            // Exposed internally for reorder/cancel cross-checks
+  sellerId: string; // Exposed internally for reorder/cancel cross-checks
   items: BuyerOrderItemShape[];
   statusHistory: BuyerOrderStatusHistoryShape[];
   tracking: BuyerOrderTrackingShape | null;
@@ -93,7 +93,7 @@ function mapTracking(t: any): BuyerOrderTrackingShape {
   return {
     carrier: t.carrier ?? null,
     trackingNumber: t.trackingNumber ?? null,
-    trackingUrl: t.carrierUrl ?? null,           // FIX-2: OrderTracking.carrierUrl → trackingUrl (INV-S5 FU-1)
+    trackingUrl: t.carrierUrl ?? null, // FIX-2: OrderTracking.carrierUrl → trackingUrl (INV-S5 FU-1)
     estimatedDelivery: t.estimatedDelivery?.toISOString() ?? null,
     dispatchProofUrl: t.dispatchProofUrl ?? null,
   };
@@ -123,7 +123,10 @@ function mapOrderToListItem(o: any): BuyerOrderListItem {
     discount: o.discount.toString(),
     createdAt: o.createdAt.toISOString(),
     items: (o.items ?? []).map(mapOrderItem),
-    payments: (o.payments ?? []).map((p: any) => ({ status: p.status, method: p.method })),
+    payments: (o.payments ?? []).map((p: any) => ({
+      status: p.status,
+      method: p.method,
+    })),
   };
 }
 
@@ -147,13 +150,13 @@ export class BuyerOrderRepository {
   ): Promise<BuyerOrderListResult> {
     const rows = await this.prisma.order.findMany({
       where: {
-        buyerId,        // MANDATORY ownership filter (INV-18)
+        buyerId, // MANDATORY ownership filter (INV-18)
         isDeleted: false,
         ...(filter.status && { status: filter.status }),
         ...(filter.cursor && { id: { lt: filter.cursor } }),
       },
       include: {
-        items: { take: 3 },  // preview only — no N+1 (INV-S5-31)
+        items: { take: 3 }, // preview only — no N+1 (INV-S5-31)
         payments: { select: { status: true, method: true }, take: 1 },
       },
       orderBy: { createdAt: 'desc' },
@@ -222,7 +225,7 @@ export class BuyerOrderRepository {
       discount: order.discount.toString(),
       createdAt: order.createdAt.toISOString(),
       confirmedAt: order.confirmedAt?.toISOString() ?? null, // For grace-window check (INV-S5-24)
-      sellerId: order.sellerId,                               // For service-level cross-checks
+      sellerId: order.sellerId, // For service-level cross-checks
       items: order.items.map(mapOrderItem),
       statusHistory: statusHistory.map(mapStatusHistory),
       tracking: trackingRow ? mapTracking(trackingRow) : null,

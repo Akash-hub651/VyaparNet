@@ -6,7 +6,10 @@ import {
   HttpStatus,
   Headers,
   Ip,
+  Get,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { ZodValidationPipe } from '../../../shared/pipes/zod-validation.pipe';
 import { Public } from '../../../shared/decorators/public.decorator';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
@@ -15,12 +18,14 @@ import {
   SendOtpSchema,
   VerifyOtpSchema,
   RefreshTokenSchema,
+  AdminLoginSchema,
 } from '@vyaparnet/types';
 import type {
   SendOtpDto,
   VerifyOtpDto,
   RefreshTokenDto,
   AuthTokensResponse,
+  AdminLoginDto,
 } from '@vyaparnet/types';
 import type { JwtPayload } from './token.service';
 
@@ -101,6 +106,54 @@ export class AuthController {
   }
 
   /**
+   * POST /api/v1/auth/login
+   *
+   * Admin Panel password-based login.
+   * Sets admin_token httpOnly cookie.
+   */
+  @Public()
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  async login(
+    @Body(new ZodValidationPipe(AdminLoginSchema)) dto: AdminLoginDto,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<any> {
+    const { tokens, user } = await this.authService.loginAdmin(
+      dto,
+      ip ?? '0.0.0.0',
+      userAgent ?? '',
+    );
+    
+    // Set httpOnly cookie for the admin panel
+    res.cookie('admin_token', tokens.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: tokens.expiresIn * 1000, // maxAge in milliseconds
+    });
+
+    return user;
+  }
+
+  /**
+   * GET /api/v1/auth/me
+   *
+   * Get current authenticated user details.
+   */
+  @Get('me')
+  @HttpCode(HttpStatus.OK)
+  async getMe(@CurrentUser() user: JwtPayload): Promise<any> {
+    return {
+      id: user.sub,
+      role: user.role,
+      segment: user.segment,
+    };
+  }
+
+  /**
    * POST /api/v1/auth/logout
    *
    * Revoke current session.
@@ -110,10 +163,15 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async logout(
     @CurrentUser() user: JwtPayload,
+    @Res({ passthrough: true }) res: Response,
     @Body() body: { refreshToken?: string },
   ): Promise<{ success: true; data: { message: string } }> {
     // Extract session ID from JWT jti or from request context
     await this.authService.logout(user.sub, user.jti, body.refreshToken);
+    
+    // Clear admin_token cookie
+    res.clearCookie('admin_token', { path: '/' });
+    
     return { success: true, data: { message: 'Logged out successfully.' } };
   }
 

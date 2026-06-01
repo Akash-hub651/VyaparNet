@@ -1,4 +1,14 @@
-import { Controller, Get, Patch, Post, Param, Query, Body, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Post,
+  Param,
+  Query,
+  Body,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { SellerOrderService } from '../services/seller-order.service';
 import { SellerDispatchProofService } from '../services/seller-dispatch-proof.service';
 import { SellerContextGuard } from '../guards/seller-context.guard';
@@ -18,7 +28,7 @@ import {
 
 @Controller('seller/orders')
 @UseGuards(JwtAuthGuard, RolesGuard, SellerContextGuard) // INV-S5-2: SellerContextGuard on EVERY seller route class
-@Roles(UserRole.SELLER)                                   // INV-S5-21: SELLER role required
+@Roles(UserRole.SELLER) // INV-S5-21: SELLER role required
 export class SellerOrdersController {
   constructor(
     private readonly sellerOrderService: SellerOrderService,
@@ -30,17 +40,15 @@ export class SellerOrdersController {
   @Get()
   async getOrders(
     @Req() req: any,
-    @Query(new ZodValidationPipe(SellerOrderFilterSchema)) filter: SellerOrderFilterDto,
+    @Query(new ZodValidationPipe(SellerOrderFilterSchema))
+    filter: SellerOrderFilterDto,
   ) {
     // req.seller.businessId enforces cross-seller isolation (INV-S5-3)
     return this.sellerOrderService.getOrders(req.seller, filter);
   }
 
   @Get(':id')
-  async getOrder(
-    @Req() req: any,
-    @Param('id') orderId: string,
-  ) {
+  async getOrder(@Req() req: any, @Param('id') orderId: string) {
     // Cross-seller access returns 404 ORDER_NOT_FOUND — not 403 (security: don't reveal existence)
     return this.sellerOrderService.getOrder(orderId, req.seller);
   }
@@ -51,7 +59,8 @@ export class SellerOrdersController {
   async transitionStatus(
     @Req() req: any,
     @Param('id') orderId: string,
-    @Body(new ZodValidationPipe(TransitionStatusSchema)) dto: TransitionStatusDto,
+    @Body(new ZodValidationPipe(TransitionStatusSchema))
+    dto: TransitionStatusDto,
   ) {
     return this.sellerOrderService.transitionStatus(orderId, req.seller, dto);
   }
@@ -69,7 +78,10 @@ export class SellerOrdersController {
     @Req() req: any,
     @Param('id') orderId: string,
   ) {
-    return this.sellerDispatchProofService.generateUploadUrl(orderId, req.seller);
+    return this.sellerDispatchProofService.generateUploadUrl(
+      orderId,
+      req.seller,
+    );
   }
 
   /**
@@ -84,8 +96,13 @@ export class SellerOrdersController {
   async confirmDispatchProof(
     @Req() req: any,
     @Param('id') orderId: string,
-    @Body(new ZodValidationPipe(DispatchProofConfirmSchema)) dto: DispatchProofConfirmDto,
+    @Body(new ZodValidationPipe(DispatchProofConfirmSchema))
+    dto: DispatchProofConfirmDto,
   ) {
-    return this.sellerDispatchProofService.confirmDispatchProof(orderId, req.seller, dto);
+    return this.sellerDispatchProofService.confirmDispatchProof(
+      orderId,
+      req.seller,
+      dto,
+    );
   }
 }

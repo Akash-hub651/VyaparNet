@@ -1,4 +1,14 @@
-import { Controller, Post, Get, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { UserRole, Segment, Product } from '@vyaparnet/database';
 import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
@@ -14,19 +24,27 @@ export class ProductsController {
 
   @Post()
   @Roles(UserRole.SELLER)
-  async createProduct(@Body() dto: BaseProductDto & { segment: Segment }, @CurrentUser() user: any): Promise<Product> {
+  async createProduct(
+    @Body() dto: BaseProductDto & { segment: Segment },
+    @CurrentUser() user: any,
+  ): Promise<Product> {
     return this.productsService.createProduct(dto, user.id, user.role);
   }
 
   @Post(':id/publish')
   @Roles(UserRole.SELLER)
-  async publishProduct(@Param('id') id: string, @CurrentUser() user: any): Promise<Product> {
+  async publishProduct(
+    @Param('id') id: string,
+    @CurrentUser() user: any,
+  ): Promise<Product> {
     return this.productsService.publishProduct(id, user.id, user.role);
   }
 
   @Get()
   async listProducts(@Query('segment') _segment: Segment) {
-    throw new Error('Not Implemented: Use Search module for listing (Phase 6).');
+    throw new Error(
+      'Not Implemented: Use Search module for listing (Phase 6).',
+    );
   }
 
   @Get('seller')
@@ -45,13 +63,20 @@ export class ProductsController {
 
   @Put(':id')
   @Roles(UserRole.SELLER)
-  async updateProduct(@Param('id') id: string, @Body() dto: Partial<BaseProductDto & { segment: Segment }>, @CurrentUser() user: any): Promise<Product> {
+  async updateProduct(
+    @Param('id') id: string,
+    @Body() dto: Partial<BaseProductDto & { segment: Segment }>,
+    @CurrentUser() user: any,
+  ): Promise<Product> {
     return this.productsService.updateProduct(id, dto, user.id);
   }
 
   @Delete(':id')
   @Roles(UserRole.SELLER)
-  async deleteProduct(@Param('id') id: string, @CurrentUser() user: any): Promise<Product> {
+  async deleteProduct(
+    @Param('id') id: string,
+    @CurrentUser() user: any,
+  ): Promise<Product> {
     return this.productsService.deleteProduct(id, user.id);
   }
 }

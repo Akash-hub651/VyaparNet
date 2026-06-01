@@ -12,7 +12,11 @@ import { ZodValidationPipe } from '../../../shared/pipes/zod-validation.pipe';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 import { UsersService } from './users.service';
 import { OnboardingService } from './onboarding.service';
-import { UpdateUserSchema, OnboardBusinessSchema, CreateAddressSchema } from '@vyaparnet/types';
+import {
+  UpdateUserSchema,
+  OnboardBusinessSchema,
+  CreateAddressSchema,
+} from '@vyaparnet/types';
 import type {
   UpdateUserDto,
   OnboardBusinessDto,

@@ -23,14 +23,16 @@ export async function handleOrderCreated(
   payload: OrderCreatedPayload,
   ctx: HandlerContext,
 ): Promise<void> {
-  const { orderId, orderNumber, buyerId, sellerId, grandTotal } = payload;
+  const { orderId, orderNumber, buyerId, sellerId, grandTotal, buyerCode } = payload;
 
   // ─── Step 1: Buyer dedup check (INV-S6-6) ────────────────────────────────────
   // INV-S6-25: This is the BUYER key — separate from seller key below
   const dedupKeyBuyer = `notif:${buyerId}:OrderCreated:${orderId}`;
   if (await ctx.deduplicationService.isDuplicate(dedupKeyBuyer)) {
     ctx.logger.log({ buyerId, orderId }, 'NOTIFICATION_DEDUP_SKIPPED_BUYER');
-    ctx.metrics.notificationDedupSkippedTotal.inc({ eventType: 'OrderCreated' });
+    ctx.metrics.notificationDedupSkippedTotal.inc({
+      eventType: 'OrderCreated',
+    });
     return;
   }
 
@@ -50,6 +52,7 @@ export async function handleOrderCreated(
   const vars: Record<string, string> = {
     orderNumber,
     grandTotal: grandTotal?.toString() ?? '',
+    buyerCode: buyerCode ?? 'UNKNOWN',
   };
 
   // ─── Step 4: Buyer notifications (SMS + Email + In-App) ──────────────────────
@@ -68,7 +71,8 @@ export async function handleOrderCreated(
   if (sellerContact && sellerUserId) {
     // INV-S6-25: Seller dedup key is SEPARATE from buyer dedup key (FOOTGUN-3-F avoidance)
     const dedupKeySeller = `notif:${sellerUserId}:OrderCreated:${orderId}`;
-    const sellerAlreadyNotified = await ctx.deduplicationService.isDuplicate(dedupKeySeller);
+    const sellerAlreadyNotified =
+      await ctx.deduplicationService.isDuplicate(dedupKeySeller);
 
     if (!sellerAlreadyNotified) {
       // INV-S6-7: sellerContact — buyer's details NEVER passed here
@@ -84,8 +88,13 @@ export async function handleOrderCreated(
       // Set seller dedup AFTER successful enqueue (INV-S6-6)
       await ctx.deduplicationService.setProcessed(dedupKeySeller, 300);
     } else {
-      ctx.logger.log({ sellerUserId, orderId }, 'NOTIFICATION_DEDUP_SKIPPED_SELLER');
-      ctx.metrics.notificationDedupSkippedTotal.inc({ eventType: 'OrderCreated' });
+      ctx.logger.log(
+        { sellerUserId, orderId },
+        'NOTIFICATION_DEDUP_SKIPPED_SELLER',
+      );
+      ctx.metrics.notificationDedupSkippedTotal.inc({
+        eventType: 'OrderCreated',
+      });
     }
   }
 

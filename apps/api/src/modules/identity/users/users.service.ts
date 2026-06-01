@@ -2,7 +2,12 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { UsersRepository } from './repositories/users.repository';
 import { AuditSafeWriterService } from '../../security/audit/audit-safe-writer.service';
 import { AuditAction } from '@vyaparnet/types';
-import type { UpdateUserDto, UserProfileResponse, CreateAddressDto, AddressType } from '@vyaparnet/types';
+import type {
+  UpdateUserDto,
+  UserProfileResponse,
+  CreateAddressDto,
+  AddressType,
+} from '@vyaparnet/types';
 import type { User, Business, Address } from '@vyaparnet/database';
 import { UserRole, Segment, KycStatus } from '@vyaparnet/types';
 
@@ -132,7 +137,7 @@ export class UsersService {
       action: AuditAction.CREATE,
       entityType: 'Address',
       entityId: address.id,
-      newValue: dto as unknown as Record<string, unknown>,
+      newValue: dto,
       ipAddress,
     });
 

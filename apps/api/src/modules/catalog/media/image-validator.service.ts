@@ -25,7 +25,9 @@ export class ImageValidatorService {
     }
 
     if (!this.checkMagicBytes(buffer, declaredMimeType)) {
-      throw new BadRequestException('INVALID_FILE_TYPE: MIME spoofing detected');
+      throw new BadRequestException(
+        'INVALID_FILE_TYPE: MIME spoofing detected',
+      );
     }
   }
 

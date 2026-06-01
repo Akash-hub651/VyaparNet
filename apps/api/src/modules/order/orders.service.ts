@@ -20,9 +20,10 @@ import {
   generateOrderNumber,
   isPrismaUniqueConstraintError,
 } from './order-state-machine';
-import { Prisma, OrderStatus, Order } from '@vyaparnet/database';
+import { Prisma, Order } from '@vyaparnet/database';
 import { PaymentService } from '../payment/payment.service';
 import { MetricsService } from '../observability/metrics.service';
+import { maskBuyerId } from '@vyaparnet/utils';
 
 export interface CreateOrderDto {
   cartId?: string;
@@ -64,15 +65,24 @@ export class OrdersService {
     private readonly metrics: MetricsService,
   ) {}
 
-  async createOrder(dto: CreateOrderDto, userId: string, ipAddress: string): Promise<OrderResponseDto> {
-    this.metrics.checkoutFunnelStepTotal.inc({ step: 'create_order_initiated' });
+  async createOrder(
+    dto: CreateOrderDto,
+    userId: string,
+    ipAddress: string,
+  ): Promise<OrderResponseDto> {
+    this.metrics.checkoutFunnelStepTotal.inc({
+      step: 'create_order_initiated',
+    });
 
     // ── STEP 1: IDEMPOTENCY CHECK (INV-33: userId from JWT always first) ──
     // HARDENED (INV-33): key format MUST be order_idem:{userId}:{clientKey}
     const idempotencyKey = `order_idem:${userId}:${dto.clientIdempotencyKey}`;
     const cached = await this.redis.get(idempotencyKey);
     if (cached) {
-      this.logger.log({ userId, idempotencyKey }, 'Order idempotency hit — returning cached response');
+      this.logger.log(
+        { userId, idempotencyKey },
+        'Order idempotency hit — returning cached response',
+      );
       return JSON.parse(cached);
     }
 
@@ -81,9 +91,15 @@ export class OrdersService {
 
     // ── STEP 3: LOAD CART ──
     this.metrics.cartCheckoutInitiatedTotal.inc({ segment: dto.segment });
-    const cart = await this.cartRepo.findActiveWithItems(userId, dto.segment as any);
+    const cart = await this.cartRepo.findActiveWithItems(
+      userId,
+      dto.segment as any,
+    );
     if (!cart || cart.items.length === 0) {
-      throw new BadRequestException({ code: 'CART_EMPTY', message: 'Cart is empty or not found' });
+      throw new BadRequestException({
+        code: 'CART_EMPTY',
+        message: 'Cart is empty or not found',
+      });
     }
 
     // ── STEP 4: PRE-VALIDATION — products & availability (parallel reads) ──
@@ -91,12 +107,23 @@ export class OrdersService {
     const products = await this.prisma.product.findMany({
       where: { id: { in: productIds } },
       include: {
-        inventory: { select: { id: true, quantity: true, reservedQty: true, damagedQty: true, businessId: true } },
+        inventory: {
+          select: {
+            id: true,
+            quantity: true,
+            reservedQty: true,
+            damagedQty: true,
+            businessId: true,
+          },
+        },
       },
     });
 
     if (products.length !== productIds.length) {
-      throw new BadRequestException({ code: 'PRODUCT_NOT_FOUND', message: 'One or more products not found' });
+      throw new BadRequestException({
+        code: 'PRODUCT_NOT_FOUND',
+        message: 'One or more products not found',
+      });
     }
 
     const productMap = new Map(products.map((p) => [p.id, p]));
@@ -146,13 +173,22 @@ export class OrdersService {
       where: { id: dto.shippingAddressId, userId, isDeleted: false },
     });
     if (!shippingAddress) {
-      throw new BadRequestException({ code: 'ADDRESS_NOT_FOUND', message: 'Shipping address not found' });
+      throw new BadRequestException({
+        code: 'ADDRESS_NOT_FOUND',
+        message: 'Shipping address not found',
+      });
     }
-    const billingAddress = dto.billingAddressId === dto.shippingAddressId
-      ? shippingAddress
-      : await this.prisma.address.findFirst({ where: { id: dto.billingAddressId, userId, isDeleted: false } });
+    const billingAddress =
+      dto.billingAddressId === dto.shippingAddressId
+        ? shippingAddress
+        : await this.prisma.address.findFirst({
+            where: { id: dto.billingAddressId, userId, isDeleted: false },
+          });
     if (!billingAddress) {
-      throw new BadRequestException({ code: 'ADDRESS_NOT_FOUND', message: 'Billing address not found' });
+      throw new BadRequestException({
+        code: 'ADDRESS_NOT_FOUND',
+        message: 'Billing address not found',
+      });
     }
 
     const addressSnapshot = {
@@ -166,7 +202,7 @@ export class OrdersService {
     };
 
     // Derive primary sellerId from first item (multi-seller: Sprint 5)
-    const primarySellerId = orderItemData[0]!.sellerId;
+    const primarySellerId = orderItemData[0].sellerId;
 
     // ── STEP 7: RESERVE — SEQUENTIAL (not parallel, per §7.1 Step 7 / S4-W6) ──
     const reservations: Array<{ id: string; productId: string }> = [];
@@ -182,17 +218,27 @@ export class OrdersService {
           userId,
           ipAddress,
           idempotencyKey: `reserve-${dto.clientIdempotencyKey}-${item.productId}`,
-          paymentMethod: dto.paymentMethod as any,
+          paymentMethod: dto.paymentMethod,
         });
-        reservations.push({ id: result.reservationId, productId: item.productId });
+        reservations.push({
+          id: result.reservationId,
+          productId: item.productId,
+        });
       }
     } catch (err) {
       // Compensation: release all reservations made so far — SEQUENTIAL (S4-W6)
       for (const res of reservations) {
         try {
-          await this.inventoryService.release(res.id, 'ORDER_CANCELLED', 'SYSTEM');
+          await this.inventoryService.release(
+            res.id,
+            'ORDER_CANCELLED',
+            'SYSTEM',
+          );
         } catch (releaseErr) {
-          this.logger.error({ reservationId: res.id, err: releaseErr }, 'CRITICAL: Failed to release reservation during pre-tx compensation');
+          this.logger.error(
+            { reservationId: res.id, err: releaseErr },
+            'CRITICAL: Failed to release reservation during pre-tx compensation',
+          );
         }
       }
       throw err;
@@ -217,7 +263,7 @@ export class OrdersService {
                   orderNumber: generateOrderNumber(),
                   segment: cart.segment as any,
                   // HARDENED (§3.4): Online → PLACED (consume deferred); COD → CONFIRMED (immediate)
-                  status: isOnline ? ('PLACED' as OrderStatus) : ('CONFIRMED' as OrderStatus),
+                  status: isOnline ? 'PLACED' : 'CONFIRMED',
                   buyerId: userId,
                   sellerId: primarySellerId,
                   cartId: cart.id,
@@ -236,8 +282,14 @@ export class OrdersService {
               });
               break; // success
             } catch (err) {
-              if (isPrismaUniqueConstraintError(err, 'orderNumber') && attempt < 2) {
-                this.logger.warn({ attempt }, 'Order number collision — retrying within tx');
+              if (
+                isPrismaUniqueConstraintError(err, 'orderNumber') &&
+                attempt < 2
+              ) {
+                this.logger.warn(
+                  { attempt },
+                  'Order number collision — retrying within tx',
+                );
                 this.metrics.orderNumberCollisionTotal.inc();
                 continue;
               }
@@ -275,7 +327,7 @@ export class OrdersService {
                 status: 'CAPTURED' as any,
                 capturedAt: new Date(),
                 idempotencyKey: `cod-${order.id}`, // deterministic — INV-26
-                gatewayRef: `cod-${order.id}`,     // synthetic but unique — INV-26
+                gatewayRef: `cod-${order.id}`, // synthetic but unique — INV-26
                 // gatewayPaymentId: null for COD (INV-30 — no real gateway payment ID)
               },
             });
@@ -342,13 +394,14 @@ export class OrdersService {
             shippingAddress: addressSnapshot,
             placedAt: new Date().toISOString(),
             orderMonth: eventMonth,
+            buyerCode: maskBuyerId(userId),
           };
 
           await tx.eventOutbox.create({
             data: {
               eventType: 'OrderCreated',
-              eventVersion: '1.0',   // HARDENED (INV-20)
-              schemaVersion: '4.3',  // HARDENED (INV-20)
+              eventVersion: '1.0', // HARDENED (INV-20)
+              schemaVersion: '4.3', // HARDENED (INV-20)
               payload: orderCreatedPayload,
               deduplicationKey: `order-created-${order.id}`, // HARDENED (INV-17): deterministic
               eventMonth,
@@ -361,8 +414,8 @@ export class OrdersService {
             await tx.eventOutbox.create({
               data: {
                 eventType: 'OrderConfirmed',
-                eventVersion: '1.0',   // HARDENED (INV-20)
-                schemaVersion: '4.3',  // HARDENED (INV-20)
+                eventVersion: '1.0', // HARDENED (INV-20)
+                schemaVersion: '4.3', // HARDENED (INV-20)
                 payload: {
                   orderId: order.id,
                   paymentMethod: dto.paymentMethod,
@@ -390,10 +443,17 @@ export class OrdersService {
     } catch (txErr) {
       // Compensation: release ALL reservations — SEQUENTIAL (S4-W6)
       // HARDENED: Sequential for...of — never Promise.all (avoids DB contention storm, S4-W6)
-      this.logger.error({ userId, paymentMethod: dto.paymentMethod, err: txErr }, 'Order $transaction failed — releasing all reservations');
+      this.logger.error(
+        { userId, paymentMethod: dto.paymentMethod, err: txErr },
+        'Order $transaction failed — releasing all reservations',
+      );
       for (const res of reservations) {
         try {
-          await this.inventoryService.release(res.id, 'ORDER_CANCELLED', 'SYSTEM');
+          await this.inventoryService.release(
+            res.id,
+            'ORDER_CANCELLED',
+            'SYSTEM',
+          );
         } catch (releaseErr) {
           this.logger.error(
             { reservationId: res.id, err: releaseErr },
@@ -416,14 +476,29 @@ export class OrdersService {
 
     if (!isOnline) {
       // COD: response is complete — set idempotency key and return
-      await this.redis.set(idempotencyKey, JSON.stringify(baseResponse), 'EX', 3600).catch((err) => {
-        // Non-fatal: log but don't fail the order — buyer already has their order
-        this.logger.warn({ idempotencyKey, err }, 'Failed to set COD order idempotency key in Redis — degraded mode');
-        this.metrics.redisUnavailableTotal.inc({ component: 'order_idempotency_set' });
+      await this.redis
+        .set(idempotencyKey, JSON.stringify(baseResponse), 'EX', 3600)
+        .catch((err) => {
+          // Non-fatal: log but don't fail the order — buyer already has their order
+          this.logger.warn(
+            { idempotencyKey, err },
+            'Failed to set COD order idempotency key in Redis — degraded mode',
+          );
+          this.metrics.redisUnavailableTotal.inc({
+            component: 'order_idempotency_set',
+          });
+        });
+      this.logger.log(
+        { orderId: createdOrder.id, userId, paymentMethod: 'COD' },
+        'COD order created and confirmed',
+      );
+      this.metrics.orderCreatedTotal.inc({
+        payment_method: dto.paymentMethod,
+        segment: dto.segment,
       });
-      this.logger.log({ orderId: createdOrder.id, userId, paymentMethod: 'COD' }, 'COD order created and confirmed');
-      this.metrics.orderCreatedTotal.inc({ payment_method: dto.paymentMethod, segment: dto.segment });
-      this.metrics.orderConfirmedTotal.inc({ payment_method: dto.paymentMethod });
+      this.metrics.orderConfirmedTotal.inc({
+        payment_method: dto.paymentMethod,
+      });
       return baseResponse;
     }
 
@@ -444,7 +519,11 @@ export class OrdersService {
       paymentUrl = paymentResult.paymentUrl;
 
       this.logger.log(
-        { orderId: createdOrder.id, paymentId: paymentResult.paymentId, method: dto.paymentMethod },
+        {
+          orderId: createdOrder.id,
+          paymentId: paymentResult.paymentId,
+          method: dto.paymentMethod,
+        },
         'Online order created — payment initiated',
       );
     } catch (paymentErr) {
@@ -466,23 +545,40 @@ export class OrdersService {
       ...baseResponse,
       paymentUrl, // undefined if payment initiation failed — buyer must retry
     };
-    await this.redis.set(idempotencyKey, JSON.stringify(onlineResponse), 'EX', 3600).catch((err) => {
-      this.logger.warn({ idempotencyKey, err }, 'Failed to set online order idempotency key in Redis — degraded mode');
-      this.metrics.redisUnavailableTotal.inc({ component: 'order_idempotency_set' });
-    });
+    await this.redis
+      .set(idempotencyKey, JSON.stringify(onlineResponse), 'EX', 3600)
+      .catch((err) => {
+        this.logger.warn(
+          { idempotencyKey, err },
+          'Failed to set online order idempotency key in Redis — degraded mode',
+        );
+        this.metrics.redisUnavailableTotal.inc({
+          component: 'order_idempotency_set',
+        });
+      });
 
     this.logger.log(
-      { orderId: createdOrder.id, userId, paymentMethod: dto.paymentMethod, hasPaymentUrl: !!paymentUrl },
+      {
+        orderId: createdOrder.id,
+        userId,
+        paymentMethod: dto.paymentMethod,
+        hasPaymentUrl: !!paymentUrl,
+      },
       'Online order created in PLACED state',
     );
 
-    this.metrics.orderCreatedTotal.inc({ payment_method: dto.paymentMethod, segment: dto.segment });
-
+    this.metrics.orderCreatedTotal.inc({
+      payment_method: dto.paymentMethod,
+      segment: dto.segment,
+    });
 
     return onlineResponse;
   }
 
-  async getOrder(orderId: string, userId: string): Promise<Order & { items: any[] }> {
+  async getOrder(
+    orderId: string,
+    userId: string,
+  ): Promise<Order & { items: any[] }> {
     const order = await this.ordersRepo.findById(orderId, userId);
     if (!order) throw new NotFoundException({ code: 'ORDER_NOT_FOUND' });
     return order;
@@ -495,27 +591,39 @@ export class OrdersService {
     return this.statusHistoryRepo.findByOrderId(orderId);
   }
 
-  async cancelOrder(orderId: string, userId: string, reason: string): Promise<void> {
+  async cancelOrder(
+    orderId: string,
+    userId: string,
+    reason: string,
+  ): Promise<void> {
     const order = await this.ordersRepo.findById(orderId, userId);
     if (!order) throw new NotFoundException({ code: 'ORDER_NOT_FOUND' });
 
     // HARDENED: validate state machine transition
     assertNotTerminal(order);
-    validateTransition(order.status as OrderStatus, 'CANCELLED');
+    validateTransition(order.status, 'CANCELLED');
 
     // Release reservations OUTSIDE $transaction — sequential, idempotent (§7.3)
-    await this.inventoryService.releaseAllForOrder(orderId, 'ORDER_CANCELLED', userId);
+    await this.inventoryService.releaseAllForOrder(
+      orderId,
+      'ORDER_CANCELLED',
+      userId,
+    );
 
     const historyMonth = formatYearMonth(new Date());
     await this.prisma.$transaction(async (tx) => {
       await tx.order.update({
         where: { id: orderId },
-        data: { status: 'CANCELLED', cancelledAt: new Date(), cancellationReason: reason },
+        data: {
+          status: 'CANCELLED',
+          cancelledAt: new Date(),
+          cancellationReason: reason,
+        },
       });
       await tx.orderStatusHistory.create({
         data: {
           orderId,
-          statusFrom: order.status as OrderStatus,
+          statusFrom: order.status,
           statusTo: 'CANCELLED',
           actorId: userId,
           actorRole: 'BUYER' as any, // INV-S5-22: SystemActorType.BUYER — buyer-initiated cancel
@@ -562,15 +670,23 @@ export class OrdersService {
       count = (await this.redis.eval(script, 1, key, windowSeconds)) as number;
     } catch (err) {
       // Redis degraded: skip rate limit but log metric (§4.3)
-      this.logger.warn({ userId, err }, 'Redis unavailable for checkout rate limit — allowing request');
-      this.metrics.redisUnavailableTotal.inc({ component: 'checkout_rate_limit' });
+      this.logger.warn(
+        { userId, err },
+        'Redis unavailable for checkout rate limit — allowing request',
+      );
+      this.metrics.redisUnavailableTotal.inc({
+        component: 'checkout_rate_limit',
+      });
       this.metrics.rateLimitAtomicFailureTotal.inc({ endpoint: 'checkout' });
       return;
     }
 
     if (count > limit) {
       this.logger.warn({ userId, count }, 'Checkout rate limit exceeded');
-      throw new ConflictException({ code: 'CHECKOUT_RATE_LIMIT_EXCEEDED', message: 'Too many checkout attempts' });
+      throw new ConflictException({
+        code: 'CHECKOUT_RATE_LIMIT_EXCEEDED',
+        message: 'Too many checkout attempts',
+      });
     }
   }
 }

@@ -171,14 +171,16 @@ export class InventoryQueryService {
    * NOTE: Does NOT use Redis cache (cache would need N round-trips anyway).
    * DB read is a single IN() query — efficient even for 50-item reorders.
    */
-  async getBatchAvailability(productIds: string[]): Promise<StockAvailabilityDto[]> {
+  async getBatchAvailability(
+    productIds: string[],
+  ): Promise<StockAvailabilityDto[]> {
     if (productIds.length === 0) return [];
 
     // Single DB query with IN() clause — no N+1 (FIX-8)
-    const inventoryRows = await this.inventoryRepo.findManyByProductIds(productIds);
+    const inventoryRows =
+      await this.inventoryRepo.findManyByProductIds(productIds);
     return inventoryRows.map((inv) => this._mapToAvailabilityDto(inv, false));
   }
-
 
   /**
    * Paginated movement history for an inventory record. (§33.4 RULE 6)

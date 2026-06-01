@@ -16,7 +16,12 @@ import { IdentityModule } from '../../identity/identity.module';
 import { CatalogMetricsModule } from '../catalog-metrics.module';
 
 @Module({
-  imports: [CategoriesModule, MediaModule, IdentityModule, CatalogMetricsModule],
+  imports: [
+    CategoriesModule,
+    MediaModule,
+    IdentityModule,
+    CatalogMetricsModule,
+  ],
   controllers: [ProductsController],
   providers: [
     ProductsService,
@@ -38,4 +43,3 @@ import { CatalogMetricsModule } from '../catalog-metrics.module';
   ],
 })
 export class ProductsModule {}
-

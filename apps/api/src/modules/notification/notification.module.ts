@@ -26,7 +26,11 @@ import { NotificationController } from './notification.controller';
 
 // ─── Channels (Phase 5) ───────────────────────────────────────────────────────
 import { CircuitBreakerService } from './services/circuit-breaker.service';
-import { EmailChannel, EMAIL_SERVICE, ResendEmailService } from './channels/email.channel';
+import {
+  EmailChannel,
+  EMAIL_SERVICE,
+  ResendEmailService,
+} from './channels/email.channel';
 import { SmsChannel } from './channels/sms.channel';
 import { PushChannel } from './channels/push.channel';
 import { WebPushService } from './services/web-push.service';
@@ -66,11 +70,11 @@ import { NotificationWorker } from './workers/notification.worker';
  */
 @Module({
   imports: [
-    PrismaModule,        // PrismaService for all repositories + UserContactService
-    RedisModule,         // RedisService for DeduplicationService, PreferenceService, locks
-    BullMQModule,        // Provides 'notifications' + 'notifications-failed' queues (registered in BullMQModule)
+    PrismaModule, // PrismaService for all repositories + UserContactService
+    RedisModule, // RedisService for DeduplicationService, PreferenceService, locks
+    BullMQModule, // Provides 'notifications' + 'notifications-failed' queues (registered in BullMQModule)
     // NOTE: 'notifications-failed' DLQ is registered in BullMQModule — AF-3 LOCKED queue name
-    AuthModule,          // Provides SMS_SERVICE (Msg91SmsService) for SmsChannel
+    AuthModule, // Provides SMS_SERVICE (Msg91SmsService) for SmsChannel
   ],
   providers: [
     // ─── Phase 2: Repositories ─────────────────────────────────────────────────
@@ -93,7 +97,7 @@ import { NotificationWorker } from './workers/notification.worker';
     NotificationPreferenceService,
     // Phase 3 stub — no-op counters; real Prometheus metrics in Phase 12
     NotificationMetricsService,
-    
+
     // Phase 9: Full TemplateService — OnModuleInit pre-compilation, synchronous O(1) getTemplate()
     // INV-S6-14: render() uses replaceAll() ONLY. sanitize() for SMS, htmlEscape() for email HTML.
     TemplateService,

@@ -26,7 +26,10 @@ export class Msg91SmsService implements SmsService {
     }
   }
 
-  async sendTransactional(phoneNumber: string, message: string): Promise<SmsResult> {
+  async sendTransactional(
+    phoneNumber: string,
+    message: string,
+  ): Promise<SmsResult> {
     try {
       const provider = this.smsProviderStrategy.getProvider();
       await provider.sendTransactional({

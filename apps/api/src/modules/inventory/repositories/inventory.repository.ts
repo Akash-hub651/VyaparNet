@@ -212,13 +212,10 @@ export class InventoryRepository {
    * @param businessId - Business.id (NOT User.id) — INV-S5-1
    * @param segment    - Segment isolation filter — INV-S5-33
    */
-  async countLowStock(
-    businessId: string,
-    segment: string,
-  ): Promise<number> {
+  async countLowStock(businessId: string, segment: string): Promise<number> {
     return this.prisma.inventory.count({
       where: {
-        businessId,  // MANDATORY: segment isolation (INV-S5-14, INV-S5-33)
+        businessId, // MANDATORY: segment isolation (INV-S5-14, INV-S5-33)
         segment: segment as any,
         isLowStock: true,
       },
@@ -263,4 +260,3 @@ export class InventoryRepository {
     });
   }
 }
-

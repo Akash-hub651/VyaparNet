@@ -1,4 +1,4 @@
-// Jest globals: describe, it, expect — no import needed (Jest provides them automatically)
+import { describe, it, expect } from 'vitest';
 import { htmlEscape, buildEmailHtml } from '../channels/email.channel';
 
 /**
@@ -61,13 +61,23 @@ describe('EmailChannel — htmlEscape (Phase 13 §24.5)', () => {
     });
 
     it('escapes CTA text via htmlEscape', () => {
-      const html = buildEmailHtml('title', 'body', 'https://vyaparnet.com', "<script>evil</script>");
+      const html = buildEmailHtml(
+        'title',
+        'body',
+        'https://vyaparnet.com',
+        '<script>evil</script>',
+      );
       expect(html).toContain('&lt;script&gt;evil&lt;/script&gt;');
       expect(html).not.toContain('<script>evil</script>');
     });
 
     it('renders plain text safely without modification', () => {
-      const html = buildEmailHtml('Order Confirmed', 'Your order VN-2026-001 is confirmed.', undefined, undefined);
+      const html = buildEmailHtml(
+        'Order Confirmed',
+        'Your order VN-2026-001 is confirmed.',
+        undefined,
+        undefined,
+      );
       expect(html).toContain('Order Confirmed');
       expect(html).toContain('Your order VN-2026-001 is confirmed.');
     });

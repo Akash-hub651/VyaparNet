@@ -113,7 +113,7 @@ export async function cleanDatabase(
   await prisma.inventorySnapshot.deleteMany();
 
   // ── LAYER 3A: FK → Product (Sprint 2/3 — MUST precede Product) ───────────
-  await prisma.inventory.deleteMany();          // FK → Product, Business
+  await prisma.inventory.deleteMany(); // FK → Product, Business
   await prisma.searchProductDocument.deleteMany(); // FK → Product (via productId field)
   await prisma.productMedia.deleteMany();
   await prisma.productVariant.deleteMany();

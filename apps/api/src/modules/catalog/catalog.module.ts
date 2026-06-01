@@ -13,13 +13,6 @@ import { CatalogMetricsModule } from './catalog-metrics.module';
     MediaModule,
     SearchModule,
   ],
-  exports: [
-    CatalogMetricsModule,
-    ProductsModule,
-    CategoriesModule,
-  ],
+  exports: [CatalogMetricsModule, ProductsModule, CategoriesModule],
 })
 export class CatalogModule {}
-
-
-

@@ -53,7 +53,9 @@ export class TemplateService implements OnModuleInit {
    */
   async onModuleInit(): Promise<void> {
     await this.compileAllTemplates();
-    this.logger.log(`TemplateService: ${this.templateCache.size} templates compiled`);
+    this.logger.log(
+      `TemplateService: ${this.templateCache.size} templates compiled`,
+    );
   }
 
   /**
@@ -91,17 +93,18 @@ export class TemplateService implements OnModuleInit {
   getTemplate(name: string, language: 'hi' | 'en'): CompiledTemplate {
     const key = `${name}_${language}`;
     const template =
-      this.templateCache.get(key) ??
-      this.templateCache.get(`${name}_hi`); // Fallback to Hindi
+      this.templateCache.get(key) ?? this.templateCache.get(`${name}_hi`); // Fallback to Hindi
 
     if (!template) {
       this.logger.error({ templateName: name, language }, 'TEMPLATE_NOT_FOUND');
       // Fallback: generic safe message — never crash worker (FOOTGUN-9-C avoidance)
       return {
-        title: language === 'hi' ? 'VyaparNet se update' : 'Update from VyaparNet',
-        body: language === 'hi'
-          ? 'Aapke account mein kuch hua hai.'
-          : 'Something happened in your account.',
+        title:
+          language === 'hi' ? 'VyaparNet se update' : 'Update from VyaparNet',
+        body:
+          language === 'hi'
+            ? 'Aapke account mein kuch hua hai.'
+            : 'Something happened in your account.',
         type: NotificationType.SYSTEM,
       };
     }
@@ -139,7 +142,9 @@ export class TemplateService implements OnModuleInit {
 
     // FIX-6: Observe render latency — swallow if metrics unavailable (test env, startup race)
     try {
-      this.metrics?.notificationTemplateRenderMs.observe(Date.now() - renderStart);
+      this.metrics?.notificationTemplateRenderMs.observe(
+        Date.now() - renderStart,
+      );
     } catch {
       // swallow — metrics failure must never crash the render path
     }
@@ -158,8 +163,8 @@ export class TemplateService implements OnModuleInit {
    */
   private sanitize(value: string): string {
     return String(value)
-      .replace(/[<>'"&]/g, '')          // Strip HTML-dangerous chars (INV-S6-23)
-      .replace(/[~^{}|\\]/g, '')        // Strip SMS-dangerous chars
-      .slice(0, 200);                   // Max 200 chars per variable (§20.1)
+      .replace(/[<>'"&]/g, '') // Strip HTML-dangerous chars (INV-S6-23)
+      .replace(/[~^{}|\\]/g, '') // Strip SMS-dangerous chars
+      .slice(0, 200); // Max 200 chars per variable (§20.1)
   }
 }

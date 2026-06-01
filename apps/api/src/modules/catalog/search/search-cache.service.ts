@@ -20,10 +20,13 @@ export class SearchCacheService {
     // Sort filters to ensure consistent hashing regardless of key order
     const sortedFilters = Object.keys(filters)
       .sort()
-      .reduce((acc, key) => {
-        acc[key] = filters[key];
-        return acc;
-      }, {} as Record<string, any>);
+      .reduce(
+        (acc, key) => {
+          acc[key] = filters[key];
+          return acc;
+        },
+        {} as Record<string, any>,
+      );
 
     const hashPayload = normalizedQuery + JSON.stringify(sortedFilters);
     const hash = createHash('sha256').update(hashPayload).digest('hex');
@@ -35,7 +38,11 @@ export class SearchCacheService {
     return this.redis.getJson<T[]>(key);
   }
 
-  async setSearchResults<T>(key: string, results: T[], ttlSeconds = 60): Promise<void> {
+  async setSearchResults<T>(
+    key: string,
+    results: T[],
+    ttlSeconds = 60,
+  ): Promise<void> {
     await this.redis.setJson(key, results, ttlSeconds);
   }
 }

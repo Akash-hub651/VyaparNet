@@ -12,7 +12,14 @@ import { ObservabilityModule } from '../observability/observability.module';
 import { AuthModule } from '../identity/auth/auth.module';
 
 @Module({
-  imports: [PrismaModule, InventoryModule, CartModule, RedisModule, ObservabilityModule, AuthModule],
+  imports: [
+    PrismaModule,
+    InventoryModule,
+    CartModule,
+    RedisModule,
+    ObservabilityModule,
+    AuthModule,
+  ],
   controllers: [BuyerOrdersController, BuyerDashboardController], // FIX-5: §7.1 structure
   providers: [BuyerOrderService, BuyerOrderRepository, BuyerReorderService],
   exports: [BuyerOrderService, BuyerReorderService],

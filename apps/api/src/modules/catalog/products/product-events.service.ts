@@ -36,17 +36,19 @@ export class ProductEventsService {
     };
 
     await tx.eventOutbox.createMany({
-      data: [{
-        eventType: 'ProductCreated',
-        payload: payload as unknown as Prisma.InputJsonValue,
-        deduplicationKey: `product-created-${product.id}`,
-        eventMonth: new Date().toISOString().slice(0, 7),
-      }],
+      data: [
+        {
+          eventType: 'ProductCreated',
+          payload: payload as unknown as Prisma.InputJsonValue,
+          deduplicationKey: `product-created-${product.id}`,
+          eventMonth: new Date().toISOString().slice(0, 7),
+        },
+      ],
       skipDuplicates: true,
     });
 
     await tx.searchReindexJob.deleteMany({
-      where: { entityType: 'Product', entityId: product.id, processedAt: null }
+      where: { entityType: 'Product', entityId: product.id, processedAt: null },
     });
 
     await tx.searchReindexJob.create({
@@ -64,7 +66,7 @@ export class ProductEventsService {
         entityType: 'Product',
         entityId: product.id,
         actorId: userId,
-        newValue: { ...product, version: product.version } as unknown as Prisma.InputJsonValue,
+        newValue: { ...product, version: product.version },
         auditMonth: new Date().toISOString().slice(0, 7),
       },
     });
@@ -82,20 +84,27 @@ export class ProductEventsService {
     userId: string,
     changes: Record<string, any>,
   ): Promise<void> {
-    const payload: ProductEventPayload = { aggregateId: product.id, aggregateType: 'Product', productId: product.id, changes };
-    
+    const payload: ProductEventPayload = {
+      aggregateId: product.id,
+      aggregateType: 'Product',
+      productId: product.id,
+      changes,
+    };
+
     await tx.eventOutbox.createMany({
-      data: [{
-        eventType: 'ProductStateTransition',
-        payload: payload as unknown as Prisma.InputJsonValue,
-        deduplicationKey: `product-state-${product.id}-v${product.version}`,
-        eventMonth: new Date().toISOString().slice(0, 7),
-      }],
+      data: [
+        {
+          eventType: 'ProductStateTransition',
+          payload: payload as unknown as Prisma.InputJsonValue,
+          deduplicationKey: `product-state-${product.id}-v${product.version}`,
+          eventMonth: new Date().toISOString().slice(0, 7),
+        },
+      ],
       skipDuplicates: true,
     });
 
     await tx.searchReindexJob.deleteMany({
-      where: { entityType: 'Product', entityId: product.id, processedAt: null }
+      where: { entityType: 'Product', entityId: product.id, processedAt: null },
     });
 
     await tx.searchReindexJob.create({
@@ -107,7 +116,7 @@ export class ProductEventsService {
     });
 
     // Cache invalidation (Future Phase placeholder)
-    
+
     await tx.auditLog.create({
       data: {
         action: AuditAction.UPDATE,
@@ -115,12 +124,14 @@ export class ProductEventsService {
         entityType: 'Product',
         entityId: product.id,
         actorId: userId,
-        newValue: { ...changes, version: product.version } as unknown as Prisma.InputJsonValue,
+        newValue: { ...changes, version: product.version },
         auditMonth: new Date().toISOString().slice(0, 7),
       },
     });
 
-    this.logger.debug(`Queued ProductUpdated event for product ${product.id} (v${product.version})`);
+    this.logger.debug(
+      `Queued ProductUpdated event for product ${product.id} (v${product.version})`,
+    );
   }
 
   /**
@@ -131,20 +142,26 @@ export class ProductEventsService {
     product: Product,
     userId: string,
   ): Promise<void> {
-    const payload: ProductEventPayload = { aggregateId: product.id, aggregateType: 'Product', productId: product.id };
+    const payload: ProductEventPayload = {
+      aggregateId: product.id,
+      aggregateType: 'Product',
+      productId: product.id,
+    };
 
     await tx.eventOutbox.createMany({
-      data: [{
-        eventType: 'ProductDeleted',
-        payload: payload as unknown as Prisma.InputJsonValue,
-        deduplicationKey: `product-deleted-${product.id}`,
-        eventMonth: new Date().toISOString().slice(0, 7),
-      }],
+      data: [
+        {
+          eventType: 'ProductDeleted',
+          payload: payload as unknown as Prisma.InputJsonValue,
+          deduplicationKey: `product-deleted-${product.id}`,
+          eventMonth: new Date().toISOString().slice(0, 7),
+        },
+      ],
       skipDuplicates: true,
     });
 
     await tx.searchReindexJob.deleteMany({
-      where: { entityType: 'Product', entityId: product.id, processedAt: null }
+      where: { entityType: 'Product', entityId: product.id, processedAt: null },
     });
 
     await tx.searchReindexJob.create({

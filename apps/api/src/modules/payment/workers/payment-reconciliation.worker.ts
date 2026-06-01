@@ -27,7 +27,8 @@ export class PaymentReconciliationWorker implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     @InjectQueue('payments') private readonly paymentsQueue: Queue,
-    @Inject(PAYMENT_PROVIDER_TOKEN) private readonly paymentProvider: PaymentProvider,
+    @Inject(PAYMENT_PROVIDER_TOKEN)
+    private readonly paymentProvider: PaymentProvider,
     private readonly metrics: MetricsService,
   ) {}
 
@@ -75,7 +76,9 @@ export class PaymentReconciliationWorker implements OnModuleInit {
       return;
     }
 
-    this.logger.log(`Found ${pendingPayments.length} pending payments for reconciliation`);
+    this.logger.log(
+      `Found ${pendingPayments.length} pending payments for reconciliation`,
+    );
 
     let reconciliationMissedCount = 0;
 
@@ -83,7 +86,9 @@ export class PaymentReconciliationWorker implements OnModuleInit {
       if (!payment.gatewayRef) continue;
 
       try {
-        const status = await this.paymentProvider.getPaymentStatus(payment.gatewayRef);
+        const status = await this.paymentProvider.getPaymentStatus(
+          payment.gatewayRef,
+        );
         const ageMs = Date.now() - payment.createdAt.getTime();
         const ageMins = ageMs / (1000 * 60);
 
@@ -93,42 +98,71 @@ export class PaymentReconciliationWorker implements OnModuleInit {
             razorpayEventId: `sync-cap-${payment.id}`,
             eventType: 'payment.captured',
             payload: {
-              payment: { entity: { order_id: payment.gatewayRef, amount: undefined, id: 'sync-captured' } },
+              payment: {
+                entity: {
+                  order_id: payment.gatewayRef,
+                  amount: undefined,
+                  id: 'sync-captured',
+                },
+              },
             },
           });
           reconciliationMissedCount++;
           // HARDENED (OPTIONAL-1): Track each missed webhook detection
           this.metrics.paymentReconciliationMissedTotal.inc();
-          this.logger.warn({ paymentId: payment.id, gatewayRef: payment.gatewayRef }, 'Missed webhook detected — synthesized payment.captured');
+          this.logger.warn(
+            { paymentId: payment.id, gatewayRef: payment.gatewayRef },
+            'Missed webhook detected — synthesized payment.captured',
+          );
         } else if (status.status === 'FAILED') {
           // Synthesize failed webhook
           await this.paymentsQueue.add('process-webhook', {
             razorpayEventId: `sync-fail-${payment.id}`,
             eventType: 'payment.failed',
             payload: {
-              payment: { entity: { order_id: payment.gatewayRef, error_description: status.failedReason } },
+              payment: {
+                entity: {
+                  order_id: payment.gatewayRef,
+                  error_description: status.failedReason,
+                },
+              },
             },
           });
           reconciliationMissedCount++;
           // HARDENED (OPTIONAL-1): Track each missed webhook detection
           this.metrics.paymentReconciliationMissedTotal.inc();
-          this.logger.warn({ paymentId: payment.id, gatewayRef: payment.gatewayRef }, 'Missed webhook detected — synthesized payment.failed');
+          this.logger.warn(
+            { paymentId: payment.id, gatewayRef: payment.gatewayRef },
+            'Missed webhook detected — synthesized payment.failed',
+          );
         } else if (status.status === 'PENDING' && ageMins > 30) {
           // Force failed (Razorpay UPI max wait time is ~30 min)
           await this.paymentsQueue.add('process-webhook', {
             razorpayEventId: `sync-timeout-${payment.id}`,
             eventType: 'payment.failed',
             payload: {
-              payment: { entity: { order_id: payment.gatewayRef, error_description: 'Payment timed out (reconciliation force fail)' } },
+              payment: {
+                entity: {
+                  order_id: payment.gatewayRef,
+                  error_description:
+                    'Payment timed out (reconciliation force fail)',
+                },
+              },
             },
           });
           reconciliationMissedCount++;
           // HARDENED (OPTIONAL-1): Track each force-failed timeout
           this.metrics.paymentReconciliationMissedTotal.inc();
-          this.logger.warn({ paymentId: payment.id, gatewayRef: payment.gatewayRef, ageMins }, 'Payment pending >30min — synthesized payment.failed timeout');
+          this.logger.warn(
+            { paymentId: payment.id, gatewayRef: payment.gatewayRef, ageMins },
+            'Payment pending >30min — synthesized payment.failed timeout',
+          );
         }
       } catch (err) {
-        this.logger.error({ paymentId: payment.id, gatewayRef: payment.gatewayRef, err }, 'Failed to reconcile payment status from provider');
+        this.logger.error(
+          { paymentId: payment.id, gatewayRef: payment.gatewayRef, err },
+          'Failed to reconcile payment status from provider',
+        );
       }
     }
 

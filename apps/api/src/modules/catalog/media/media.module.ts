@@ -32,4 +32,3 @@ import { IdentityModule } from '../../identity/identity.module';
   exports: [MediaService, MediaClassificationService, MediaRepository],
 })
 export class MediaModule {}
-

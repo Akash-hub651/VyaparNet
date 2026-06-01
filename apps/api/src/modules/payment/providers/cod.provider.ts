@@ -46,7 +46,11 @@ export class CodPaymentProvider implements PaymentProvider {
   /**
    * COD has no webhooks — signature verification always passes.
    */
-  verifyWebhookSignature(_payload: Buffer, _signature: string, _secret: string): boolean {
+  verifyWebhookSignature(
+    _payload: Buffer,
+    _signature: string,
+    _secret: string,
+  ): boolean {
     return true;
   }
 

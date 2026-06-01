@@ -16,34 +16,34 @@ export class InventoryMetrics {
     // §25.1 Counters
     @InjectMetric('inventory_reservation_success_total')
     public readonly resSuccessTotal: Counter<string>,
-    
+
     @InjectMetric('inventory_reservation_failure_total')
     public readonly resFailureTotal: Counter<string>,
-    
+
     @InjectMetric('inventory_idempotency_hit_total')
     public readonly idempotencyHitTotal: Counter<string>,
-    
+
     @InjectMetric('inventory_optimistic_lock_retry_total')
     public readonly lockRetryTotal: Counter<string>,
-    
+
     @InjectMetric('inventory_oversell_prevented_total')
     public readonly oversellPreventedTotal: Counter<string>,
-    
+
     @InjectMetric('inventory_reservation_released_total')
     public readonly releasedTotal: Counter<string>,
-    
+
     @InjectMetric('inventory_expiry_processed_total')
     public readonly expiryTotal: Counter<string>,
-    
+
     @InjectMetric('inventory_drift_detected')
     public readonly driftDetectedTotal: Counter<string>,
-    
+
     @InjectMetric('inventory_abuse_violation_total')
     public readonly abuseViolationTotal: Counter<string>,
-    
+
     @InjectMetric('inventory_protection_mode_changes')
     public readonly protectModeChangesTotal: Counter<string>,
-    
+
     @InjectMetric('inventory_hot_product_detected')
     public readonly hotProductDetectedTotal: Counter<string>,
 
@@ -54,7 +54,7 @@ export class InventoryMetrics {
     // §25.1 Gauges
     @InjectMetric('inventory_active_reservations')
     public readonly activeReservationsGauge: Gauge<string>,
-    
+
     @InjectMetric('inventory_low_stock_products')
     public readonly lowStockProductsGauge: Gauge<string>,
   ) {}
