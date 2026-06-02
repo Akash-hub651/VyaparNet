@@ -457,11 +457,12 @@ export async function generateInvoice(
 export interface FeatureFlag {
   id: string;
   name: string;
-  description: string;
-  value: string;
+  description: string | null;
+  enabled: boolean;           // matches FeatureFlagDto.enabled (backend)
+  rolloutPercent: number;    // matches FeatureFlagDto.rolloutPercent (backend)
+  segment: string | null;
   env: string;
-  segment: string;
-  isActive: boolean;
+  createdAt: string;
   updatedAt: string;
 }
 
@@ -469,26 +470,38 @@ export async function listFlags(): Promise<FeatureFlag[]> {
   return apiFetch<FeatureFlag[]>('/admin/flags');
 }
 
+/**
+ * toggleFlag — sends AdminUpdateFlagDto: { enabled, rolloutPercent? }
+ * Backend: PATCH /admin/flags/:name (AdminFlagService.toggleFlag)
+ * INV-S7-18: Cache invalidated via SCAN+DEL after toggle.
+ */
 export async function toggleFlag(
-  id: string,
-  isActive: boolean,
+  name: string,
+  enabled: boolean,
   idempotencyKey: string,
+  rolloutPercent?: number,
 ): Promise<FeatureFlag> {
-  return apiFetch<FeatureFlag>(`/admin/flags/${id}/toggle`, {
+  return apiFetch<FeatureFlag>(`/admin/flags/${name}`, {
     method: 'PATCH',
-    body: JSON.stringify({ isActive }),
+    body: JSON.stringify({ enabled, ...(rolloutPercent !== undefined && { rolloutPercent }) }),
     idempotencyKey,
   });
 }
 
-export async function updateFlagValue(
-  id: string,
-  value: string,
+/**
+ * updateFlagRollout — updates rolloutPercent (numeric rate) for a flag.
+ * Used for commission/TDS rate flags: platform_commission_percent, tds_rate_percent, etc.
+ * Backend: PATCH /admin/flags/:name with { enabled: current, rolloutPercent: newValue }
+ */
+export async function updateFlagRollout(
+  name: string,
+  enabled: boolean,
+  rolloutPercent: number,
   idempotencyKey: string,
 ): Promise<FeatureFlag> {
-  return apiFetch<FeatureFlag>(`/admin/flags/${id}`, {
+  return apiFetch<FeatureFlag>(`/admin/flags/${name}`, {
     method: 'PATCH',
-    body: JSON.stringify({ value }),
+    body: JSON.stringify({ enabled, rolloutPercent }),
     idempotencyKey,
   });
 }
