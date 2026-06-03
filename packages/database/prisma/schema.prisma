@@ -57,6 +57,7 @@ enum QuotationStatus {
   REJECTED
   EXPIRED
   CONVERTED_TO_ORDER
+  CANCELLED
 }
 
 enum OrderStatus {
@@ -108,6 +109,19 @@ enum DisputeStatus {
   RESOLVED_BUYER
   RESOLVED_SELLER
   CLOSED
+}
+
+enum DisputePriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum RfqStatus {
+  OPEN
+  CLOSED
+  CANCELLED
 }
 
 enum PaymentStatus {
@@ -279,6 +293,15 @@ enum PayoutStatus {
   INITIATED
   TRANSFERRED
   FAILED
+  ON_HOLD
+  CANCELLED
+  REVERSED
+}
+
+enum TicketParticipantRole {
+  BUYER
+  SELLER
+  ADMIN
 }
 
 // FIX #6: Enum for Coupon discount type
@@ -374,6 +397,8 @@ model User {
   kycDocuments    KycDocument[]   @relation("VerifiedKyc")
   assignedTickets SupportTicket[] @relation("TicketAssignee")
   raisedTickets   SupportTicket[] @relation("TicketRaiser")
+  procurementTemplates ProcurementTemplate[]
+  rfqs            Rfq[]
 
   // Reverse relations for named relations
   verifiedKycDocs       KycDocument[]   @relation("KycVerifier")
@@ -436,6 +461,8 @@ model SellerScore {
   deliveryQualityScore   Int      @default(0)  // 0-100
   acceptanceRate         Int      @default(0)  // 0-100
   orderCount             Int      @default(0)  // sample size
+  disputeRate            Int      @default(0)  // Sprint 8 addition
+  returnRate             Int      @default(0)  // Sprint 8 addition
   calculatedAt           DateTime
   previousCompositeScore Int?                  // NULL on first calculation
 
@@ -704,6 +731,7 @@ model Inventory {
   @@index([businessId, isLowStock], map: "idx_inv_biz_low")
   @@index([segment], map: "idx_inv_seg")
   @@index([updatedAt], map: "idx_inv_updated_at")
+  @@index([businessId], map: "idx_inv_biz")
 }
 
 model InventoryMovement {
@@ -746,6 +774,8 @@ model InventoryReservation {
   @@index([status, expiresAt], map: "idx_invres_active_expiry")
   @@index([cartId], map: "idx_invres_cart")
   @@index([orderId], map: "idx_invres_order")
+  @@index([reservedByUserId], map: "idx_invres_user")
+  @@index([reservedByBusinessId], map: "idx_invres_biz")
 }
 
 // =============================================================================
@@ -949,6 +979,7 @@ model ReturnRequest {
   id      String @id @default(cuid())
   orderId String
   itemId  String
+  sellerId String?
 
   reason      ReturnReason
   description String?
@@ -1086,7 +1117,7 @@ model EventOutbox {
   eventType     String
   payload       Json
   eventVersion  String @default("1.0")
-  schemaVersion String @default("5.0")  // R4: Updated from 4.3 to 5.0 — always set explicitly in code (INV-S5-23)
+  schemaVersion String @default("8.0")  // R4: Updated from 4.3 to 8.0 — always set explicitly in code (INV-S5-23)
 
   status     EventStatus @default(PENDING)
   retryCount Int         @default(0)
@@ -1117,6 +1148,7 @@ model SupportTicket {
   description  String
   priority     SupportTicketPriority @default(MEDIUM)
   status       SupportTicketStatus   @default(OPEN)
+  disputeId    String?
   // Sprint 7: AUDIT-P1-B — admin resolution message (different from user's description)
   resolvedNote String?
 
@@ -1131,10 +1163,29 @@ model SupportTicket {
 
   user     User  @relation("TicketRaiser", fields: [userId], references: [id])
   assigned User? @relation("TicketAssignee", fields: [assignedTo], references: [id])
+  messages SupportTicketMessage[]
 
   @@index([userId, status], map: "idx_st_user_stat")
   @@index([assignedTo, status], map: "idx_st_assign_stat")
   @@index([status, priority, createdAt], map: "idx_st_stat_pri_date")  // Sprint 7: admin ticket queue
+}
+
+model SupportTicketMessage {
+  id              String                @id @default(cuid())
+  ticketId        String
+  senderId        String
+  senderRole      TicketParticipantRole
+  message         String
+  attachments     String[]
+  clientMessageId String?
+  
+  isDeleted       Boolean               @default(false)
+  createdAt       DateTime              @default(now())
+
+  ticket          SupportTicket         @relation(fields: [ticketId], references: [id])
+
+  // Native index will be added in migration for thread pagination
+  @@index([ticketId, createdAt], map: "idx_stm_ticket_date")
 }
 
 model Dispute {
@@ -1144,6 +1195,7 @@ model Dispute {
   reason      String
   description String?
   status      DisputeStatus @default(OPEN)
+  priority    DisputePriority @default(MEDIUM)
 
   resolvedBy String?
   resolution String?
@@ -1160,9 +1212,27 @@ model Dispute {
   order    Order @relation(fields: [orderId], references: [id])
   // FIX #11: Active relation to resolver
   resolver User? @relation("DisputeResolver", fields: [resolvedBy], references: [id])
+  evidence DisputeEvidence[]
 
   @@index([orderId, status], map: "idx_dsp_order_stat")
   @@index([raisedBy, status], map: "idx_dsp_raised_stat")
+}
+
+model DisputeEvidence {
+  id         String   @id @default(cuid())
+  disputeId  String
+  uploadedBy String
+  fileUrl    String
+  fileType   String
+  fileSize   Int
+  mimeType   String
+  
+  isDeleted  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  dispute    Dispute  @relation(fields: [disputeId], references: [id])
+
+  @@index([disputeId, createdAt], map: "idx_dev_dispute_date")
 }
 
 // =============================================================================
@@ -1205,6 +1275,7 @@ model FeatureFlag {
 model Quotation {
   id       String          @id @default(cuid())
   orderId  String?         @unique
+  rfqId    String?
   status   QuotationStatus @default(DRAFT)
   buyerId  String
   sellerId String
@@ -1234,6 +1305,29 @@ model Quotation {
   @@index([buyerId, status, createdAt], map: "idx_quot_buyer_stat_date")
   @@index([sellerId, status, createdAt], map: "idx_quot_seller_stat_date")
   @@index([quoteMonth], map: "idx_quot_month")
+  
+  rfq Rfq? @relation(fields: [rfqId], references: [id])
+}
+
+model Rfq {
+  id          String    @id @default(cuid())
+  buyerId     String
+  segment     Segment
+  status      RfqStatus @default(OPEN)
+  
+  items       Json      // [{productId, quantity, targetPrice}]
+  validUntil  DateTime
+  closedAt    DateTime?
+  cancellationReason String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  buyer       User      @relation(fields: [buyerId], references: [id])
+  quotations  Quotation[]
+
+  @@index([buyerId, status], map: "idx_rfq_buyer_stat")
+  @@index([segment, status], map: "idx_rfq_seg_stat")
 }
 
 model QuotationItem {
@@ -1274,6 +1368,22 @@ model PriceNegotiation {
   @@index([quotationId, createdAt], map: "idx_pn_quot_date")
 }
 
+model ProcurementTemplate {
+  id        String   @id @default(cuid())
+  buyerId   String
+  name      String
+  segment   Segment
+  items     Json     // List of { productId, targetQuantity, targetPrice }
+  
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  buyer     User     @relation(fields: [buyerId], references: [id])
+
+  @@index([buyerId, segment, isDeleted], map: "idx_pt_buyer_seg_del")
+}
+
 // =============================================================================
 // DOMAIN: 14. BUYER CREDIT & LEDGER
 // =============================================================================
@@ -1308,6 +1418,7 @@ model BuyerLedger {
   amount          Decimal         @db.Decimal(18, 2)
   balance         Decimal         @db.Decimal(18, 2)
   description     String?
+  returnRequestId String?
 
   createdAt DateTime @default(now())
   createdBy String?
