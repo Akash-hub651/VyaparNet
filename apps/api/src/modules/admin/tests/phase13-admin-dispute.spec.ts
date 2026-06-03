@@ -48,6 +48,10 @@ describe('Phase 13: Admin Dispute Management + Payout Integration', () => {
           .fn()
           .mockResolvedValue({ sellerId: 'seller-1', segment: 'B2B' }),
       },
+      // INV-S4-OUTBOX: DisputeResolved EventOutbox emitted inside resolveDispute $transaction
+      eventOutbox: {
+        create: vi.fn().mockResolvedValue({ id: 'evt_1' }),
+      },
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -87,6 +91,7 @@ describe('Phase 13: Admin Dispute Management + Payout Integration', () => {
     const mockDispute = {
       id: 'dsp_123',
       orderId: 'ord_123',
+      raisedBy: 'buyer_1', // Required for DisputeResolved EventOutbox payload
       status: DisputeStatus.ESCALATED,
       order: { segment: 'B2B' },
       createdAt: new Date(),

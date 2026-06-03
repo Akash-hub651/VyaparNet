@@ -25,7 +25,9 @@ describe('DisputesService', () => {
         create: vi.fn(),
         findMany: vi.fn(),
         findUnique: vi.fn(),
+        count: vi.fn(),  // INV-S8-7: max 3 disputes per orderId
       },
+
       sellerPayout: { updateMany: vi.fn() },
       eventOutbox: { create: vi.fn() },
       $transaction: vi.fn((cb) => cb(prisma)),
@@ -109,6 +111,8 @@ describe('DisputesService', () => {
       };
 
       prisma.dispute.create.mockResolvedValue(mockCreatedDispute);
+      // INV-S8-7: 0 prior disputes — under the limit of 3
+      prisma.dispute.count.mockResolvedValue(0);
 
       const res = await service.createDispute('buyer_1', {
         orderId: 'ord_1',

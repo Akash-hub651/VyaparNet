@@ -12,8 +12,10 @@ import {
 import { AdminReturnService } from '../services/admin-return.service';
 import { AdminRefundService } from '../services/admin-refund.service';
 import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
-import { RolesGuard } from '../../../shared/guards/roles.guard';
-import { Roles } from '../../../shared/decorators/roles.decorator';
+// INV-S7-1: AdminContextGuard is the ONLY role-enforcement guard on /admin/* routes.
+// FOOTGUN-2-A: NO RolesGuard, NO SellerContextGuard — AdminContextGuard is exclusive.
+import { AdminContextGuard } from '../guards/admin-context.guard';
+import { AdminRateLimitGuard } from '../guards/admin-rate-limit.guard';
 import { ZodValidationPipe } from '../../../shared/pipes/zod-validation.pipe';
 import {
   AdminReturnListQueryDto,
@@ -24,11 +26,10 @@ import {
   AdminReturnInitiateRefundSchema,
 } from '@vyaparnet/types';
 import { AdminIdempotencyGuard } from '../guards/admin-idempotency.guard';
-import { UserRole } from '@vyaparnet/types';
 
 @Controller('admin/returns')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN)
+// Guard stack: JwtAuthGuard → AdminContextGuard → AdminRateLimitGuard (INV-S7-1)
+@UseGuards(JwtAuthGuard, AdminContextGuard, AdminRateLimitGuard)
 export class AdminReturnsController {
   constructor(
     private readonly adminReturnService: AdminReturnService,

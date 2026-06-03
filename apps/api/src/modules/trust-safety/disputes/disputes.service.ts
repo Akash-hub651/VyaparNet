@@ -95,6 +95,17 @@ export class DisputesService {
       );
     }
 
+    // INV-S8-7: Max 3 disputes per orderId (including resolved/closed disputes)
+    const totalDisputeCount = await this.prisma.dispute.count({
+      where: { orderId: dto.orderId },
+    });
+
+    if (totalDisputeCount >= 3) {
+      throw new BadRequestException(
+        'Maximum dispute limit (3) reached for this order',
+      );
+    }
+
     const segment = order.segment;
     const slaHours = this.configService.get('DISPUTE_SLA_HOURS')
       ? parseInt(this.configService.get('DISPUTE_SLA_HOURS')!)
@@ -131,14 +142,17 @@ export class DisputesService {
 
       // 3. Create EventOutbox event (INV-S4-OUTBOX)
       const eventMonth = formatYearMonth(new Date()); // INV-S8-16
-      const deduplicationKey = `DISPUTE_CREATED:${createdDispute.id}:${buyerId}`; // INV-S8-15
+      const deduplicationKey = `DisputeOpened:${createdDispute.id}:${buyerId}`; // INV-S8-15
 
       await tx.eventOutbox.create({
         data: {
-          eventType: 'DISPUTE_CREATED',
+          eventType: 'DisputeOpened', // Must match OUTBOX_EVENT_NOTIFICATION_MAP key
           payload: {
             disputeId: createdDispute.id,
             orderId: createdDispute.orderId,
+            buyerId,
+            segment: createdDispute.segment,
+            priority: createdDispute.priority,
           },
           schemaVersion: '8.0', // INV-S8-14
           eventMonth,

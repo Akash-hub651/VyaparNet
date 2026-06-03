@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { AuditSafeWriterService } from '../../security/audit/audit-safe-writer.service';
+import { AuditAction } from '@vyaparnet/types';
 import { BuyerLedgerType, Prisma, Segment } from '@vyaparnet/database';
 
 @Injectable()
@@ -32,7 +33,7 @@ export class AdminLedgerService {
     await this.auditSafeWriter.safeWrite({
       entityType: 'BUYER',
       entityId: buyerId,
-      action: 'UPDATE' as any,
+      action: AuditAction.UPDATE, // No READ in AuditAction enum; use UPDATE for admin ledger access audit
       actorId: adminId,
       newValue: { action: 'LEDGER_VIEWED', buyerId },
     });
@@ -47,7 +48,8 @@ export class AdminLedgerService {
     buyerId: string,
     amount: string,
     description: string,
-    segment: Segment,
+    // Accepts string for multi-segment future-readiness (no enum lock — INV-S8-17)
+    segment: string,
     adminId: string,
   ) {
     const user = await this.prisma.user.findUnique({ where: { id: buyerId } });
@@ -67,7 +69,7 @@ export class AdminLedgerService {
       const entry = await tx.buyerLedger.create({
         data: {
           buyerId,
-          segment,
+          segment: segment as Segment, // Safe cast: Zod schema validates value before this point
           transactionType: BuyerLedgerType.ADJUSTMENT,
           amount: adjustmentAmount,
           balance: newBalance,
@@ -81,7 +83,7 @@ export class AdminLedgerService {
     await this.auditSafeWriter.safeWrite({
       entityType: 'BUYER',
       entityId: buyerId,
-      action: 'UPDATE' as any,
+      action: AuditAction.UPDATE,
       actorId: adminId,
       newValue: { action: 'LEDGER_CORRECTION', amount, description },
     });

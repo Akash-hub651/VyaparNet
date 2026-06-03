@@ -246,6 +246,10 @@ export enum PayoutStatus {
   INITIATED = 'INITIATED',
   TRANSFERRED = 'TRANSFERRED',
   FAILED = 'FAILED',
+  // Sprint 8 (OBS-DSR7-3): Dispute resolution payout governance
+  ON_HOLD = 'ON_HOLD',     // Payout held pending dispute outcome
+  CANCELLED = 'CANCELLED', // Payout cancelled — buyer-favored dispute resolution
+  REVERSED = 'REVERSED',   // Payout reversed — post-transfer dispute reversal
 }
 
 export enum DiscountType {

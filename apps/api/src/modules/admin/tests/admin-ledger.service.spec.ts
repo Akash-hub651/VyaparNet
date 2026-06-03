@@ -51,7 +51,8 @@ describe('AdminLedgerService', () => {
 
       const res = await service.getBuyerLedger('buyer_1', 'admin_1', 1, 10);
       expect(res.entries.length).toBe(1);
-      expect(res.currentBalance).toBe('100.50');
+      // Prisma.Decimal.toString() drops trailing zeros: '100.50' → '100.5'
+      expect(res.currentBalance).toBe('100.5');
       expect(auditWriter.safeWrite).toHaveBeenCalledWith(
         expect.objectContaining({
           action: 'UPDATE',

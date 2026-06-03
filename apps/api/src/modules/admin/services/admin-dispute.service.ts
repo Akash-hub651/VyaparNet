@@ -20,6 +20,7 @@ import { EvidenceService } from '../../trust-safety/evidence/evidence.service';
 import { NotificationService } from '../../notification/services/notification.service';
 import { MetricsService } from '../../observability/metrics.service';
 import { Logger } from '@nestjs/common';
+import { formatYearMonth } from '../../../utils/date.utils'; // INV-S8-16: eventMonth governance
 
 const DISPUTE_ADMIN_TRANSITIONS: Record<DisputeStatus, DisputeStatus[]> = {
   OPEN: [
@@ -146,7 +147,7 @@ export class AdminDisputeService {
         disputeId: id,
         segment: dispute.order.segment,
       })
-      .catch((err) => console.error(err));
+      .catch((err) => this.logger.error('DisputeEscalated_ADMIN sendDirect failed', err));
 
     return updated;
   }
@@ -187,6 +188,26 @@ export class AdminDisputeService {
           );
         }
       }
+
+      // INV-S4-OUTBOX: DisputeResolved EventOutbox — drives createDisputeResolvedHandler() notification
+      // INV-S8-14: schemaVersion '8.0' for all Sprint 8 events
+      // INV-S8-15: deterministic deduplication key
+      // INV-S8-16: eventMonth required
+      await tx.eventOutbox.create({
+        data: {
+          eventType: 'DisputeResolved',
+          schemaVersion: '8.0',
+          eventMonth: formatYearMonth(new Date()),
+          deduplicationKey: `DisputeResolved:${id}:${adminId}`,
+          payload: {
+            disputeId: id,
+            orderId: dispute.orderId,
+            buyerId: dispute.raisedBy,
+            segment: dispute.order.segment,
+            outcome: outcome === 'BUYER_FAVORED' ? 'BUYER_FAVORED' : 'SELLER_FAVORED',
+          },
+        },
+      });
 
       return updated;
     });
