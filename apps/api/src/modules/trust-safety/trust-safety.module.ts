@@ -34,6 +34,7 @@ import { RefundService } from './refunds/refund.service';
     // Sprint 8: Queues are registered per-domain module
     BullModule.registerQueue({ name: 'return-sla' }),
     BullModule.registerQueue({ name: 'dispute-sla' }),
+    BullModule.registerQueue({ name: 'scorecard' }), // Trigger scorecard updates (Sprint 8)
   ],
   controllers: [ReturnsController, DisputesController],
   providers: [

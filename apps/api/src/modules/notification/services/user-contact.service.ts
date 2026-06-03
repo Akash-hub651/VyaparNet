@@ -77,4 +77,19 @@ export class UserContactService {
     });
     return business?.ownerId ?? null;
   }
+
+  /**
+   * Resolve the Seller ID for an Order.
+   *
+   * Used by: handleReturnApproved to send seller notification.
+   *
+   * INV-S6-15: Direct Prisma read — never imports OrderModule.
+   */
+  async getOrderSellerId(orderId: string): Promise<string | null> {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      select: { sellerId: true },
+    });
+    return order?.sellerId ?? null;
+  }
 }

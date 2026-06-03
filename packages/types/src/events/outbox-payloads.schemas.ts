@@ -217,3 +217,101 @@ export type Sprint7OutboxPayload =
   | { eventType: 'BusinessRejected'; payload: BusinessRejectedPayload }
   | { eventType: 'UserSuspended'; payload: UserSuspendedPayload };
 
+// =============================================================================
+// Sprint 8 EventOutbox Payload Schemas (§15.2)
+// schemaVersion: '8.0'
+// =============================================================================
+
+export const ReturnInitiatedPayloadSchema = z.object({
+  returnId: z.string().cuid(),
+  orderId: z.string().cuid(),
+  buyerId: z.string().cuid(),
+  itemId: z.string().cuid(),
+  segment: z.string(),
+  reason: z.string(),
+  requestedAmount: z.string(), // Decimal as string — never number
+}).strict();
+export type ReturnInitiatedPayload = z.infer<typeof ReturnInitiatedPayloadSchema>;
+
+export const ReturnApprovedPayloadSchema = z.object({
+  returnId: z.string().cuid(),
+  orderId: z.string().cuid(),
+  buyerId: z.string().cuid(),
+  segment: z.string(),
+  adminId: z.string().cuid(),
+}).strict();
+export type ReturnApprovedPayload = z.infer<typeof ReturnApprovedPayloadSchema>;
+
+export const ReturnRejectedPayloadSchema = z.object({
+  returnId: z.string().cuid(),
+  orderId: z.string().cuid(),
+  buyerId: z.string().cuid(),
+  segment: z.string(),
+  reason: z.string(),
+}).strict();
+export type ReturnRejectedPayload = z.infer<typeof ReturnRejectedPayloadSchema>;
+
+export const RefundInitiatedPayloadSchema = z.object({
+  returnId: z.string().cuid(),
+  buyerId: z.string().cuid(),
+  orderId: z.string().cuid(),
+  amount: z.string(), // Decimal as string
+  ledgerEntryId: z.string().cuid(),
+  segment: z.string(),
+}).strict();
+export type RefundInitiatedPayload = z.infer<typeof RefundInitiatedPayloadSchema>;
+
+export const DisputeOpenedPayloadSchema = z.object({
+  disputeId: z.string().cuid(),
+  orderId: z.string().cuid(),
+  buyerId: z.string().cuid(),
+  priority: z.enum(["NORMAL", "HIGH", "CRITICAL"]),
+  segment: z.string(),
+  payoutHeld: z.boolean(),
+}).strict();
+export type DisputeOpenedPayload = z.infer<typeof DisputeOpenedPayloadSchema>;
+
+export const DisputeResolvedPayloadSchema = z.object({
+  disputeId: z.string().cuid(),
+  orderId: z.string().cuid(),
+  buyerId: z.string().cuid(),
+  outcome: z.enum(["RESOLVED_BUYER", "RESOLVED_SELLER"]),
+  resolution: z.string().min(20),
+  payoutCancelled: z.boolean(),
+  payoutReleased: z.boolean(),
+  segment: z.string(),
+}).strict();
+export type DisputeResolvedPayload = z.infer<typeof DisputeResolvedPayloadSchema>;
+
+export const QuoteCreatedPayloadSchema = z.object({
+  quotationId: z.string().cuid(),
+  rfqId: z.string().cuid(),
+  buyerId: z.string().cuid(),
+  sellerId: z.string().cuid(),
+  totalPrice: z.string(), // Decimal as string
+  validUntil: z.string().datetime(),
+  segment: z.string(),
+}).strict();
+export type QuoteCreatedPayload = z.infer<typeof QuoteCreatedPayloadSchema>;
+
+export const QuoteAcceptedPayloadSchema = z.object({
+  quotationId: z.string().cuid(),
+  rfqId: z.string().cuid(),
+  sellerId: z.string().cuid(),
+  buyerId: z.string().cuid(),
+  segment: z.string(),
+}).strict();
+export type QuoteAcceptedPayload = z.infer<typeof QuoteAcceptedPayloadSchema>;
+
+// Sprint 8 complete outbox payload union
+export type Sprint8OutboxPayload =
+  | Sprint7OutboxPayload
+  | { eventType: 'ReturnInitiated'; payload: ReturnInitiatedPayload }
+  | { eventType: 'ReturnApproved'; payload: ReturnApprovedPayload }
+  | { eventType: 'ReturnRejected'; payload: ReturnRejectedPayload }
+  | { eventType: 'RefundInitiated'; payload: RefundInitiatedPayload }
+  | { eventType: 'DisputeOpened'; payload: DisputeOpenedPayload }
+  | { eventType: 'DisputeResolved'; payload: DisputeResolvedPayload }
+  | { eventType: 'QuoteCreated'; payload: QuoteCreatedPayload }
+  | { eventType: 'QuoteAccepted'; payload: QuoteAcceptedPayload };
+

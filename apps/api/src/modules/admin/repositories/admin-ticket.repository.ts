@@ -131,4 +131,54 @@ export class AdminTicketRepository {
       },
     });
   }
+
+  /**
+   * addMessage — append a reply to the ticket thread.
+   */
+  async addMessage(
+    ticketId: string,
+    senderId: string,
+    senderRole: 'ADMIN' | 'BUYER' | 'SELLER',
+    message: string,
+    attachments: string[],
+    clientMessageId: string
+  ) {
+    // OBS-AR8-17: deduplication via findFirst
+    const existing = await this.prisma.supportTicketMessage.findFirst({
+      where: { ticketId, senderId, clientMessageId },
+    });
+    if (existing) return existing;
+
+    return this.prisma.supportTicketMessage.create({
+      data: {
+        ticketId,
+        senderId,
+        senderRole,
+        message,
+        attachments,
+        clientMessageId,
+      },
+    });
+  }
+
+  /**
+   * getMessages — fetch messages for a ticket
+   */
+  async getMessages(ticketId: string) {
+    return this.prisma.supportTicketMessage.findMany({
+      where: { ticketId, isDeleted: false },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  /**
+   * linkDispute — links a dispute to the ticket
+   */
+  async linkDispute(id: string, disputeId: string, tx?: Prisma.TransactionClient) {
+    const client = tx || this.prisma;
+    return client.supportTicket.update({
+      where: { id },
+      data: { disputeId },
+    });
+  }
 }

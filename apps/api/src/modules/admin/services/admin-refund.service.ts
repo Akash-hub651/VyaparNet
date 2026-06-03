@@ -1,13 +1,18 @@
 import { Injectable } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 import { RefundService } from '../../trust-safety/refunds/refund.service';
 import { AuditSafeWriterService } from '../../security/audit/audit-safe-writer.service';
 import { AuditAction } from '@vyaparnet/types';
+import { PrismaService } from '../../../core/prisma/prisma.service';
 
 @Injectable()
 export class AdminRefundService {
   constructor(
     private readonly refundService: RefundService,
     private readonly auditWriter: AuditSafeWriterService,
+    @InjectQueue('scorecard') private readonly scorecardQueue: Queue,
+    private readonly prisma: PrismaService,
   ) {}
 
   /**
@@ -48,6 +53,18 @@ export class AdminRefundService {
         status: { from: 'REFUND_INITIATED', to: 'REFUNDED' },
       },
     });
+
+    const order = await this.prisma.order.findUnique({
+      where: { id: updatedReturn.orderId },
+      select: { sellerId: true, segment: true },
+    });
+
+    if (order) {
+      await this.scorecardQueue.add('increment-return-rate', {
+        businessId: order.sellerId,
+        segment: order.segment,
+      });
+    }
 
     return updatedReturn;
   }

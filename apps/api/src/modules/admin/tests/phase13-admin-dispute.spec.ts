@@ -7,6 +7,7 @@ import { AuditSafeWriterService } from '../../security/audit/audit-safe-writer.s
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { EvidenceService } from '../../trust-safety/evidence/evidence.service';
 import { NotificationService } from '../../notification/services/notification.service';
+import { getQueueToken } from '@nestjs/bull';
 import { DisputeStatus, PayoutStatus, DisputePriority } from '@vyaparnet/database';
 import { AuditAction } from '@vyaparnet/types';
 
@@ -16,6 +17,7 @@ describe('Phase 13: Admin Dispute Management + Payout Integration', () => {
   let payoutRepo: jest.Mocked<AdminPayoutRepository>;
   let auditWriter: jest.Mocked<AuditSafeWriterService>;
   let prisma: any;
+  const mockScorecardQueue = { add: vi.fn() };
 
   beforeEach(async () => {
     disputeRepo = {
@@ -36,6 +38,9 @@ describe('Phase 13: Admin Dispute Management + Payout Integration', () => {
       sellerPayout: {
         findFirst: vi.fn(),
       },
+      order: {
+        findUnique: vi.fn().mockResolvedValue({ sellerId: 'seller-1', segment: 'B2B' }),
+      },
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -47,6 +52,7 @@ describe('Phase 13: Admin Dispute Management + Payout Integration', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: EvidenceService, useValue: {} },
         { provide: NotificationService, useValue: {} },
+        { provide: getQueueToken('scorecard'), useValue: mockScorecardQueue },
       ],
     }).compile();
 

@@ -116,6 +116,7 @@ import { TrustSafetyModule } from '../trust-safety/trust-safety.module';
     TrustSafetyModule,
     BullModule.registerQueue({ name: 'invoice-generation' }),
     BullModule.registerQueue({ name: 'notifications-failed' }), // Phase 10: DLQ reader (INV-S7-24)
+    BullModule.registerQueue({ name: 'scorecard' }), // Phase 8: Trigger scorecard updates
   ],
   controllers: [
     AdminBusinessesController, // Phase 3: KYC

@@ -4,6 +4,7 @@ import type { Queue } from 'bull';
 import { OrderStatus, PaymentStatus } from '@vyaparnet/database';
 import type { TechnicalExceptionDto } from '@vyaparnet/types';
 import { PrismaService } from '../../../core/prisma/prisma.service';
+import { RedisService } from '../../../core/redis/redis.service';
 import { AdminMetricsService } from './admin-metrics.service';
 import { AdminDisputeRepository } from '../repositories/admin-dispute.repository';
 
@@ -69,6 +70,7 @@ export class AdminExceptionService {
     private readonly notificationsFailedQueue: Queue,
     private readonly metrics: AdminMetricsService,
     private readonly disputeRepo: AdminDisputeRepository,
+    private readonly redis: RedisService,
   ) {}
 
   /**
@@ -240,13 +242,16 @@ export class AdminExceptionService {
       this.logger.error({ err: error.message }, 'ADMIN_DLQ_DEPTH_FETCH_FAILED');
     }
 
+    const returnSlaRaw = await this.redis.get('return_sla_breach_count');
+    const disputeSlaRaw = await this.redis.get('dispute_sla_breach_count');
+
     this.logger.log({ dlqDepth }, 'ADMIN_TECHNICAL_EXCEPTIONS_QUERIED');
 
     return {
       dlqDepth,
       openDisputes: await this.disputeRepo.countOpen(),
-      returnSlaBreaches: 0, // Sprint 8: BullMQ return-sla worker increments Redis counter
-      disputeSlaBreaches: 0, // Sprint 8: BullMQ dispute-sla worker increments Redis counter
+      returnSlaBreaches: returnSlaRaw ? parseInt(returnSlaRaw, 10) : 0,
+      disputeSlaBreaches: disputeSlaRaw ? parseInt(disputeSlaRaw, 10) : 0,
     };
   }
 }

@@ -5,6 +5,8 @@ import { DisputeStatus, Segment, DisputePriority, PayoutStatus } from '@vyaparne
 import { AuditSafeWriterService } from '../../security/audit/audit-safe-writer.service';
 import { AuditAction } from '@vyaparnet/types';
 import { PrismaService } from '../../../core/prisma/prisma.service';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 import { EvidenceService } from '../../trust-safety/evidence/evidence.service';
 import { NotificationService } from '../../notification/services/notification.service';
 
@@ -26,6 +28,7 @@ export class AdminDisputeService {
     private readonly prisma: PrismaService,
     private readonly evidenceService: EvidenceService,
     private readonly notificationService: NotificationService,
+    @InjectQueue('scorecard') private readonly scorecardQueue: Queue,
   ) {}
 
   async listDisputes(page: number, limit: number, segment?: Segment, status?: DisputeStatus, priority?: DisputePriority) {
@@ -135,6 +138,19 @@ export class AdminDisputeService {
       oldValue: { status: dispute.status, resolution: dispute.resolution },
       newValue: { status: nextStatus, resolution: resolutionText },
     });
+
+    if (nextStatus === DisputeStatus.RESOLVED_BUYER) {
+      const order = await this.prisma.order.findUnique({
+        where: { id: dispute.orderId },
+        select: { sellerId: true, segment: true },
+      });
+      if (order) {
+        await this.scorecardQueue.add('increment-dispute-rate', {
+          businessId: order.sellerId,
+          segment: order.segment,
+        });
+      }
+    }
 
     return result;
   }

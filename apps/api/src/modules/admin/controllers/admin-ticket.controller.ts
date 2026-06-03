@@ -21,7 +21,11 @@ import {
   AdminAssignTicketDtoSchema,
   AdminResolveTicketDtoSchema,
   AdminEscalateTicketDtoSchema,
+  AdminLinkDisputeDtoSchema,
 } from '@vyaparnet/types';
+import { SupportTicketReplySchema } from '@vyaparnet/types';
+import { Post, UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
 
 /**
  * AdminTicketsController — Phase 11 Support Ticket Workflow.
@@ -126,5 +130,58 @@ export class AdminTicketsController {
       });
     }
     return this.ticketService.escalateTicket(id, parsed.data, req.user.id, req);
+  }
+
+  /**
+   * POST /admin/tickets/:id/reply
+   */
+  @Post(':id/reply')
+  @UseGuards(AdminIdempotencyGuard)
+  @UseInterceptors(FilesInterceptor('attachments', 5))
+  @HttpCode(HttpStatus.CREATED)
+  async replyToTicket(
+    @Param('id') id: string,
+    @Body() rawBody: Record<string, unknown>,
+    @Req() req: Request & { user: { id: string } },
+    @UploadedFiles() files?: Express.Multer.File[],
+  ) {
+    const parsed = SupportTicketReplySchema.safeParse(rawBody);
+    if (!parsed.success) {
+      throw new UnprocessableEntityException({
+        code: 'VALIDATION_ERROR',
+        errors: parsed.error.issues,
+      });
+    }
+    return this.ticketService.replyToTicket(id, parsed.data, req.user.id, files || []);
+  }
+
+  /**
+   * GET /admin/tickets/:id/messages
+   */
+  @Get(':id/messages')
+  @HttpCode(HttpStatus.OK)
+  async getTicketMessages(@Param('id') id: string) {
+    return this.ticketService.getTicketMessages(id);
+  }
+
+  /**
+   * POST /admin/tickets/:id/link-dispute
+   */
+  @Post(':id/link-dispute')
+  @UseGuards(AdminIdempotencyGuard)
+  @HttpCode(HttpStatus.OK)
+  async linkDispute(
+    @Param('id') id: string,
+    @Body() rawBody: Record<string, unknown>,
+    @Req() req: Request & { user: { id: string }; idempotencyKey: string },
+  ) {
+    const parsed = AdminLinkDisputeDtoSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      throw new UnprocessableEntityException({
+        code: 'VALIDATION_ERROR',
+        errors: parsed.error.issues,
+      });
+    }
+    return this.ticketService.linkDispute(id, parsed.data, req.user.id, req);
   }
 }

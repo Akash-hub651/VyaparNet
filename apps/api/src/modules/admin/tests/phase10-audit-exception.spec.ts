@@ -11,6 +11,7 @@ import { PrismaService } from '../../../core/prisma/prisma.service';
 import { getQueueToken } from '@nestjs/bull';
 import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
 import { AdminContextGuard } from '../guards/admin-context.guard';
+import { RedisService } from '../../../core/redis/redis.service';
 
 // ─── Test fixtures ────────────────────────────────────────────────────────────
 
@@ -176,42 +177,44 @@ describe('AdminAuditController — Phase 10 Validation Gate', () => {
 
 describe('AdminExceptionService.getTechnicalExceptions — Phase 10 DLQ', () => {
   let service: AdminExceptionService;
-  let prismaService: any;
+  let prisma: any;
   let dlqQueue: any;
-  let metricsService: any;
+  let metrics: any;
+  let disputeRepo: any;
+  let redis: any;
 
   beforeEach(async () => {
+    prisma = {
+      order: { findMany: vi.fn() },
+      payment: { findMany: vi.fn() },
+      business: { findMany: vi.fn() },
+    };
+
     dlqQueue = {
-      getFailed: vi.fn().mockResolvedValue([
-        { id: 'job-1', name: 'SendNotification', failedReason: 'Connection refused' },
-        { id: 'job-2', name: 'SendNotification', failedReason: 'Timeout' },
-      ]),
+      getFailed: vi.fn().mockResolvedValue([]),
     };
 
-    prismaService = {
-      order: { findMany: vi.fn().mockResolvedValue([]) },
-      payment: { findMany: vi.fn().mockResolvedValue([]) },
-      business: { findMany: vi.fn().mockResolvedValue([]) },
-    };
-
-    metricsService = {
+    metrics = {
       exceptionCenterStuckOrders: { set: vi.fn() },
       exceptionCenterFailedPayments: { set: vi.fn() },
+    };
+
+    disputeRepo = {
+      countOpen: vi.fn().mockResolvedValue(42),
+    };
+
+    redis = {
+      get: vi.fn().mockResolvedValue('0'),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AdminExceptionService,
-        { provide: PrismaService, useValue: prismaService },
-        {
-          provide: getQueueToken('notifications-failed'), // INV-S7-24: LOCKED name
-          useValue: dlqQueue,
-        },
-        { provide: AdminMetricsService, useValue: metricsService },
-        {
-          provide: AdminDisputeRepository,
-          useValue: { countOpen: vi.fn().mockResolvedValue(0) },
-        },
+        { provide: PrismaService, useValue: prisma },
+        { provide: getQueueToken('notifications-failed'), useValue: dlqQueue },
+        { provide: AdminMetricsService, useValue: metrics },
+        { provide: AdminDisputeRepository, useValue: disputeRepo },
+        { provide: RedisService, useValue: redis },
       ],
     }).compile();
 
@@ -222,27 +225,26 @@ describe('AdminExceptionService.getTechnicalExceptions — Phase 10 DLQ', () => 
     const result = await service.getTechnicalExceptions();
 
     expect(dlqQueue.getFailed).toHaveBeenCalledWith(0, 100);
-    expect(result.dlqDepth).toBe(2); // 2 mock failed jobs
-  });
-
-  it('openDisputes is 0 placeholder (Sprint 8 scope)', async () => {
-    const result = await service.getTechnicalExceptions();
-
-    expect(result.openDisputes).toBe(0);
+    expect(result.dlqDepth).toBe(0);
+    expect(result.openDisputes).toBe(42);
+    expect(result.returnSlaBreaches).toBe(0);
+    expect(result.disputeSlaBreaches).toBe(0);
   });
 
   it('FOOTGUN-10-B: getTechnicalExceptions returns fresh data (no caching)', async () => {
-    // Call twice — should call getFailed both times (no cache)
-    dlqQueue.getFailed
-      .mockResolvedValueOnce([{ id: 'job-1' }])
-      .mockResolvedValueOnce([{ id: 'job-1' }, { id: 'job-2' }]);
-
-    const r1 = await service.getTechnicalExceptions();
-    const r2 = await service.getTechnicalExceptions();
-
-    expect(dlqQueue.getFailed).toHaveBeenCalledTimes(2);
-    expect(r1.dlqDepth).toBe(1);
-    expect(r2.dlqDepth).toBe(2); // Different result = not cached
+    dlqQueue.getFailed.mockResolvedValue([1, 2, 3]);
+    redis.get.mockImplementation((key) => {
+      if (key === 'return_sla_breach_count') return Promise.resolve('5');
+      if (key === 'dispute_sla_breach_count') return Promise.resolve('2');
+      return Promise.resolve('0');
+    });
+    disputeRepo.countOpen.mockResolvedValue(7);
+    
+    const res = await service.getTechnicalExceptions();
+    expect(res.dlqDepth).toBe(3);
+    expect(res.openDisputes).toBe(7);
+    expect(res.returnSlaBreaches).toBe(5);
+    expect(res.disputeSlaBreaches).toBe(2);
   });
 
   it('DLQ fetch failure is non-fatal (returns dlqDepth=0)', async () => {

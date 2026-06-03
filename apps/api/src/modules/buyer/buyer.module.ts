@@ -13,6 +13,10 @@ import { AuthModule } from '../identity/auth/auth.module';
 import { TrustSafetyModule } from '../trust-safety/trust-safety.module';
 import { BuyerLedgerController } from './controllers/buyer-ledger.controller';
 import { BuyerLedgerService } from './services/buyer-ledger.service';
+import { BuyerTicketsController } from './controllers/buyer-tickets.controller';
+import { BuyerTicketService } from './services/buyer-ticket.service';
+import { BuyerTicketRepository } from './repositories/buyer-ticket.repository';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
@@ -23,9 +27,10 @@ import { BuyerLedgerService } from './services/buyer-ledger.service';
     ObservabilityModule,
     AuthModule,
     TrustSafetyModule,
+    NotificationModule,
   ],
-  controllers: [BuyerOrdersController, BuyerDashboardController, BuyerLedgerController], // FIX-5: §7.1 structure
-  providers: [BuyerOrderService, BuyerOrderRepository, BuyerReorderService, BuyerLedgerService],
+  controllers: [BuyerOrdersController, BuyerDashboardController, BuyerLedgerController, BuyerTicketsController], // FIX-5: §7.1 structure
+  providers: [BuyerOrderService, BuyerOrderRepository, BuyerReorderService, BuyerLedgerService, BuyerTicketService, BuyerTicketRepository],
   exports: [BuyerOrderService, BuyerReorderService],
 })
 export class BuyerModule {}

@@ -58,3 +58,12 @@ export const AdminEscalateTicketDtoSchema = z
 export type AdminEscalateTicketDto = z.infer<
   typeof AdminEscalateTicketDtoSchema
 >;
+
+// PATCH /admin/tickets/:id/link-dispute
+export const AdminLinkDisputeDtoSchema = z
+  .object({
+    disputeId: z.string().min(1, "disputeId is required"),
+  })
+  .strict();
+
+export type AdminLinkDisputeDto = z.infer<typeof AdminLinkDisputeDtoSchema>;

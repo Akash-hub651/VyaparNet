@@ -6,6 +6,8 @@ import { AdminTicketRepository } from '../repositories/admin-ticket.repository';
 import { AdminTicketsController } from '../controllers/admin-ticket.controller';
 import { AuditSafeWriterService } from '../../security/audit/audit-safe-writer.service';
 import { PrismaService } from '../../../core/prisma/prisma.service';
+import { EvidenceService } from '../../trust-safety/evidence/evidence.service';
+import { NotificationService } from '../../notification/services/notification.service';
 import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
 import { AdminContextGuard } from '../guards/admin-context.guard';
 import { AdminIdempotencyGuard } from '../guards/admin-idempotency.guard';
@@ -33,6 +35,8 @@ describe('AdminTicketService — Phase 11', () => {
   let repo: any;
   let prisma: any;
   let auditWriter: any;
+  let notificationService: any;
+  let evidenceService: any;
 
   beforeEach(async () => {
     repo = {
@@ -51,12 +55,22 @@ describe('AdminTicketService — Phase 11', () => {
       safeWrite: vi.fn().mockResolvedValue(undefined),
     };
 
+    notificationService = {
+      sendDirect: vi.fn(),
+    };
+
+    evidenceService = {
+      getEvidenceUrl: vi.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AdminTicketService,
         { provide: AdminTicketRepository, useValue: repo },
         { provide: PrismaService, useValue: prisma },
         { provide: AuditSafeWriterService, useValue: auditWriter },
+        { provide: NotificationService, useValue: notificationService },
+        { provide: EvidenceService, useValue: evidenceService },
       ],
     }).compile();
 

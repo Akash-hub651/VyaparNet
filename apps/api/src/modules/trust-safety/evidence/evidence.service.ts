@@ -24,7 +24,7 @@ export class EvidenceService {
    * Returns the S3 key.
    */
   async uploadEvidence(
-    entityType: 'return' | 'dispute',
+    entityType: 'return' | 'dispute' | 'ticket',
     entityId: string,
     fileBuffer: Buffer,
     originalFilename: string,

@@ -68,4 +68,16 @@ export class SellerScorecardWorker implements OnModuleInit {
     await this.sellerScorecardService.runFullScorecardComputation();
     this.logger.log('seller-scorecard-cron finished');
   }
+
+  @Process('increment-return-rate')
+  async handleReturnRate(job: Job<{ businessId: string; segment: any }>): Promise<void> {
+    this.logger.log({ businessId: job.data.businessId }, 'Processing increment-return-rate');
+    await this.sellerScorecardService.incrementReturnRate(job.data.businessId, job.data.segment);
+  }
+
+  @Process('increment-dispute-rate')
+  async handleDisputeRate(job: Job<{ businessId: string; segment: any }>): Promise<void> {
+    this.logger.log({ businessId: job.data.businessId }, 'Processing increment-dispute-rate');
+    await this.sellerScorecardService.incrementDisputeRate(job.data.businessId, job.data.segment);
+  }
 }

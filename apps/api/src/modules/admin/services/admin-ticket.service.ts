@@ -8,7 +8,11 @@ import type {
   AdminTicketListQuery,
   AdminResolveTicketDto,
   AdminEscalateTicketDto,
+  AdminLinkDisputeDto,
 } from '@vyaparnet/types';
+import { SupportTicketReplyDto } from '@vyaparnet/types';
+import { NotificationService } from '../../notification/services/notification.service';
+import { EvidenceService } from '../../trust-safety/evidence/evidence.service';
 
 /**
  * AdminTicketService — Phase 11 Support Ticket Workflow
@@ -21,6 +25,8 @@ export class AdminTicketService {
     private readonly ticketRepo: AdminTicketRepository,
     private readonly prisma: PrismaService,
     private readonly auditWriter: AuditSafeWriterService,
+    private readonly notificationService: NotificationService,
+    private readonly evidenceService: EvidenceService,
   ) {}
 
   /**
@@ -181,6 +187,82 @@ export class AdminTicketService {
         priority: updated.priority,
         reason: dto.escalationReason,
       },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'] as string,
+    });
+
+    return updated;
+  }
+
+  /**
+   * getTicketMessages
+   */
+  async getTicketMessages(id: string) {
+    const ticket = await this.ticketRepo.findById(id);
+    if (!ticket) throw new NotFoundException({ code: 'TICKET_NOT_FOUND', id });
+    return this.ticketRepo.getMessages(id);
+  }
+
+  /**
+   * replyToTicket
+   */
+  async replyToTicket(id: string, dto: SupportTicketReplyDto, adminUserId: string, files: Express.Multer.File[] = []) {
+    const ticket = await this.ticketRepo.findById(id);
+    if (!ticket) throw new NotFoundException({ code: 'TICKET_NOT_FOUND', id });
+
+    // Enforce INV-S8-13 and INV-S8-30 through EvidenceService
+    const attachmentKeys: string[] = [];
+    if (files.length > 0) {
+      for (const file of files) {
+        const key = await this.evidenceService.uploadEvidence(
+          'ticket',
+          id,
+          file.buffer,
+          file.originalname
+        );
+        attachmentKeys.push(key);
+      }
+    }
+
+    const message = await this.ticketRepo.addMessage(
+      id,
+      adminUserId,
+      'ADMIN',
+      dto.message,
+      attachmentKeys,
+      dto.clientMessageId
+    );
+
+    // Send direct notification (NO EventOutbox) (D-TKT-2)
+    await this.notificationService.sendDirect(
+      ticket.userId,
+      'SupportTicketReplyReceived',
+      { ticketId: id, messageId: message.id }
+    );
+
+    return message;
+  }
+
+  /**
+   * linkDispute
+   */
+  async linkDispute(id: string, dto: AdminLinkDisputeDto, adminUserId: string, req: Request) {
+    const ticket = await this.ticketRepo.findById(id);
+    if (!ticket) throw new NotFoundException({ code: 'TICKET_NOT_FOUND', id });
+
+    const dispute = await this.prisma.dispute.findUnique({ where: { id: dto.disputeId } });
+    if (!dispute) throw new NotFoundException({ code: 'DISPUTE_NOT_FOUND', id: dto.disputeId });
+
+    const updated = await this.ticketRepo.linkDispute(id, dto.disputeId);
+
+    await this.auditWriter.safeWrite({
+      actorId: adminUserId,
+      action: 'TICKET_DISPUTE_LINKED' as any,
+      entityType: 'SupportTicket',
+      entityId: id,
+      entityName: ticket.subject,
+      oldValue: { disputeId: ticket.disputeId },
+      newValue: { disputeId: updated.disputeId },
       ipAddress: req.ip,
       userAgent: req.headers['user-agent'] as string,
     });

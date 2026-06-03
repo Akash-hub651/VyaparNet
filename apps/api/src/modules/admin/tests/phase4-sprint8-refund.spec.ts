@@ -5,11 +5,13 @@ import { BuyerLedgerRepository } from '../../trust-safety/refunds/buyer-ledger.r
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { UnprocessableEntityException } from '@nestjs/common';
 import { ReturnStatus, Prisma } from '@vyaparnet/database';
+import { getQueueToken } from '@nestjs/bull';
 
 describe('Phase 4: Refund + BuyerLedger Integration', () => {
   let refundService: RefundService;
   let buyerLedgerRepo: BuyerLedgerRepository;
   let prisma: any;
+  let scorecardQueue: any;
 
   beforeEach(async () => {
     buyerLedgerRepo = {
@@ -33,11 +35,16 @@ describe('Phase 4: Refund + BuyerLedger Integration', () => {
       },
     };
 
+    scorecardQueue = {
+      add: vi.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RefundService,
         { provide: BuyerLedgerRepository, useValue: buyerLedgerRepo },
         { provide: PrismaService, useValue: prisma },
+        { provide: getQueueToken('scorecard'), useValue: scorecardQueue },
       ],
     }).compile();
 

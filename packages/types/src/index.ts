@@ -62,3 +62,6 @@ export * from './trust-safety/dispute.schemas';
 // Ledger (Sprint 8)
 export * from './ledger/buyer-ledger.schemas';
 
+// Support
+export * from './support/ticket.schemas';
+

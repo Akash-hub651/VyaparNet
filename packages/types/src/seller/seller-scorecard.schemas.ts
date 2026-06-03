@@ -7,6 +7,8 @@ export const SellerScoreSchema = z.object({
   dispatchSpeedScore: z.number().int().min(0).max(100),
   deliveryQualityScore: z.number().int().min(0).max(100),
   acceptanceRate: z.number().int().min(0).max(100),
+  returnRate: z.number().int().nonnegative(),
+  disputeRate: z.number().int().nonnegative(),
   orderCount: z.number().int().nonnegative(),
   calculatedAt: z.string().datetime(),
   previousCompositeScore: z.number().int().min(0).max(100).nullable(),
@@ -26,6 +28,8 @@ export const SellerScoreResponseSchema = z.object({
   dispatchSpeedScore: z.number().int().min(0).max(100),
   deliveryQualityScore: z.number().int().min(0).max(100),
   acceptanceRate: z.number().int().min(0).max(100),
+  returnRate: z.number().int().nonnegative().optional(),
+  disputeRate: z.number().int().nonnegative().optional(),
   orderCount: z.number().int().nonnegative(),
   calculatedAt: z.string(), // ISO8601
   narrative: ScorecardNarrativeSchema,

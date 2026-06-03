@@ -25,6 +25,16 @@ import { handleBusinessRejected } from '../handlers/business-rejected.handler';
 import { handleProductApproved } from '../handlers/product-approved.handler';
 import { handleProductRejected } from '../handlers/product-rejected.handler';
 import { handleUserSuspended } from '../handlers/user-suspended.handler';
+import {
+  createReturnInitiatedHandler,
+  createReturnApprovedHandler,
+  createReturnRejectedHandler,
+  createRefundInitiatedHandler,
+  createDisputeOpenedHandler,
+  createDisputeResolvedHandler,
+  createQuoteCreatedHandler,
+  createQuoteAcceptedHandler,
+} from '../handlers/sprint8.handlers';
 
 /**
  * OUTBOX_EVENT_NOTIFICATION_MAP — routes EventOutbox eventType to handler function.
@@ -88,4 +98,14 @@ export const OUTBOX_EVENT_NOTIFICATION_MAP: Record<
   // OrderConfirmed   — NOT here. OrderStatusChanged handles CONFIRMED status.
   // OrderCancelled   — NOT here. OrderStatusChanged handles CANCELLED status.
   // OrderDelivered   — Sprint 7 Admin feature handled via admin-order service.
+
+  // ─── Sprint 8 Additions ──────────────────────────────────────────────────────
+  ReturnInitiated: createReturnInitiatedHandler(),
+  ReturnApproved: createReturnApprovedHandler(),
+  ReturnRejected: createReturnRejectedHandler(),
+  RefundInitiated: createRefundInitiatedHandler(),
+  DisputeOpened: createDisputeOpenedHandler(),
+  DisputeResolved: createDisputeResolvedHandler(),
+  QuoteCreated: createQuoteCreatedHandler(),
+  QuoteAccepted: createQuoteAcceptedHandler(),
 };
