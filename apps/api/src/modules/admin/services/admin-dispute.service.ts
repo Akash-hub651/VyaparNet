@@ -147,7 +147,9 @@ export class AdminDisputeService {
         disputeId: id,
         segment: dispute.order.segment,
       })
-      .catch((err) => this.logger.error('DisputeEscalated_ADMIN sendDirect failed', err));
+      .catch((err) =>
+        this.logger.error('DisputeEscalated_ADMIN sendDirect failed', err),
+      );
 
     return updated;
   }
@@ -204,7 +206,8 @@ export class AdminDisputeService {
             orderId: dispute.orderId,
             buyerId: dispute.raisedBy,
             segment: dispute.order.segment,
-            outcome: outcome === 'BUYER_FAVORED' ? 'BUYER_FAVORED' : 'SELLER_FAVORED',
+            outcome:
+              outcome === 'BUYER_FAVORED' ? 'BUYER_FAVORED' : 'SELLER_FAVORED',
           },
         },
       });
@@ -241,10 +244,14 @@ export class AdminDisputeService {
       outcome: outcome === 'BUYER_FAVORED' ? 'BUYER' : 'SELLER',
     });
 
-    const resolutionTimeSecs = (Date.now() - dispute.createdAt.getTime()) / 1000;
-    this.metricsService.disputeResolutionTimeSeconds.observe({
-      segment: dispute.order.segment,
-    }, resolutionTimeSecs);
+    const resolutionTimeSecs =
+      (Date.now() - dispute.createdAt.getTime()) / 1000;
+    this.metricsService.disputeResolutionTimeSeconds.observe(
+      {
+        segment: dispute.order.segment,
+      },
+      resolutionTimeSecs,
+    );
 
     // 2. Structured Log & Trace
     this.logger.log({

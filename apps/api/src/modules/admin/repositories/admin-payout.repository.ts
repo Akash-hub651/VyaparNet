@@ -65,7 +65,7 @@ export class AdminPayoutRepository {
 
     const payouts = await this.prisma.sellerPayout.findMany({
       where: {
-        ...(filter.status ? { status: filter.status as PayoutStatus } : {}),
+        ...(filter.status ? { status: filter.status } : {}),
         ...(filter.sellerId ? { sellerId: filter.sellerId } : {}),
       },
       include: {

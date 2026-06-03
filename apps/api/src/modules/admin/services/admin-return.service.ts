@@ -46,12 +46,12 @@ export class AdminReturnService {
     newStatus: ReturnStatus,
   ) {
     this.metricsService.returnRequestsTotal.inc({ segment, status: newStatus });
-    
+
     // Log for QC approval rate if applicable
     if (newStatus === ReturnStatus.QC_APPROVED) {
       // It's a gauge so we might need a different approach, but as per spec:
       // return_qc_approval_rate is gauge, we'll just track it simply or skip setting it precisely here
-      // since it's tricky to calculate rate in real-time without a query. 
+      // since it's tricky to calculate rate in real-time without a query.
       // Actually, spec says: Approved / total QC decisions. I'll just leave it for now or set it to 1.
     }
 
@@ -133,7 +133,14 @@ export class AdminReturnService {
       newValue: { status: ReturnStatus.APPROVED_FOR_PICKUP },
     });
 
-    this.logStatusChange(id, adminId, returnReq.orderId, returnReq.segment as Segment, returnReq.status, ReturnStatus.APPROVED_FOR_PICKUP);
+    this.logStatusChange(
+      id,
+      adminId,
+      returnReq.orderId,
+      returnReq.segment as Segment,
+      returnReq.status,
+      ReturnStatus.APPROVED_FOR_PICKUP,
+    );
 
     return updated;
   }
@@ -159,7 +166,14 @@ export class AdminReturnService {
       newValue: { status: ReturnStatus.QC_REJECTED },
     });
 
-    this.logStatusChange(id, adminId, returnReq.orderId, returnReq.segment as Segment, returnReq.status, ReturnStatus.QC_REJECTED);
+    this.logStatusChange(
+      id,
+      adminId,
+      returnReq.orderId,
+      returnReq.segment as Segment,
+      returnReq.status,
+      ReturnStatus.QC_REJECTED,
+    );
 
     return updated;
   }
@@ -215,7 +229,14 @@ export class AdminReturnService {
       newValue: { status: ReturnStatus.RECEIVED_AT_QC },
     });
 
-    this.logStatusChange(id, adminId, returnReq.orderId, returnReq.segment as Segment, returnReq.status, ReturnStatus.RECEIVED_AT_QC);
+    this.logStatusChange(
+      id,
+      adminId,
+      returnReq.orderId,
+      returnReq.segment as Segment,
+      returnReq.status,
+      ReturnStatus.RECEIVED_AT_QC,
+    );
 
     return result;
   }
@@ -254,8 +275,18 @@ export class AdminReturnService {
       },
     });
 
-    this.metricsService.returnRefundAmountTotal.inc({ segment: returnReq.segment as Segment }, parseFloat(approvedAmount.toString()));
-    this.logStatusChange(id, adminId, returnReq.orderId, returnReq.segment as Segment, returnReq.status, ReturnStatus.QC_APPROVED);
+    this.metricsService.returnRefundAmountTotal.inc(
+      { segment: returnReq.segment as Segment },
+      parseFloat(approvedAmount.toString()),
+    );
+    this.logStatusChange(
+      id,
+      adminId,
+      returnReq.orderId,
+      returnReq.segment as Segment,
+      returnReq.status,
+      ReturnStatus.QC_APPROVED,
+    );
 
     return updated;
   }
@@ -305,7 +336,14 @@ export class AdminReturnService {
       newValue: { status: ReturnStatus.CLOSED },
     });
 
-    this.logStatusChange(id, adminId, returnReq.orderId, returnReq.segment as Segment, returnReq.status, ReturnStatus.CLOSED);
+    this.logStatusChange(
+      id,
+      adminId,
+      returnReq.orderId,
+      returnReq.segment as Segment,
+      returnReq.status,
+      ReturnStatus.CLOSED,
+    );
 
     return updated;
   }

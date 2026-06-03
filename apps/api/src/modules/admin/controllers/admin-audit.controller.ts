@@ -53,7 +53,7 @@ export class AdminAuditController {
       });
     }
 
-    const query = result.data as AdminAuditLogListQuery;
+    const query = result.data;
 
     // Belt-and-suspenders: reject limit > 100 (also enforced by Zod max)
     if ((query.limit ?? 20) > 100) {

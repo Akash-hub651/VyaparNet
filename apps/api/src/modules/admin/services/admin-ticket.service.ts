@@ -96,7 +96,7 @@ export class AdminTicketService {
       oldValue: { assignedTo: ticket.assignedTo, status: ticket.status },
       newValue: { assignedTo: adminUserId, status: updated.status },
       ipAddress: req.ip,
-      userAgent: req.headers['user-agent'] as string,
+      userAgent: req.headers['user-agent'],
     });
 
     return updated;
@@ -140,7 +140,7 @@ export class AdminTicketService {
       oldValue: { status: ticket.status },
       newValue: { status: updated.status },
       ipAddress: req.ip,
-      userAgent: req.headers['user-agent'] as string,
+      userAgent: req.headers['user-agent'],
     });
 
     return updated;
@@ -188,7 +188,7 @@ export class AdminTicketService {
         reason: dto.escalationReason,
       },
       ipAddress: req.ip,
-      userAgent: req.headers['user-agent'] as string,
+      userAgent: req.headers['user-agent'],
     });
 
     return updated;
@@ -280,7 +280,7 @@ export class AdminTicketService {
       oldValue: { disputeId: ticket.disputeId },
       newValue: { disputeId: updated.disputeId },
       ipAddress: req.ip,
-      userAgent: req.headers['user-agent'] as string,
+      userAgent: req.headers['user-agent'],
     });
 
     return updated;

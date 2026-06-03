@@ -106,7 +106,7 @@ export class RefundService {
       // Append to BuyerLedger (INV-S8-2)
       const ledgerEntry = await this.buyerLedgerRepo.create(tx, {
         buyerId: returnRequest.order.buyerId,
-        segment: returnRequest.order.segment as Segment,
+        segment: returnRequest.order.segment,
         transactionType: BuyerLedgerType.REFUND,
         orderId: returnRequest.orderId,
         amount: approvedAmountDecimal,
@@ -139,15 +139,17 @@ export class RefundService {
 
     // ─── Phase 9: Observability & Traces (§20.1, §20.2, §20.4, §20.5) ────────
     // 1. Metric: Increment refund initiated counters
-    this.metricsService.refundInitiatedTotal.inc({ segment: returnRequest.order.segment });
-    
+    this.metricsService.refundInitiatedTotal.inc({
+      segment: returnRequest.order.segment,
+    });
+
     // OBS-AR8-18: parseFloat ONLY for Prometheus gauge serialisation
     this.metricsService.refundAmountTotal.set(
-      { segment: returnRequest.order.segment }, 
-      parseFloat(approvedAmountDecimal.toString())
+      { segment: returnRequest.order.segment },
+      parseFloat(approvedAmountDecimal.toString()),
     );
     this.metricsService.buyerLedgerEntriesTotal.inc({ type: 'REFUND' });
-    
+
     // 2. Structured Log & Trace
     this.logger.log({
       level: 'info',

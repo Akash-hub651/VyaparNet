@@ -79,7 +79,9 @@ export class ReturnsService {
       const returnWindowDays = this.configService.get('RETURN_WINDOW_DAYS')
         ? parseInt(this.configService.get('RETURN_WINDOW_DAYS')!)
         : 7;
-      const windowEnd = new Date(order.deliveredAt.getTime() + returnWindowDays * 24 * 60 * 60 * 1000);
+      const windowEnd = new Date(
+        order.deliveredAt.getTime() + returnWindowDays * 24 * 60 * 60 * 1000,
+      );
       if (new Date() > windowEnd) {
         throw new BadRequestException('Return window has expired');
       }
@@ -181,8 +183,11 @@ export class ReturnsService {
 
     // ─── Phase 9: Observability & Traces (§20.1, §20.2, §20.4, §20.5) ────────
     // 1. Metric: Increment return requests counter
-    this.metricsService.returnRequestsTotal.inc({ segment, status: returnReq.status });
-    
+    this.metricsService.returnRequestsTotal.inc({
+      segment,
+      status: returnReq.status,
+    });
+
     // 2. Structured Log & Trace
     this.logger.log({
       level: 'info',
@@ -202,7 +207,7 @@ export class ReturnsService {
       orderId: returnReq.orderId,
       itemId: returnReq.itemId,
       sellerId: returnReq.sellerId,
-      reason: returnReq.reason as any,
+      reason: returnReq.reason,
       description: returnReq.description,
       images: [], // Images are managed separately via Evidence API
       status: returnReq.status,
@@ -258,7 +263,7 @@ export class ReturnsService {
       orderId: returnReq.orderId,
       itemId: returnReq.itemId,
       sellerId: returnReq.sellerId,
-      reason: returnReq.reason as any,
+      reason: returnReq.reason,
       description: returnReq.description,
       images: [], // Controller will inject signed URLs if needed
       status: returnReq.status,

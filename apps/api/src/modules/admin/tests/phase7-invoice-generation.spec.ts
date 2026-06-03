@@ -123,7 +123,7 @@ describe('AdminInvoiceService — Phase 7 Tax Invoice Generation', () => {
         ...makeCompletedOrder(),
         shippingAddressSnapshot: { stateCode: '27' }, // Same as platform (Maharashtra)
       };
-      const result = service.calculateGst(order as any);
+      const result = service.calculateGst(order);
 
       expect(result.isInterState).toBe(false);
       expect(result.cgstAmount.greaterThan(0)).toBe(true);
@@ -140,7 +140,7 @@ describe('AdminInvoiceService — Phase 7 Tax Invoice Generation', () => {
         ...makeCompletedOrder(),
         shippingAddressSnapshot: { stateCode: '29' }, // Karnataka ≠ Maharashtra (27)
       };
-      const result = service.calculateGst(order as any);
+      const result = service.calculateGst(order);
 
       expect(result.isInterState).toBe(true);
       expect(result.igstAmount.greaterThan(0)).toBe(true);

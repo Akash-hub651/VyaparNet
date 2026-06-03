@@ -25,7 +25,7 @@ describe('DisputesService', () => {
         create: vi.fn(),
         findMany: vi.fn(),
         findUnique: vi.fn(),
-        count: vi.fn(),  // INV-S8-7: max 3 disputes per orderId
+        count: vi.fn(), // INV-S8-7: max 3 disputes per orderId
       },
 
       sellerPayout: { updateMany: vi.fn() },

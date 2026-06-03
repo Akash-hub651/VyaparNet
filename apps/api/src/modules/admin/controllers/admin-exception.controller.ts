@@ -161,7 +161,7 @@ export class AdminExceptionsController {
       oldValue: { status: 'FAILED', failedReason: job.failedReason },
       newValue: { status: 'RETRIED', attemptsMade: job.attemptsMade },
       ipAddress: req.ip,
-      userAgent: req.headers['user-agent'] as string,
+      userAgent: req.headers['user-agent'],
     });
 
     return { jobId, status: 'RETRIED' };

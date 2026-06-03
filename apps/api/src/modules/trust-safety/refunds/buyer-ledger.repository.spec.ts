@@ -44,7 +44,7 @@ describe('BuyerLedgerRepository', () => {
         description: 'Test',
         orderId: 'ord_1',
       };
-      
+
       const tx = prisma;
       tx.buyerLedger.create.mockResolvedValue(mockEntry);
 

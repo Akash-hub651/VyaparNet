@@ -102,7 +102,10 @@ describe('Phase 6: Support Ticket Threads - Buyer', () => {
     it('should deduplicate messages using clientMessageId (OBS-AR8-17)', async () => {
       // Simulate that the repository will return the existing message instead of creating a new one
       ticketRepo.findByIdForBuyer.mockResolvedValue({ id: 't1' });
-      ticketRepo.addMessage.mockResolvedValue({ id: 'existing_m1', clientMessageId: 'dedup_123' });
+      ticketRepo.addMessage.mockResolvedValue({
+        id: 'existing_m1',
+        clientMessageId: 'dedup_123',
+      });
 
       const result = await service.replyToTicket(
         't1',
@@ -117,7 +120,10 @@ describe('Phase 6: Support Ticket Threads - Buyer', () => {
         [],
         'dedup_123',
       );
-      expect(result).toEqual({ id: 'existing_m1', clientMessageId: 'dedup_123' });
+      expect(result).toEqual({
+        id: 'existing_m1',
+        clientMessageId: 'dedup_123',
+      });
     });
   });
 });

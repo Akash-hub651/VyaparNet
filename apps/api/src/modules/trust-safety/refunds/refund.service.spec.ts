@@ -85,15 +85,26 @@ describe('RefundService', () => {
     it('should successfully initiate refund and calculate balance inside transaction (INV-S8-40)', async () => {
       prisma.returnRequest.findUnique.mockResolvedValue(mockReturn);
       buyerLedgerRepo.findByReturnId.mockResolvedValue(null);
-      buyerLedgerRepo.findLatestBalance.mockResolvedValue(new Prisma.Decimal('50.00'));
-      prisma.returnRequest.update.mockResolvedValue({ ...mockReturn, status: ReturnStatus.REFUND_INITIATED });
-      prisma.payment.findFirst.mockResolvedValue({ id: 'pay_1', status: 'CAPTURED' });
+      buyerLedgerRepo.findLatestBalance.mockResolvedValue(
+        new Prisma.Decimal('50.00'),
+      );
+      prisma.returnRequest.update.mockResolvedValue({
+        ...mockReturn,
+        status: ReturnStatus.REFUND_INITIATED,
+      });
+      prisma.payment.findFirst.mockResolvedValue({
+        id: 'pay_1',
+        status: 'CAPTURED',
+      });
       buyerLedgerRepo.create.mockResolvedValue({ id: 'ledger_1' });
 
       const result = await service.initiateRefund('ret_1', '100.00', 'actor_1');
 
       expect(prisma.$transaction).toHaveBeenCalled();
-      expect(buyerLedgerRepo.findLatestBalance).toHaveBeenCalledWith(prisma, 'buyer_1');
+      expect(buyerLedgerRepo.findLatestBalance).toHaveBeenCalledWith(
+        prisma,
+        'buyer_1',
+      );
       expect(buyerLedgerRepo.create).toHaveBeenCalledWith(
         prisma,
         expect.objectContaining({

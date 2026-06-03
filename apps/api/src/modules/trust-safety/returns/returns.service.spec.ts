@@ -184,7 +184,7 @@ describe('ReturnsService', () => {
       const res = await service.createReturnRequest('buyer_1', {
         orderId: 'ord_1',
         itemId: 'item_1',
-        reason: 'DAMAGED' as any,
+        reason: 'DAMAGED',
         description: 'Broken',
         images: [],
         requestedRefundAmount: '100.50',

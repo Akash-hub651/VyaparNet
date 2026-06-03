@@ -173,11 +173,7 @@ describe('Phase 5: ProcurementModule + RFQ (INV-S8)', () => {
         ],
       };
 
-      const result = await service.submitQuotation(
-        'rfq-1',
-        'seller-1',
-        dto as any,
-      );
+      const result = await service.submitQuotation('rfq-1', 'seller-1', dto);
       expect(result).toEqual(quoteData);
     });
   });

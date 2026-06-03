@@ -66,7 +66,13 @@ describe('AdminLedgerService', () => {
     it('should throw NotFound if buyer does not exist', async () => {
       prisma.user.findUnique.mockResolvedValue(null);
       await expect(
-        service.applyCorrection('buyer_1', '10.0', 'desc', 'TEXTILE' as Segment, 'admin_1'),
+        service.applyCorrection(
+          'buyer_1',
+          '10.0',
+          'desc',
+          'TEXTILE',
+          'admin_1',
+        ),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -77,8 +83,14 @@ describe('AdminLedgerService', () => {
       });
       prisma.buyerLedger.create.mockResolvedValue({ id: 'adj_1' });
 
-      const res = await service.applyCorrection('buyer_1', '50.00', 'desc', 'TEXTILE' as Segment, 'admin_1');
-      
+      const res = await service.applyCorrection(
+        'buyer_1',
+        '50.00',
+        'desc',
+        'TEXTILE',
+        'admin_1',
+      );
+
       expect(prisma.$transaction).toHaveBeenCalled();
       expect(prisma.buyerLedger.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -92,7 +104,11 @@ describe('AdminLedgerService', () => {
       expect(auditWriter.safeWrite).toHaveBeenCalledWith(
         expect.objectContaining({
           action: 'UPDATE',
-          newValue: { action: 'LEDGER_CORRECTION', amount: '50.00', description: 'desc' },
+          newValue: {
+            action: 'LEDGER_CORRECTION',
+            amount: '50.00',
+            description: 'desc',
+          },
         }),
       );
       expect(res.id).toBe('adj_1');

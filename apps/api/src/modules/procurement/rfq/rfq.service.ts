@@ -41,7 +41,7 @@ export class RfqService {
       validUntil: new Date(dto.validUntil),
       status: RfqStatus.OPEN,
     });
-    
+
     // ─── Phase 9: Observability (§20.1) ────────
     this.metricsService.rfqCreatedTotal.inc({ segment: dto.segment });
 
@@ -108,7 +108,7 @@ export class RfqService {
             rfqId,
             quotationId,
             buyerId,
-          } as Prisma.InputJsonValue,
+          },
           schemaVersion: '8.0',
           eventVersion: '1.0',
           deduplicationKey: `QuoteAccepted:${quotationId}`,
@@ -162,9 +162,14 @@ export class RfqService {
       ipAddress,
     );
 
-    const quotation = await this.quotationRepo.findByIdForBuyer(quotationId, buyerId);
+    const quotation = await this.quotationRepo.findByIdForBuyer(
+      quotationId,
+      buyerId,
+    );
     if (quotation) {
-      this.metricsService.quoteConvertedToOrderTotal.inc({ segment: quotation.segment });
+      this.metricsService.quoteConvertedToOrderTotal.inc({
+        segment: quotation.segment,
+      });
     }
 
     return order;
@@ -247,7 +252,7 @@ export class RfqService {
             rfqId,
             quotationId: q.id,
             sellerId: business.id,
-          } as Prisma.InputJsonValue,
+          },
           schemaVersion: '8.0',
           eventVersion: '1.0',
           deduplicationKey: `QuoteCreated:${q.id}`,

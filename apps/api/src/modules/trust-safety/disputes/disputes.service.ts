@@ -165,11 +165,11 @@ export class DisputesService {
 
     // ─── Phase 9: Observability & Traces (§20.1, §20.2, §20.4, §20.5) ────────
     // 1. Metric: Increment dispute opened counter
-    this.metricsService.disputeOpenedTotal.inc({ 
-      segment, 
-      priority: dispute.priority 
+    this.metricsService.disputeOpenedTotal.inc({
+      segment,
+      priority: dispute.priority,
     });
-    
+
     // 2. Structured Log & Trace
     this.logger.log({
       level: 'info',
