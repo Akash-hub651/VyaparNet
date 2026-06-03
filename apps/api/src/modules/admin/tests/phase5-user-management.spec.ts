@@ -11,6 +11,7 @@ import { AdminMetricsService } from '../services/admin-metrics.service';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { RedisService } from '../../../core/redis/redis.service';
 import { NotificationService } from '../../notification/services/notification.service';
+import { BuyerLedgerRepository } from '../../trust-safety/refunds/buyer-ledger.repository';
 import { AuditSafeWriterService } from '../../security/audit/audit-safe-writer.service';
 import { UserRole } from '@vyaparnet/database';
 
@@ -105,7 +106,14 @@ describe('AdminUserService — Phase 5 User Management', () => {
         { provide: RedisService, useValue: redisService },
         { provide: NotificationService, useValue: notificationService },
         { provide: AuditSafeWriterService, useValue: auditWriter },
-        { provide: AdminMetricsService, useValue: metrics },
+        {
+          provide: AdminMetricsService,
+          useValue: metrics,
+        },
+        {
+          provide: BuyerLedgerRepository,
+          useValue: { findManyForBuyer: vi.fn(), findLatestBalance: vi.fn() },
+        },
       ],
     }).compile();
 

@@ -651,6 +651,339 @@ export class OrdersService {
     this.metrics.orderCancelledTotal.inc({ reason, actor: 'USER' });
   }
 
+  async createFromQuotation(
+    quotationId: string,
+    userId: string,
+    dto: { shippingAddressId: string; billingAddressId: string; paymentMethod: 'COD' | 'ONLINE_UPI' | 'ONLINE_CARD'; clientIdempotencyKey: string },
+    ipAddress: string,
+  ): Promise<OrderResponseDto> {
+    this.metrics.checkoutFunnelStepTotal.inc({
+      step: 'create_order_from_rfq_initiated',
+    });
+
+    const idempotencyKey = `order_idem:${userId}:${dto.clientIdempotencyKey}`;
+    const cached = await this.redis.get(idempotencyKey);
+    if (cached) {
+      this.logger.log({ userId, idempotencyKey }, 'Order idempotency hit — returning cached response');
+      return JSON.parse(cached);
+    }
+
+    await this.checkCheckoutRate(userId);
+
+    const quotation = await this.prisma.quotation.findFirst({
+      where: { id: quotationId, buyerId: userId },
+      include: { items: true },
+    });
+
+    if (!quotation) {
+      throw new NotFoundException({ code: 'QUOTATION_NOT_FOUND' });
+    }
+
+    if (quotation.status !== 'ACCEPTED_BY_BUYER') {
+      throw new BadRequestException({ code: 'QUOTATION_NOT_ACCEPTED', message: 'Quotation must be accepted before conversion' });
+    }
+
+    if (quotation.validUntil < new Date()) {
+      throw new BadRequestException({ code: 'QUOTATION_EXPIRED' });
+    }
+
+    const productIds = quotation.items.map((i) => i.productId);
+    const products = await this.prisma.product.findMany({
+      where: { id: { in: productIds } },
+    });
+    
+    if (products.length !== productIds.length) {
+      throw new BadRequestException({ code: 'PRODUCT_NOT_FOUND' });
+    }
+    const productMap = new Map(products.map((p) => [p.id, p]));
+
+    let subtotal = new Prisma.Decimal(0);
+    let taxAmount = new Prisma.Decimal(0);
+
+    const orderItemData = quotation.items.map((item) => {
+      const product = productMap.get(item.productId)!;
+      const unitPrice = item.unitPrice; // Use quoted price, NOT live product price
+      const gstPercent = product.gstPercent ?? new Prisma.Decimal(0);
+      const lineTotal = unitPrice.mul(item.quantity);
+      const gstAmount = lineTotal.mul(gstPercent).div(100);
+      subtotal = subtotal.add(lineTotal);
+      taxAmount = taxAmount.add(gstAmount);
+
+      return {
+        productId: item.productId,
+        sellerId: quotation.sellerId,
+        productName: item.productName,
+        productSlug: item.productSlug,
+        quantity: item.quantity,
+        unitPrice,
+        totalPrice: lineTotal,
+        discountAmount: new Prisma.Decimal(0),
+        hsnCode: product.hsnCode ?? null,
+        gstPercent,
+        gstAmount,
+      };
+    });
+
+    const grandTotal = subtotal.add(taxAmount);
+
+    const shippingAddress = await this.prisma.address.findFirst({
+      where: { id: dto.shippingAddressId, userId, isDeleted: false },
+    });
+    if (!shippingAddress) throw new BadRequestException({ code: 'ADDRESS_NOT_FOUND', message: 'Shipping address not found' });
+    
+    const billingAddress = dto.billingAddressId === dto.shippingAddressId ? shippingAddress : await this.prisma.address.findFirst({
+      where: { id: dto.billingAddressId, userId, isDeleted: false },
+    });
+    if (!billingAddress) throw new BadRequestException({ code: 'ADDRESS_NOT_FOUND', message: 'Billing address not found' });
+
+    const addressSnapshot = {
+      name: shippingAddress.name,
+      line1: shippingAddress.line1,
+      line2: shippingAddress.line2,
+      city: shippingAddress.city,
+      state: shippingAddress.state,
+      pincode: shippingAddress.pincode,
+      country: shippingAddress.country,
+    };
+
+    const reservations: Array<{ id: string; productId: string }> = [];
+    try {
+      for (const item of quotation.items) {
+        const result = await this.inventoryService.reserve({
+          productId: item.productId,
+          quantity: item.quantity,
+          segment: quotation.segment,
+          orderId: undefined,
+          orderType: 'RFQ',
+          userId,
+          ipAddress,
+          idempotencyKey: `reserve-${dto.clientIdempotencyKey}-${item.productId}`,
+          paymentMethod: dto.paymentMethod,
+        });
+        reservations.push({ id: result.reservationId, productId: item.productId });
+      }
+    } catch (err) {
+      for (const res of reservations) {
+        try {
+          await this.inventoryService.release(res.id, 'ORDER_CANCELLED', 'SYSTEM');
+        } catch (releaseErr) {
+          this.logger.error({ reservationId: res.id, err: releaseErr }, 'Failed to release reservation');
+        }
+      }
+      throw err;
+    }
+
+    const isOnline = dto.paymentMethod !== 'COD';
+    let createdOrder: Order;
+    try {
+      createdOrder = await this.prisma.$transaction(
+        async (tx) => {
+          let order!: Order;
+          for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+              order = await tx.order.create({
+                data: {
+                  orderNumber: generateOrderNumber(),
+                  segment: quotation.segment as any,
+                  status: isOnline ? 'PLACED' : 'CONFIRMED',
+                  buyerId: userId,
+                  sellerId: quotation.sellerId,
+                  shippingAddressSnapshot: addressSnapshot,
+                  billingAddressSnapshot: addressSnapshot,
+                  subtotal,
+                  taxAmount,
+                  shippingCost: new Prisma.Decimal(0),
+                  discount: new Prisma.Decimal(0),
+                  grandTotal,
+                  placedAt: new Date(),
+                  confirmedAt: isOnline ? undefined : new Date(),
+                  orderMonth: formatYearMonth(new Date()),
+                },
+              });
+              break;
+            } catch (err) {
+              if (isPrismaUniqueConstraintError(err, 'orderNumber') && attempt < 2) {
+                this.metrics.orderNumberCollisionTotal.inc();
+                continue;
+              }
+              throw err;
+            }
+          }
+
+          await tx.orderItem.createMany({
+            data: orderItemData.map((item) => ({
+              orderId: order.id,
+              productId: item.productId,
+              sellerId: item.sellerId,
+              productName: item.productName,
+              productSlug: item.productSlug,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              totalPrice: item.totalPrice,
+              discount: item.discountAmount,
+              hsnCode: item.hsnCode,
+              gstPercent: item.gstPercent,
+              gstAmount: item.gstAmount,
+            })),
+          });
+
+          if (!isOnline) {
+            await tx.payment.create({
+              data: {
+                orderId: order.id,
+                amount: grandTotal,
+                method: 'COD' as any,
+                gateway: 'COD',
+                status: 'CAPTURED' as any,
+                capturedAt: new Date(),
+                idempotencyKey: `cod-${order.id}`,
+                gatewayRef: `cod-${order.id}`,
+              },
+            });
+            for (const reservation of reservations) {
+              await this.inventoryService.consume(reservation.id, userId, tx);
+            }
+          }
+
+          const historyMonth = formatYearMonth(new Date());
+          await tx.orderStatusHistory.create({
+            data: {
+              orderId: order.id,
+              statusFrom: null,
+              statusTo: 'PLACED',
+              actorId: userId,
+              actorRole: 'BUYER' as any,
+              timestamp: new Date(),
+              historyMonth,
+            },
+          });
+
+          if (!isOnline) {
+            await tx.orderStatusHistory.create({
+              data: {
+                orderId: order.id,
+                statusFrom: 'PLACED',
+                statusTo: 'CONFIRMED',
+                actorId: userId,
+                actorRole: 'SYSTEM' as any,
+                reason: 'COD',
+                timestamp: new Date(),
+                historyMonth,
+              },
+            });
+          }
+
+          const eventMonth = formatYearMonth(new Date());
+          await tx.eventOutbox.create({
+            data: {
+              eventType: 'OrderCreated',
+              eventVersion: '1.0',
+              schemaVersion: '8.0', // Phase 5 Requirement
+              payload: {
+                orderId: order.id,
+                orderNumber: order.orderNumber,
+                buyerId: userId,
+                segment: quotation.segment,
+                items: orderItemData.map((i) => ({
+                  productId: i.productId,
+                  productName: i.productName,
+                  quantity: i.quantity,
+                  unitPrice: i.unitPrice.toNumber(),
+                  totalPrice: i.totalPrice.toNumber(),
+                  hsnCode: i.hsnCode,
+                  gstPercent: i.gstPercent.toNumber(),
+                })),
+                subtotal: subtotal.toNumber(),
+                taxAmount: taxAmount.toNumber(),
+                grandTotal: grandTotal.toNumber(),
+                paymentMethod: dto.paymentMethod,
+                shippingAddress: addressSnapshot,
+                placedAt: new Date().toISOString(),
+                orderMonth: eventMonth,
+                buyerCode: maskBuyerId(userId),
+                isRfq: true,
+                quotationId: quotation.id,
+              },
+              deduplicationKey: `order-created-${order.id}`,
+              eventMonth,
+              status: 'PENDING',
+            },
+          });
+
+          if (!isOnline) {
+            await tx.eventOutbox.create({
+              data: {
+                eventType: 'OrderConfirmed',
+                eventVersion: '1.0',
+                schemaVersion: '8.0',
+                payload: { orderId: order.id, paymentMethod: dto.paymentMethod, confirmedAt: new Date().toISOString(), grandTotal: grandTotal.toNumber() },
+                deduplicationKey: `order-confirmed-${order.id}`,
+                eventMonth,
+                status: 'PENDING',
+              },
+            });
+          }
+
+          await tx.quotation.update({
+            where: { id: quotation.id },
+            data: { status: 'CONVERTED_TO_ORDER', orderId: order.id },
+          });
+
+          await tx.rfq.update({
+            where: { id: quotation.rfqId! },
+            data: { status: 'CLOSED', closedAt: new Date() },
+          });
+
+          return order;
+        },
+        { timeout: 10000, isolationLevel: 'ReadCommitted' },
+      );
+    } catch (txErr) {
+      this.logger.error({ userId, paymentMethod: dto.paymentMethod, err: txErr }, 'Order $transaction failed');
+      for (const res of reservations) {
+        try {
+          await this.inventoryService.release(res.id, 'ORDER_CANCELLED', 'SYSTEM');
+        } catch (releaseErr) {
+          this.logger.error({ reservationId: res.id, err: releaseErr }, 'Failed to release reservation during post-tx compensation');
+        }
+      }
+      throw txErr;
+    }
+
+    const baseResponse: OrderResponseDto = {
+      orderId: createdOrder.id,
+      orderNumber: createdOrder.orderNumber,
+      status: createdOrder.status,
+      grandTotal: grandTotal.toNumber(),
+      paymentMethod: dto.paymentMethod,
+    };
+
+    if (!isOnline) {
+      await this.redis.set(idempotencyKey, JSON.stringify(baseResponse), 'EX', 3600).catch(() => null);
+      return baseResponse;
+    }
+
+    const paymentIdempotencyKey = `${dto.clientIdempotencyKey}-payment`;
+    let paymentUrl: string | undefined;
+    try {
+      const paymentResult = await this.paymentService.initiatePayment(
+        createdOrder.id,
+        grandTotal.toNumber(),
+        dto.paymentMethod,
+        paymentIdempotencyKey,
+        userId,
+      );
+      paymentUrl = paymentResult.paymentUrl;
+    } catch (paymentErr) {
+      this.logger.error({ orderId: createdOrder.id, userId, err: paymentErr }, 'Payment initiation failed after order creation');
+    }
+
+    const onlineResponse: OrderResponseDto = { ...baseResponse, paymentUrl };
+    await this.redis.set(idempotencyKey, JSON.stringify(onlineResponse), 'EX', 3600).catch(() => null);
+
+    return onlineResponse;
+  }
+
   // HARDENED (INV-21): checkout_rate:{userId} — atomic Lua INCR+EXPIRE
   private async checkCheckoutRate(userId: string): Promise<void> {
     const key = `checkout_rate:${userId}`;

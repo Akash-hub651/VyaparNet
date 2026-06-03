@@ -41,7 +41,7 @@ export class AdminTicketRepository {
       ],
       include: {
         user: { select: { id: true, email: true, role: true } },
-        assignee: { select: { id: true, email: true } }, // Prisma generated: SupportTicketInclude.assignee (from @relation("TicketAssignee"))
+        assigned: { select: { id: true, email: true } }, // Prisma generated: SupportTicketInclude.assigned (from @relation("TicketAssignee"))
       },
     });
 
@@ -66,7 +66,7 @@ export class AdminTicketRepository {
       where: { id },
       include: {
         user: { select: { id: true, email: true, role: true } },
-        assignee: { select: { id: true, email: true } }, // Prisma generated: SupportTicketInclude.assignee
+        assigned: { select: { id: true, email: true } }, // Prisma generated: SupportTicketInclude.assigned
       },
     });
   }

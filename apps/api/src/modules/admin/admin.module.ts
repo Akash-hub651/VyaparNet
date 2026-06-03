@@ -64,6 +64,17 @@ import { AdminTicketsController } from './controllers/admin-ticket.controller';
 import { AdminTicketRepository } from './repositories/admin-ticket.repository';
 import { AdminTicketService } from './services/admin-ticket.service';
 
+import { AdminReturnsController } from './controllers/admin-returns.controller';
+import { AdminReturnRepository } from './repositories/admin-return.repository';
+import { AdminRefundService } from './services/admin-refund.service';
+import { AdminReturnService } from './services/admin-return.service';
+
+// Phase 13: Dispute Management
+import { AdminDisputesController } from './controllers/admin-disputes.controller';
+import { AdminDisputeService } from './services/admin-dispute.service';
+
+import { TrustSafetyModule } from '../trust-safety/trust-safety.module';
+
 /**
  * AdminModule — Sprint 7 Admin System & Platform Governance.
  *
@@ -102,6 +113,7 @@ import { AdminTicketService } from './services/admin-ticket.service';
     ObservabilityModule,
     AuditModule,
     AuthModule,
+    TrustSafetyModule,
     BullModule.registerQueue({ name: 'invoice-generation' }),
     BullModule.registerQueue({ name: 'notifications-failed' }), // Phase 10: DLQ reader (INV-S7-24)
   ],
@@ -116,6 +128,8 @@ import { AdminTicketService } from './services/admin-ticket.service';
     AdminAuditController,      // Phase 10: Audit Log Viewer
     AdminExceptionsController, // Phase 10: Exception Center + DLQ
     AdminTicketsController,    // Phase 11: Support Tickets
+    AdminReturnsController,    // Phase 12: Return Management
+    AdminDisputesController,   // Phase 13: Dispute Management
   ],
   providers: [
     // Guards
@@ -162,6 +176,15 @@ import { AdminTicketService } from './services/admin-ticket.service';
     // Phase 11: Support Ticket Workflow
     AdminTicketRepository,
     AdminTicketService,
+
+    // Phase 12: Return Management
+    AdminReturnRepository,
+    AdminReturnService,
+
+    // Phase 13: Dispute Management
+    AdminPayoutService,
+    AdminDisputeService,
+    AdminRefundService,
   ],
   exports: [], // FOOTGUN-2-B: AdminModule is a leaf, it exports nothing.
 })

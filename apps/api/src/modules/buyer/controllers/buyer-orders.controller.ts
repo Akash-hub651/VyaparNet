@@ -66,4 +66,12 @@ export class BuyerOrdersController {
   ) {
     return this.buyerReorderService.reorder(orderId, buyerId);
   }
+
+  @Get(':id/refund-status')
+  async getRefundStatus(
+    @CurrentUser('id') buyerId: string,
+    @Param('id') orderId: string,
+  ): Promise<any> {
+    return this.buyerOrderService.getRefundStatus(orderId, buyerId);
+  }
 }

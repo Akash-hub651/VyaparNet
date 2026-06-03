@@ -1003,6 +1003,7 @@ model ReturnRequest {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  segment   Segment?
 
   order     Order @relation(fields: [orderId], references: [id])
   // FIX #12: Active relation to inspector
@@ -1208,6 +1209,7 @@ model Dispute {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  segment   Segment?
 
   order    Order @relation(fields: [orderId], references: [id])
   // FIX #11: Active relation to resolver

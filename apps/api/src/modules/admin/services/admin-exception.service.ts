@@ -5,6 +5,7 @@ import { OrderStatus, PaymentStatus } from '@vyaparnet/database';
 import type { TechnicalExceptionDto } from '@vyaparnet/types';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { AdminMetricsService } from './admin-metrics.service';
+import { AdminDisputeRepository } from '../repositories/admin-dispute.repository';
 
 // ─── Exception DTOs ──────────────────────────────────────────────────────────
 
@@ -67,6 +68,7 @@ export class AdminExceptionService {
     @InjectQueue('notifications-failed') // FOOTGUN-10-C: name LOCKED (INV-S7-24)
     private readonly notificationsFailedQueue: Queue,
     private readonly metrics: AdminMetricsService,
+    private readonly disputeRepo: AdminDisputeRepository,
   ) {}
 
   /**
@@ -242,7 +244,7 @@ export class AdminExceptionService {
 
     return {
       dlqDepth,
-      openDisputes: 0, // Sprint 8: AdminDisputeRepository.countOpen() fills this
+      openDisputes: await this.disputeRepo.countOpen(),
       returnSlaBreaches: 0, // Sprint 8: BullMQ return-sla worker increments Redis counter
       disputeSlaBreaches: 0, // Sprint 8: BullMQ dispute-sla worker increments Redis counter
     };

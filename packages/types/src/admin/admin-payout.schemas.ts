@@ -26,3 +26,9 @@ export type AdminPayoutListQuery = z.infer<typeof AdminPayoutListQuerySchema>;
 // PATCH /admin/payouts/:id/initiate — marks payout as INITIATED
 export const InitiatePayoutDtoSchema = z.object({}).strict();
 export type InitiatePayoutDto = z.infer<typeof InitiatePayoutDtoSchema>;
+
+export const AdminPayoutReverseSchema = z.object({
+  reversalReason: z.string().min(10, 'Reversal reason is mandatory and must be at least 10 characters').max(2000), // INV-S8-32
+}).strict();
+
+export type AdminPayoutReverseDto = z.infer<typeof AdminPayoutReverseSchema>;

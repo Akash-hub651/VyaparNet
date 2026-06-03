@@ -20,6 +20,8 @@ import {
   AdminSuspendUserDtoSchema,
   AdminChangeRoleDtoSchema,
 } from '@vyaparnet/types';
+import { BuyerLedgerListQuerySchema, BuyerLedgerListQueryDto } from '@vyaparnet/types';
+import { ZodValidationPipe } from '../../../shared/pipes/zod-validation.pipe';
 
 /**
  * AdminUsersController — User Management & Suspension workflow.
@@ -70,6 +72,18 @@ export class AdminUsersController {
   @Get(':id')
   async getUserDetail(@Param('id') id: string) {
     return this.userService.getUserDetail(id);
+  }
+
+  /**
+   * GET /admin/buyers/:id/ledger
+   * Returns paginated ledger for a buyer.
+   */
+  @Get('buyers/:id/ledger')
+  async getBuyerLedger(
+    @Param('id') id: string,
+    @Query(new ZodValidationPipe(BuyerLedgerListQuerySchema)) query: BuyerLedgerListQueryDto,
+  ): Promise<any> {
+    return this.userService.getBuyerLedger(id, query.page, query.limit, query.segment);
   }
 
   /**

@@ -15,6 +15,7 @@ import {
   UserDetailDto,
   UserListResponse,
 } from '../repositories/admin-user.repository';
+import { BuyerLedgerRepository } from '../../trust-safety/refunds/buyer-ledger.repository';
 import { formatYearMonth } from '../../order/order-state-machine';
 import {
   AuditAction,
@@ -58,6 +59,7 @@ export class AdminUserService {
     private readonly auditWriter: AuditSafeWriterService,
     private readonly userRepo: AdminUserRepository,
     private readonly metrics: AdminMetricsService,
+    private readonly buyerLedgerRepo: BuyerLedgerRepository,
   ) {}
 
   // ─── GET /admin/users ─────────────────────────────────────────────────────
@@ -352,5 +354,15 @@ export class AdminUserService {
       },
       'ADMIN_USER_ROLE_CHANGED',
     );
+  }
+
+  /**
+   * Retrieves paginated buyer ledger for an admin view.
+   */
+  async getBuyerLedger(buyerId: string, page: number, limit: number, segment?: any): Promise<any> {
+    const user = await this.prisma.user.findUnique({ where: { id: buyerId } });
+    if (!user) throw new NotFoundException('Buyer not found');
+
+    return this.buyerLedgerRepo.findManyForBuyer(buyerId, { page, limit, segment });
   }
 }

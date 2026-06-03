@@ -13,6 +13,8 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { OrderModule } from './modules/order/order.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { BuyerModule } from './modules/buyer/buyer.module';
+// import { ScorecardModule } from './modules/scorecard/scorecard.module';
+import { TrustSafetyModule } from './modules/trust-safety/trust-safety.module';
 import { SellerModule } from './modules/seller/seller.module';
 import { ObservabilityModule } from './modules/observability/observability.module';
 import { NotificationModule } from './modules/notification/notification.module';
@@ -58,6 +60,8 @@ import { PermissionsGuard } from './shared/guards/permissions.guard';
     PaymentModule, // Sprint 4
     ObservabilityModule, // Sprint 4 Observability
     BuyerModule, // Sprint 5
+    // ScorecardModule,
+    TrustSafetyModule,
     SellerModule, // Sprint 5
     // INV-S6-1: Pure consumer — NEVER writes EventOutbox. Registered in Sprint 6.
     NotificationModule, // Sprint 6

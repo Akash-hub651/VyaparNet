@@ -1,0 +1,185 @@
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { PrismaService } from '../../../core/prisma/prisma.service';
+import { ConfigService } from '@nestjs/config';
+import { CreateDisputeDto, DisputeResponseDto } from '@vyaparnet/types';
+import { DisputeStatus, OrderStatus, DisputePriority, PayoutStatus } from '@vyaparnet/database';
+import { formatYearMonth } from '../../../utils/date.utils';
+
+@Injectable()
+export class DisputesService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  validateDisputeTransition(currentStatus: DisputeStatus, newStatus: DisputeStatus): void {
+    const validTransitions: Record<DisputeStatus, DisputeStatus[]> = {
+      OPEN: ['UNDER_REVIEW', 'RESOLVED_BUYER', 'RESOLVED_SELLER'],
+      UNDER_REVIEW: ['ESCALATED', 'RESOLVED_BUYER', 'RESOLVED_SELLER'],
+      ESCALATED: ['RESOLVED_BUYER', 'RESOLVED_SELLER'],
+      RESOLVED_BUYER: ['CLOSED'],
+      RESOLVED_SELLER: ['CLOSED'],
+      CLOSED: [],
+    };
+
+    if (!validTransitions[currentStatus]?.includes(newStatus)) {
+      throw new BadRequestException(`Invalid dispute state transition from ${currentStatus} to ${newStatus}`);
+    }
+  }
+
+  async createDispute(buyerId: string, dto: CreateDisputeDto): Promise<DisputeResponseDto> {
+    const order = await this.prisma.order.findUnique({
+      where: { id: dto.orderId },
+    });
+
+    if (!order) throw new NotFoundException('Order not found');
+    if (order.buyerId !== buyerId) throw new ForbiddenException('Not authorized');
+
+    if (order.status !== OrderStatus.DELIVERED) {
+      throw new BadRequestException('Order has not been delivered yet');
+    }
+
+    // Rule: Mutual Exclusion (INV-S8-39) - No active return on the order
+    const activeReturn = await this.prisma.returnRequest.findFirst({
+      where: {
+        orderId: dto.orderId,
+        status: {
+          notIn: ['CLOSED', 'QC_REJECTED'],
+        },
+      },
+    });
+
+    if (activeReturn) {
+      throw new BadRequestException('Cannot initiate dispute while an active return request exists for this order');
+    }
+
+    // Rule: Duplicate active dispute check
+    const existingDispute = await this.prisma.dispute.findFirst({
+      where: {
+        orderId: dto.orderId,
+        status: {
+          in: ['OPEN', 'UNDER_REVIEW', 'ESCALATED'],
+        },
+      },
+    });
+
+    if (existingDispute) {
+      throw new BadRequestException('An active dispute already exists for this order');
+    }
+
+    const segment = order.segment;
+    const slaHours = this.configService.get('DISPUTE_SLA_HOURS') ? parseInt(this.configService.get('DISPUTE_SLA_HOURS')!) : 48;
+    const slaBreachedAt = new Date(Date.now() + slaHours * 60 * 60 * 1000);
+
+    const dispute = await this.prisma.$transaction(async (tx) => {
+      // 1. Create Dispute
+      const createdDispute = await tx.dispute.create({
+        data: {
+          orderId: dto.orderId,
+          raisedBy: buyerId,
+          reason: dto.reason,
+          description: dto.description,
+          status: DisputeStatus.OPEN,
+          priority: DisputePriority.MEDIUM,
+          segment,
+          slaBreachedAt,
+        },
+      });
+
+      // 2. Atomic Payout Hold (INV-S8-9)
+      await tx.sellerPayout.updateMany({
+        where: {
+          orderId: dto.orderId,
+          status: {
+            in: [PayoutStatus.PENDING, PayoutStatus.INITIATED],
+          },
+        },
+        data: {
+          status: PayoutStatus.ON_HOLD,
+        },
+      });
+
+      // 3. Create EventOutbox event (INV-S4-OUTBOX)
+      const eventMonth = formatYearMonth(new Date()); // INV-S8-16
+      const deduplicationKey = `DISPUTE_CREATED:${createdDispute.id}:${buyerId}`; // INV-S8-15
+
+      await tx.eventOutbox.create({
+        data: {
+          eventType: 'DISPUTE_CREATED',
+          payload: {
+            disputeId: createdDispute.id,
+            orderId: createdDispute.orderId,
+          },
+          schemaVersion: '8.0', // INV-S8-14
+          eventMonth,
+          deduplicationKey,
+        },
+      });
+
+      return createdDispute;
+    });
+
+    return {
+      id: dispute.id,
+      orderId: dispute.orderId,
+      raisedBy: dispute.raisedBy,
+      reason: dispute.reason,
+      description: dispute.description,
+      status: dispute.status,
+      priority: dispute.priority,
+      resolvedBy: dispute.resolvedBy,
+      resolution: dispute.resolution,
+      resolvedAt: dispute.resolvedAt?.toISOString(),
+      createdAt: dispute.createdAt.toISOString(),
+      updatedAt: dispute.updatedAt.toISOString(),
+    };
+  }
+
+  async getDisputesForBuyer(buyerId: string): Promise<DisputeResponseDto[]> {
+    const disputes = await this.prisma.dispute.findMany({
+      where: {
+        raisedBy: buyerId,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return disputes.map((dispute) => ({
+      id: dispute.id,
+      orderId: dispute.orderId,
+      raisedBy: dispute.raisedBy,
+      reason: dispute.reason,
+      description: dispute.description,
+      status: dispute.status,
+      priority: dispute.priority,
+      resolvedBy: dispute.resolvedBy,
+      resolution: dispute.resolution,
+      resolvedAt: dispute.resolvedAt?.toISOString(),
+      createdAt: dispute.createdAt.toISOString(),
+      updatedAt: dispute.updatedAt.toISOString(),
+    }));
+  }
+
+  async getDisputeById(id: string, buyerId: string): Promise<DisputeResponseDto> {
+    const dispute = await this.prisma.dispute.findUnique({
+      where: { id },
+    });
+
+    if (!dispute) throw new NotFoundException('Dispute not found');
+    if (dispute.raisedBy !== buyerId) throw new ForbiddenException('Not authorized');
+
+    return {
+      id: dispute.id,
+      orderId: dispute.orderId,
+      raisedBy: dispute.raisedBy,
+      reason: dispute.reason,
+      description: dispute.description,
+      status: dispute.status,
+      priority: dispute.priority,
+      resolvedBy: dispute.resolvedBy,
+      resolution: dispute.resolution,
+      resolvedAt: dispute.resolvedAt?.toISOString(),
+      createdAt: dispute.createdAt.toISOString(),
+      updatedAt: dispute.updatedAt.toISOString(),
+    };
+  }
+}

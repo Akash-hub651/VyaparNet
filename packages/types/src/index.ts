@@ -28,6 +28,7 @@ export * from './cart/cart.schemas';
 
 // Order
 export * from './order/order.schemas';
+export * from './procurement/procurement.schemas';
 
 // Payment
 export * from './payment/payment.schemas';
@@ -53,4 +54,11 @@ export * from './notification/push-subscription.schemas';
 
 // Admin DTOs (Sprint 7)
 export * from './admin';
+
+// Trust Safety (Sprint 8)
+export * from './trust-safety/return.schemas';
+export * from './trust-safety/dispute.schemas';
+
+// Ledger (Sprint 8)
+export * from './ledger/buyer-ledger.schemas';
 

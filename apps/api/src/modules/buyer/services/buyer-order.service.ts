@@ -142,4 +142,39 @@ export class BuyerOrderService {
 
     return updated;
   }
+
+  async getRefundStatus(orderId: string, buyerId: string): Promise<any> {
+    // First, verify the order belongs to the buyer
+    const order = await this.prisma.order.findFirst({
+      where: { id: orderId, buyerId },
+      select: { id: true },
+    });
+
+    if (!order) {
+      throw new UnprocessableEntityException({
+        code: 'ORDER_NOT_FOUND',
+      });
+    }
+
+    const returnRequest = await this.prisma.returnRequest.findFirst({
+      where: { orderId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        status: true,
+        requestedRefundAmount: true,
+        approvedRefundAmount: true,
+        resolution: true,
+        resolvedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!returnRequest) {
+      return { status: 'NO_RETURN_REQUEST' };
+    }
+
+    return returnRequest;
+  }
 }

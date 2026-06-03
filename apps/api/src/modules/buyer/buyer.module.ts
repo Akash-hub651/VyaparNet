@@ -10,6 +10,9 @@ import { CartModule } from '../cart/cart.module';
 import { RedisModule } from '../../core/redis/redis.module';
 import { ObservabilityModule } from '../observability/observability.module';
 import { AuthModule } from '../identity/auth/auth.module';
+import { TrustSafetyModule } from '../trust-safety/trust-safety.module';
+import { BuyerLedgerController } from './controllers/buyer-ledger.controller';
+import { BuyerLedgerService } from './services/buyer-ledger.service';
 
 @Module({
   imports: [
@@ -19,9 +22,10 @@ import { AuthModule } from '../identity/auth/auth.module';
     RedisModule,
     ObservabilityModule,
     AuthModule,
+    TrustSafetyModule,
   ],
-  controllers: [BuyerOrdersController, BuyerDashboardController], // FIX-5: §7.1 structure
-  providers: [BuyerOrderService, BuyerOrderRepository, BuyerReorderService],
+  controllers: [BuyerOrdersController, BuyerDashboardController, BuyerLedgerController], // FIX-5: §7.1 structure
+  providers: [BuyerOrderService, BuyerOrderRepository, BuyerReorderService, BuyerLedgerService],
   exports: [BuyerOrderService, BuyerReorderService],
 })
 export class BuyerModule {}

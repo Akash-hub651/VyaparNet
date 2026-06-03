@@ -6,6 +6,7 @@ import { AdminAuditRepository } from '../repositories/admin-audit.repository';
 import { AdminAuditController } from '../controllers/admin-audit.controller';
 import { AdminExceptionService } from '../services/admin-exception.service';
 import { AdminMetricsService } from '../services/admin-metrics.service';
+import { AdminDisputeRepository } from '../repositories/admin-dispute.repository';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { getQueueToken } from '@nestjs/bull';
 import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
@@ -207,6 +208,10 @@ describe('AdminExceptionService.getTechnicalExceptions — Phase 10 DLQ', () => 
           useValue: dlqQueue,
         },
         { provide: AdminMetricsService, useValue: metricsService },
+        {
+          provide: AdminDisputeRepository,
+          useValue: { countOpen: vi.fn().mockResolvedValue(0) },
+        },
       ],
     }).compile();
 

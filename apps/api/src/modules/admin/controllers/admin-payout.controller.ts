@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Patch,
+  Post,
+  Body,
   Param,
   Query,
   UseGuards,
@@ -17,7 +19,10 @@ import { ZodValidationPipe } from '../../../shared/pipes/zod-validation.pipe';
 import {
   AdminPayoutListQuerySchema,
   type AdminPayoutListQuery,
+  AdminPayoutReverseDto,
+  AdminPayoutReverseSchema,
 } from '@vyaparnet/types';
+import { PayoutListItem } from '../repositories/admin-payout.repository';
 
 /**
  * AdminPayoutsController — Seller Payout Management (Sprint 7 Phase 8).
@@ -73,5 +78,42 @@ export class AdminPayoutsController {
     @Req() req: Request & { user: { id: string } },
   ) {
     return this.payoutService.initiatePayout(id, req.user.id, req);
+  }
+
+  @Post(':id/hold')
+  @UseGuards(AdminIdempotencyGuard)
+  async holdPayout(
+    @Req() req: any,
+    @Param('id') id: string,
+  ): Promise<PayoutListItem> {
+    return this.payoutService.hold(id, req.user.id, req);
+  }
+
+  @Post(':id/release-hold')
+  @UseGuards(AdminIdempotencyGuard)
+  async releaseHoldPayout(
+    @Req() req: any,
+    @Param('id') id: string,
+  ): Promise<PayoutListItem> {
+    return this.payoutService.releaseHold(id, req.user.id, req);
+  }
+
+  @Patch(':id/cancel')
+  @UseGuards(AdminIdempotencyGuard)
+  async cancelPayout(
+    @Req() req: any,
+    @Param('id') id: string,
+  ): Promise<PayoutListItem> {
+    return this.payoutService.cancel(id, req.user.id, req);
+  }
+
+  @Patch(':id/reverse')
+  @UseGuards(AdminIdempotencyGuard)
+  async reversePayout(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(AdminPayoutReverseSchema)) dto: AdminPayoutReverseDto,
+  ): Promise<PayoutListItem> {
+    return this.payoutService.reverse(id, req.user.id, req, dto.reversalReason);
   }
 }

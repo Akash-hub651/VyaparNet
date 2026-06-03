@@ -125,6 +125,20 @@ export class AdminPayoutRepository {
     });
   }
 
+  // ─── updateStatus (Phase 3) ───────────────────────────────────────────────
+  
+  async updateStatus(
+    id: string,
+    status: PayoutStatus,
+    tx?: import('@vyaparnet/database').Prisma.TransactionClient,
+  ): Promise<void> {
+    const client = tx ?? this.prisma;
+    await client.sellerPayout.update({
+      where: { id },
+      data: { status },
+    });
+  }
+
   // ─── Private helpers ──────────────────────────────────────────────────────
 
   private toListItem(payout: {

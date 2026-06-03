@@ -199,4 +199,111 @@ export class AdminPayoutService {
 
     return updated!;
   }
+
+  // ─── Phase 3: hold, releaseHold, cancel, reverse ──────────────────────────
+
+  async hold(id: string, adminUserId: string, req: Request): Promise<PayoutListItem> {
+    const existing = await this.payoutRepo.findById(id);
+    if (!existing) throw new NotFoundException({ code: 'PAYOUT_NOT_FOUND', payoutId: id });
+    if (existing.status !== PayoutStatus.PENDING) {
+      throw new UnprocessableEntityException(`Payout ${id} is ${existing.status} — only PENDING payouts can be held.`);
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await this.payoutRepo.updateStatus(id, PayoutStatus.ON_HOLD, tx);
+    });
+
+    await this.auditWriter.safeWrite({
+      actorId: adminUserId,
+      actorRole: SystemActorType.ADMIN,
+      action: AuditAction.STATUS_CHANGE,
+      entityType: 'SellerPayout',
+      entityId: id,
+      oldValue: { status: existing.status },
+      newValue: { status: PayoutStatus.ON_HOLD },
+      ipAddress: req?.ip ?? 'unknown',
+      userAgent: String(req?.headers?.['user-agent'] ?? 'unknown'),
+    });
+
+    return (await this.payoutRepo.findById(id))!;
+  }
+
+  async releaseHold(id: string, adminUserId: string, req: Request): Promise<PayoutListItem> {
+    const existing = await this.payoutRepo.findById(id);
+    if (!existing) throw new NotFoundException({ code: 'PAYOUT_NOT_FOUND', payoutId: id });
+    if (existing.status !== PayoutStatus.ON_HOLD) {
+      throw new UnprocessableEntityException(`Payout ${id} is ${existing.status} — only ON_HOLD payouts can be released.`);
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await this.payoutRepo.updateStatus(id, PayoutStatus.PENDING, tx);
+    });
+
+    await this.auditWriter.safeWrite({
+      actorId: adminUserId,
+      actorRole: SystemActorType.ADMIN,
+      action: AuditAction.STATUS_CHANGE,
+      entityType: 'SellerPayout',
+      entityId: id,
+      oldValue: { status: existing.status },
+      newValue: { status: PayoutStatus.PENDING },
+      ipAddress: req?.ip ?? 'unknown',
+      userAgent: String(req?.headers?.['user-agent'] ?? 'unknown'),
+    });
+
+    return (await this.payoutRepo.findById(id))!;
+  }
+
+  async cancel(id: string, adminUserId: string, req: Request): Promise<PayoutListItem> {
+    const existing = await this.payoutRepo.findById(id);
+    if (!existing) throw new NotFoundException({ code: 'PAYOUT_NOT_FOUND', payoutId: id });
+    if (existing.status !== PayoutStatus.ON_HOLD && existing.status !== PayoutStatus.PENDING) {
+      throw new UnprocessableEntityException(`Payout ${id} is ${existing.status} — cannot be cancelled.`);
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await this.payoutRepo.updateStatus(id, PayoutStatus.CANCELLED, tx);
+    });
+
+    await this.auditWriter.safeWrite({
+      actorId: adminUserId,
+      actorRole: SystemActorType.ADMIN,
+      action: AuditAction.STATUS_CHANGE,
+      entityType: 'SellerPayout',
+      entityId: id,
+      oldValue: { status: existing.status },
+      newValue: { status: PayoutStatus.CANCELLED },
+      ipAddress: req?.ip ?? 'unknown',
+      userAgent: String(req?.headers?.['user-agent'] ?? 'unknown'),
+    });
+
+    return (await this.payoutRepo.findById(id))!;
+  }
+
+  async reverse(id: string, adminUserId: string, req: Request, reversalReason: string): Promise<PayoutListItem> {
+    const existing = await this.payoutRepo.findById(id);
+    if (!existing) throw new NotFoundException({ code: 'PAYOUT_NOT_FOUND', payoutId: id });
+    if (existing.status !== PayoutStatus.TRANSFERRED) {
+      throw new UnprocessableEntityException(`Payout ${id} is ${existing.status} — only TRANSFERRED payouts can be reversed.`);
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await this.payoutRepo.updateStatus(id, PayoutStatus.REVERSED, tx);
+      // NOTE: Actual reversal logic (Ledger updates, Bank API) is out of Phase 3 scope
+    });
+
+    await this.auditWriter.safeWrite({
+      actorId: adminUserId,
+      actorRole: SystemActorType.ADMIN,
+      action: AuditAction.STATUS_CHANGE,
+      entityType: 'SellerPayout',
+      entityId: id,
+      oldValue: { status: existing.status },
+      newValue: { status: PayoutStatus.REVERSED, reversalReason },
+      ipAddress: req?.ip ?? 'unknown',
+      userAgent: String(req?.headers?.['user-agent'] ?? 'unknown'),
+    });
+
+    return (await this.payoutRepo.findById(id))!;
+  }
 }
