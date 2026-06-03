@@ -161,16 +161,20 @@ export class ReturnsService {
       });
 
       // 2. Create EventOutbox event (INV-S4-OUTBOX)
+      // OBS-DSR8-1 FIX: eventType MUST match OUTBOX_EVENT_NOTIFICATION_MAP key.
+      // 'RETURN_CREATED' is silently dropped — consumer map key is 'ReturnInitiated'.
       const eventMonth = formatYearMonth(new Date()); // INV-S8-16
-      const deduplicationKey = `RETURN_CREATED:${createdReturn.id}:${buyerId}`; // INV-S8-15
+      const deduplicationKey = `ReturnInitiated:${createdReturn.id}:${buyerId}`; // INV-S8-15
 
       await tx.eventOutbox.create({
         data: {
-          eventType: 'RETURN_CREATED',
+          eventType: 'ReturnInitiated', // OBS-DSR8-1: Aligned with OUTBOX_EVENT_NOTIFICATION_MAP key
           payload: {
             returnId: createdReturn.id,
             orderId: createdReturn.orderId,
+            buyerId, // INV-S8-14: Required for ReturnInitiatedHandler notification routing
             sellerId: createdReturn.sellerId,
+            segment: createdReturn.segment,
           },
           schemaVersion: '8.0', // INV-S8-14
           eventMonth,

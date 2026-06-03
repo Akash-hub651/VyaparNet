@@ -93,7 +93,7 @@ describe('DisputesService', () => {
       segment: 'TEXTILE',
     };
 
-    it('should create dispute atomically and hold payout (FINANCIAL INTEGRITY + INV-S8-9)', async () => {
+    it('should create dispute atomically and hold PENDING payout only (OBS-DSR8-2 + INV-S8-9)', async () => {
       prisma.order.findUnique.mockResolvedValue(mockOrder);
       prisma.returnRequest.findFirst.mockResolvedValue(null);
       prisma.dispute.findFirst.mockResolvedValue(null);
@@ -122,12 +122,14 @@ describe('DisputesService', () => {
 
       expect(prisma.$transaction).toHaveBeenCalled();
       expect(prisma.dispute.create).toHaveBeenCalled();
-      // Atomic payout hold verification
+
+      // OBS-DSR8-2: D-PAY-2 — Only PENDING payouts auto-held.
+      // INITIATED payouts (seller received bank transfer) must NOT be held.
       expect(prisma.sellerPayout.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
             orderId: 'ord_1',
-            status: { in: [PayoutStatus.PENDING, PayoutStatus.INITIATED] },
+            status: PayoutStatus.PENDING, // OBS-DSR8-2: direct equality — NOT { in: [PENDING, INITIATED] }
           }),
           data: expect.objectContaining({ status: PayoutStatus.ON_HOLD }),
         }),
@@ -138,6 +140,30 @@ describe('DisputesService', () => {
         }),
       );
       expect(res.id).toBe('disp_1');
+    });
+
+    // OBS-DSR8-2 REGRESSION: INITIATED payouts must NOT be included in the hold filter
+    it('OBS-DSR8-2: INITIATED payout must NOT be auto-held on dispute creation (D-PAY-2)', async () => {
+      prisma.order.findUnique.mockResolvedValue(mockOrder);
+      prisma.returnRequest.findFirst.mockResolvedValue(null);
+      prisma.dispute.findFirst.mockResolvedValue(null);
+      prisma.dispute.count.mockResolvedValue(0);
+      prisma.dispute.create.mockResolvedValue({
+        id: 'disp_99', orderId: 'ord_1', raisedBy: 'buyer_1',
+        reason: 'Test', description: 'Test', status: DisputeStatus.OPEN,
+        priority: 'MEDIUM', createdAt: new Date(), updatedAt: new Date(),
+      });
+
+      await service.createDispute('buyer_1', { orderId: 'ord_1', reason: 'Test', description: 'Test' });
+
+      const payoutCall = prisma.sellerPayout.updateMany.mock.calls[0][0];
+      // Status filter must be PENDING directly — not an { in: [...] } object
+      expect(payoutCall.where.status).toBe(PayoutStatus.PENDING);
+      // INITIATED must NOT appear in any filter
+      const s = payoutCall.where.status;
+      if (typeof s === 'object' && s !== null && 'in' in s) {
+        expect(s.in).not.toContain(PayoutStatus.INITIATED);
+      }
     });
 
     it('should reject wrong actor (OWNERSHIP BOUNDARY)', async () => {

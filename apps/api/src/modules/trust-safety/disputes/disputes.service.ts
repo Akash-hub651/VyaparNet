@@ -128,12 +128,14 @@ export class DisputesService {
       });
 
       // 2. Atomic Payout Hold (INV-S8-9)
+      // OBS-DSR8-2 FIX: D-PAY-2 — Only PENDING payouts are auto-held on dispute creation.
+      // INITIATED payouts (seller has already received bank transfer) must NOT be auto-held —
+      // doing so creates false financial state (DB shows ON_HOLD but funds already moved).
+      // INITIATED payouts with active disputes surface to admin exception center for manual review.
       await tx.sellerPayout.updateMany({
         where: {
           orderId: dto.orderId,
-          status: {
-            in: [PayoutStatus.PENDING, PayoutStatus.INITIATED],
-          },
+          status: PayoutStatus.PENDING, // OBS-DSR8-2: ONLY PENDING, not INITIATED
         },
         data: {
           status: PayoutStatus.ON_HOLD,

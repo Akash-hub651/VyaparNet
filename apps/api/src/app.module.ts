@@ -19,6 +19,7 @@ import { SellerModule } from './modules/seller/seller.module';
 import { ObservabilityModule } from './modules/observability/observability.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { ProcurementModule } from './modules/procurement/procurement.module'; // Sprint 8 — OBS-DSR8-3
 import { JwtAuthGuard } from './shared/guards/jwt-auth.guard';
 import { RolesGuard } from './shared/guards/roles.guard';
 import { PermissionsGuard } from './shared/guards/permissions.guard';
@@ -67,7 +68,7 @@ import { PermissionsGuard } from './shared/guards/permissions.guard';
     NotificationModule, // Sprint 6
     // AuditModule,         // Sprint 7
     AdminModule, // Sprint 7
-    // ProcurementModule,   // Sprint 8
+    ProcurementModule, // Sprint 8 — OBS-DSR8-3: Activated (bull/bullmq mismatch fixed)
   ],
   providers: [
     // Global guards — applied in order
