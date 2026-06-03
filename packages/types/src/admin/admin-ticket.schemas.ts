@@ -11,12 +11,14 @@
  * - AUDIT-P1-B: resolvedNote stored in SupportTicket.resolvedNote (added in sprint7_schema migration)
  * - FOOTGUN-1-D: NEVER import from @vyaparnet/database
  */
-import { z } from 'zod';
+import { z } from "zod";
 
 export const AdminTicketListQuerySchema = z
   .object({
-    status: z.enum(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'ESCALATED']).optional(),
-    priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional(),
+    status: z
+      .enum(["OPEN", "IN_PROGRESS", "WAITING", "RESOLVED", "CLOSED"])
+      .optional(),
+    priority: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]).optional(),
     assignedTo: z.string().optional(), // admin User.id
     cursor: z.string().optional(),
     limit: z.coerce.number().int().min(1).max(100).default(20),
@@ -48,9 +50,11 @@ export const AdminEscalateTicketDtoSchema = z
   .object({
     escalationReason: z
       .string()
-      .min(10, { message: 'Escalation reason must be at least 10 characters' })
+      .min(10, { message: "Escalation reason must be at least 10 characters" })
       .max(1000),
   })
   .strict();
 
-export type AdminEscalateTicketDto = z.infer<typeof AdminEscalateTicketDtoSchema>;
+export type AdminEscalateTicketDto = z.infer<
+  typeof AdminEscalateTicketDtoSchema
+>;

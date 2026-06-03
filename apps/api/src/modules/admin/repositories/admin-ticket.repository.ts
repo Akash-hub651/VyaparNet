@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../core/prisma/prisma.service';
-import type { Prisma, SupportTicketStatus, SupportTicketPriority } from '@vyaparnet/database';
+import type {
+  Prisma,
+  SupportTicketStatus,
+  SupportTicketPriority,
+} from '@vyaparnet/database';
 
 /**
  * AdminTicketRepository — Phase 11
@@ -37,7 +41,7 @@ export class AdminTicketRepository {
       ],
       include: {
         user: { select: { id: true, email: true, role: true } },
-        assigned: { select: { id: true, email: true } },
+        assignee: { select: { id: true, email: true } }, // Prisma generated: SupportTicketInclude.assignee (from @relation("TicketAssignee"))
       },
     });
 
@@ -62,7 +66,7 @@ export class AdminTicketRepository {
       where: { id },
       include: {
         user: { select: { id: true, email: true, role: true } },
-        assigned: { select: { id: true, email: true } },
+        assignee: { select: { id: true, email: true } }, // Prisma generated: SupportTicketInclude.assignee
       },
     });
   }
@@ -96,7 +100,11 @@ export class AdminTicketRepository {
    * resolve — resolves ticket with note.
    * Executed inside $transaction.
    */
-  async resolve(id: string, note: string | undefined, tx: Prisma.TransactionClient) {
+  async resolve(
+    id: string,
+    note: string | undefined,
+    tx: Prisma.TransactionClient,
+  ) {
     return tx.supportTicket.update({
       where: { id },
       data: {
@@ -112,7 +120,7 @@ export class AdminTicketRepository {
    * Executed inside $transaction.
    */
   async escalate(id: string, _reason: string, tx: Prisma.TransactionClient) {
-    // Reason is passed here to match the spec but we don't store escalationReason 
+    // Reason is passed here to match the spec but we don't store escalationReason
     // in the model directly in Sprint 7. We will store it in EventOutbox payload
     // and log it in AuditLog. The status changes to ESCALATED, priority CRITICAL.
     return tx.supportTicket.update({

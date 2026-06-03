@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
@@ -16,12 +12,12 @@ import { Prisma } from '@vyaparnet/database';
 
 export interface GstCalculation {
   taxableValue: Prisma.Decimal;
-  cgstAmount: Prisma.Decimal;  // Intra-state: CGST = 9%
-  sgstAmount: Prisma.Decimal;  // Intra-state: SGST = 9%
-  igstAmount: Prisma.Decimal;  // Inter-state: IGST = 18%
+  cgstAmount: Prisma.Decimal; // Intra-state: CGST = 9%
+  sgstAmount: Prisma.Decimal; // Intra-state: SGST = 9%
+  igstAmount: Prisma.Decimal; // Inter-state: IGST = 18%
   totalTaxAmount: Prisma.Decimal;
   totalInvoiceValue: Prisma.Decimal;
-  isInterState: boolean;       // true → IGST; false → CGST+SGST
+  isInterState: boolean; // true → IGST; false → CGST+SGST
 }
 
 // ─── TaxInvoice DTO ──────────────────────────────────────────────────────────
@@ -64,9 +60,9 @@ export class AdminInvoiceService {
   // Standard GST rates for B2B trade goods (textile + spare parts)
   // In a real system these come from HSN-mapped FeatureFlag (INV-S7-14).
   // For Sprint 7 MVP: 18% total GST (CGST 9% + SGST 9% OR IGST 18%)
-  private readonly CGST_RATE = 0.09;  // Intra-state
-  private readonly SGST_RATE = 0.09;  // Intra-state
-  private readonly IGST_RATE = 0.18;  // Inter-state
+  private readonly CGST_RATE = 0.09; // Intra-state
+  private readonly SGST_RATE = 0.09; // Intra-state
+  private readonly IGST_RATE = 0.18; // Inter-state
 
   // Platform seller state code prefix (first 2 chars of GSTIN)
   // Used for inter/intra state determination (FOOTGUN-7-E)
@@ -113,7 +109,11 @@ export class AdminInvoiceService {
     const gstCalc = this.calculateGst(order);
 
     // Step 4: Create DB record FIRST (FOOTGUN-7-B: PDF generation OUTSIDE $transaction)
-    const invoiceRecord = await this.createInvoiceRecord(order, gstCalc, adminUserId);
+    const invoiceRecord = await this.createInvoiceRecord(
+      order,
+      gstCalc,
+      adminUserId,
+    );
 
     // Step 5: INV-S7-16 timing gate
     const startTime = Date.now();
@@ -253,8 +253,8 @@ export class AdminInvoiceService {
       const sellerStateCode = this.PLATFORM_STATE_CODE;
 
       // Parse buyer state from shippingAddressSnapshot (JSON field)
-      const snapshot = order as any; // OrderDetailDto doesn't include snapshot — use as proxy
-      const shippingSnapshot = snapshot.shippingAddressSnapshot;
+      // OrderDetailDto.shippingAddressSnapshot: Record<string, unknown>
+      const shippingSnapshot = order.shippingAddressSnapshot;
 
       if (!shippingSnapshot) {
         return true; // Default to inter-state (conservative)
@@ -262,9 +262,11 @@ export class AdminInvoiceService {
 
       // shippingAddressSnapshot.stateCode (2-digit GST state code) if present
       // or fall back to matching on state name
+      // Narrowed from unknown: shippingSnapshot is Record<string, unknown>
+      const rawStateCode =
+        shippingSnapshot['stateCode'] ?? shippingSnapshot['gstStateCode'];
       const buyerStateCode: string | undefined =
-        shippingSnapshot.stateCode ??
-        shippingSnapshot.gstStateCode;
+        typeof rawStateCode === 'string' ? rawStateCode : undefined;
 
       if (!buyerStateCode) {
         return true; // Default to inter-state (conservative)
@@ -285,7 +287,9 @@ export class AdminInvoiceService {
     order: OrderDetailDto,
     gstCalc: GstCalculation,
     adminUserId: string,
-  ): Promise<{ id: string; invoiceNumber: string; invoiceDate: Date } & typeof gstCalc> {
+  ): Promise<
+    { id: string; invoiceNumber: string; invoiceDate: Date } & typeof gstCalc
+  > {
     const invoiceNumber = this.generateInvoiceNumber(order.orderNumber);
     const invoiceDate = new Date();
 
@@ -323,7 +327,8 @@ export class AdminInvoiceService {
    *
    * Returns a Buffer of the PDF bytes.
    */
-  private async generatePdf(
+  /** F-01 Fix: promoted from private → public so InvoiceGenerationWorker can call without `as any` cast. */
+  public async generatePdf(
     invoiceRecord: { id: string; invoiceNumber: string; invoiceDate: Date },
     order: OrderDetailDto,
     gstCalc: GstCalculation,
@@ -364,68 +369,153 @@ export class AdminInvoiceService {
 
     // ── Invoice Details ──────────────────────────────────────────────────────
     y -= 20;
-    page.drawText(`Invoice No: ${invoiceRecord.invoiceNumber}`, { x: margin, y, size: 10, font });
-    page.drawText(`Invoice Date: ${invoiceRecord.invoiceDate.toLocaleDateString('en-IN')}`, {
-      x: width / 2, y, size: 10, font,
+    page.drawText(`Invoice No: ${invoiceRecord.invoiceNumber}`, {
+      x: margin,
+      y,
+      size: 10,
+      font,
     });
+    page.drawText(
+      `Invoice Date: ${invoiceRecord.invoiceDate.toLocaleDateString('en-IN')}`,
+      {
+        x: width / 2,
+        y,
+        size: 10,
+        font,
+      },
+    );
 
     y -= 15;
-    page.drawText(`Order No: ${order.orderNumber}`, { x: margin, y, size: 10, font });
-    page.drawText(`Segment: ${order.segment}`, { x: width / 2, y, size: 10, font });
+    page.drawText(`Order No: ${order.orderNumber}`, {
+      x: margin,
+      y,
+      size: 10,
+      font,
+    });
+    page.drawText(`Segment: ${order.segment}`, {
+      x: width / 2,
+      y,
+      size: 10,
+      font,
+    });
 
     // ── Buyer Info ───────────────────────────────────────────────────────────
     y -= 30;
     page.drawText('BILL TO:', { x: margin, y, size: 11, font: boldFont });
     y -= 15;
-    page.drawText(order.buyer?.name ?? order.buyer?.id ?? 'Buyer', { x: margin, y, size: 10, font });
+    page.drawText(order.buyer?.name ?? order.buyer?.id ?? 'Buyer', {
+      x: margin,
+      y,
+      size: 10,
+      font,
+    });
     y -= 12;
-    page.drawText(`Phone: ${order.buyer?.phone ?? 'N/A'}`, { x: margin, y, size: 10, font });
+    page.drawText(`Phone: ${order.buyer?.phone ?? 'N/A'}`, {
+      x: margin,
+      y,
+      size: 10,
+      font,
+    });
 
     // ── Tax Summary ───────────────────────────────────────────────────────────
     y -= 40;
-    page.drawLine({ start: { x: margin, y }, end: { x: width - margin, y }, thickness: 0.5, color: rgb(0.7, 0.7, 0.7) });
+    page.drawLine({
+      start: { x: margin, y },
+      end: { x: width - margin, y },
+      thickness: 0.5,
+      color: rgb(0.7, 0.7, 0.7),
+    });
     y -= 20;
 
     const tableX = [margin, 300, 430, width - margin];
-    const headers = ['Description', 'Taxable Value (Rs.)', 'Tax Amount (Rs.)', 'Total (Rs.)'];
+    const headers = [
+      'Description',
+      'Taxable Value (Rs.)',
+      'Tax Amount (Rs.)',
+      'Total (Rs.)',
+    ];
     headers.forEach((h, i) => {
       page.drawText(h, { x: tableX[i], y, size: 9, font: boldFont });
     });
 
     y -= 15;
     page.drawText('B2B Trade Goods', { x: tableX[0], y, size: 9, font });
-    page.drawText(gstCalc.taxableValue.toFixed(2), { x: tableX[1], y, size: 9, font });
-    page.drawText(gstCalc.totalTaxAmount.toFixed(2), { x: tableX[2], y, size: 9, font });
-    page.drawText(gstCalc.totalInvoiceValue.toFixed(2), { x: tableX[3], y, size: 9, font });
+    page.drawText(gstCalc.taxableValue.toFixed(2), {
+      x: tableX[1],
+      y,
+      size: 9,
+      font,
+    });
+    page.drawText(gstCalc.totalTaxAmount.toFixed(2), {
+      x: tableX[2],
+      y,
+      size: 9,
+      font,
+    });
+    page.drawText(gstCalc.totalInvoiceValue.toFixed(2), {
+      x: tableX[3],
+      y,
+      size: 9,
+      font,
+    });
 
     // -- GST Breakup --
     y -= 40;
     page.drawText('GST Breakup:', { x: margin, y, size: 10, font: boldFont });
     y -= 15;
     if (gstCalc.isInterState) {
-      page.drawText(`IGST @ 18%: Rs. ${gstCalc.igstAmount.toFixed(2)}`, { x: margin, y, size: 10, font });
+      page.drawText(`IGST @ 18%: Rs. ${gstCalc.igstAmount.toFixed(2)}`, {
+        x: margin,
+        y,
+        size: 10,
+        font,
+      });
     } else {
-      page.drawText(`CGST @ 9%: Rs. ${gstCalc.cgstAmount.toFixed(2)}`, { x: margin, y, size: 10, font });
+      page.drawText(`CGST @ 9%: Rs. ${gstCalc.cgstAmount.toFixed(2)}`, {
+        x: margin,
+        y,
+        size: 10,
+        font,
+      });
       y -= 12;
-      page.drawText(`SGST @ 9%: Rs. ${gstCalc.sgstAmount.toFixed(2)}`, { x: margin, y, size: 10, font });
+      page.drawText(`SGST @ 9%: Rs. ${gstCalc.sgstAmount.toFixed(2)}`, {
+        x: margin,
+        y,
+        size: 10,
+        font,
+      });
     }
 
     // -- Grand Total --
     y -= 30;
-    page.drawLine({ start: { x: margin, y }, end: { x: width - margin, y }, thickness: 1, color: rgb(0.3, 0.3, 0.3) });
-    y -= 15;
-    page.drawText(`TOTAL INVOICE VALUE: Rs. ${gstCalc.totalInvoiceValue.toFixed(2)}`, {
-      x: margin, y, size: 12, font: boldFont,
+    page.drawLine({
+      start: { x: margin, y },
+      end: { x: width - margin, y },
+      thickness: 1,
+      color: rgb(0.3, 0.3, 0.3),
     });
+    y -= 15;
+    page.drawText(
+      `TOTAL INVOICE VALUE: Rs. ${gstCalc.totalInvoiceValue.toFixed(2)}`,
+      {
+        x: margin,
+        y,
+        size: 12,
+        font: boldFont,
+      },
+    );
 
     // ── Footer ────────────────────────────────────────────────────────────────
-    page.drawText('This is a computer-generated invoice and does not require a signature.', {
-      x: margin,
-      y: margin + 20,
-      size: 8,
-      font,
-      color: rgb(0.5, 0.5, 0.5),
-    });
+    page.drawText(
+      'This is a computer-generated invoice and does not require a signature.',
+      {
+        x: margin,
+        y: margin + 20,
+        size: 8,
+        font,
+        color: rgb(0.5, 0.5, 0.5),
+      },
+    );
     page.drawText(`Invoice ID: ${invoiceRecord.id}`, {
       x: margin,
       y: margin + 8,
@@ -472,7 +562,9 @@ export class AdminInvoiceService {
     // FOOTGUN-7-C: Generate signed URL at response time from stored S3 key
     let pdfSignedUrl: string | null = null;
     if (invoice.pdfUrl) {
-      pdfSignedUrl = await this.s3Service.getSignedUrl(invoice.pdfUrl, 300).catch(() => null);
+      pdfSignedUrl = await this.s3Service
+        .getSignedUrl(invoice.pdfUrl, 300)
+        .catch(() => null);
     }
 
     return {

@@ -61,9 +61,13 @@ export class InvoiceGenerationWorker {
     const gstCalc = this.invoiceService.calculateGst(order);
 
     // Step 3: Generate PDF (FOOTGUN-7-B: outside $transaction)
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-    const pdfBuffer: Buffer = await (this.invoiceService as any).generatePdf(
-      { id: taxInvoiceId, invoiceNumber: `ASYNC-${taxInvoiceId}`, invoiceDate: new Date() },
+    // F-01 Fix: generatePdf() is now public — direct call without `as any` cast (type-safe)
+    const pdfBuffer: Buffer = await this.invoiceService.generatePdf(
+      {
+        id: taxInvoiceId,
+        invoiceNumber: `ASYNC-${taxInvoiceId}`,
+        invoiceDate: new Date(),
+      },
       order,
       gstCalc,
     );

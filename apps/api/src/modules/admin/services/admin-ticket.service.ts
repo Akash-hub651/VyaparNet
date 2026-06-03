@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import type { Request } from 'express';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { AdminTicketRepository } from '../repositories/admin-ticket.repository';
 import { AuditSafeWriterService } from '../../security/audit/audit-safe-writer.service';
 import { AuditAction } from '@vyaparnet/types';
-import type { 
+import type {
   AdminTicketListQuery,
   AdminResolveTicketDto,
   AdminEscalateTicketDto,
@@ -26,7 +27,8 @@ export class AdminTicketService {
    * listTickets
    */
   async listTickets(filter: AdminTicketListQuery) {
-    return this.ticketRepo.findMany(filter as any);
+    // F-02 Fix: removed `as any` — AdminTicketListQuery matches AdminTicketRepository.findMany() parameter exactly
+    return this.ticketRepo.findMany(filter);
   }
 
   /**
@@ -43,7 +45,9 @@ export class AdminTicketService {
 
     // Sprint 7: slaBreachedAt computed at read time (not stored)
     // createdAt + 24 hours
-    const slaBreachedAt = new Date(ticket.createdAt.getTime() + 24 * 60 * 60 * 1000);
+    const slaBreachedAt = new Date(
+      ticket.createdAt.getTime() + 24 * 60 * 60 * 1000,
+    );
 
     return {
       ...ticket,
@@ -55,11 +59,7 @@ export class AdminTicketService {
    * assignTicket
    * INV-S7-2: safeWrite() outside $transaction
    */
-  async assignTicket(
-    id: string,
-    adminUserId: string,
-    req: any,
-  ) {
+  async assignTicket(id: string, adminUserId: string, req: Request) {
     const ticket = await this.ticketRepo.findById(id);
     if (!ticket) {
       throw new NotFoundException({ code: 'TICKET_NOT_FOUND', id });
@@ -103,7 +103,7 @@ export class AdminTicketService {
     id: string,
     dto: AdminResolveTicketDto,
     adminUserId: string,
-    req: any,
+    req: Request,
   ) {
     const ticket = await this.ticketRepo.findById(id);
     if (!ticket) {
@@ -147,7 +147,7 @@ export class AdminTicketService {
     id: string,
     dto: AdminEscalateTicketDto,
     adminUserId: string,
-    req: any,
+    req: Request,
   ) {
     const ticket = await this.ticketRepo.findById(id);
     if (!ticket) {
@@ -176,7 +176,11 @@ export class AdminTicketService {
       entityId: id,
       entityName: ticket.subject,
       oldValue: { status: ticket.status, priority: ticket.priority },
-      newValue: { status: updated.status, priority: updated.priority, reason: dto.escalationReason },
+      newValue: {
+        status: updated.status,
+        priority: updated.priority,
+        reason: dto.escalationReason,
+      },
       ipAddress: req.ip,
       userAgent: req.headers['user-agent'] as string,
     });

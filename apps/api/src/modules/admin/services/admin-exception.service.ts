@@ -235,20 +235,16 @@ export class AdminExceptionService {
       dlqDepth = failedJobs.length;
     } catch (err) {
       const error = err as Error;
-      this.logger.error(
-        { err: error.message },
-        'ADMIN_DLQ_DEPTH_FETCH_FAILED',
-      );
+      this.logger.error({ err: error.message }, 'ADMIN_DLQ_DEPTH_FETCH_FAILED');
     }
 
-    this.logger.log(
-      { dlqDepth },
-      'ADMIN_TECHNICAL_EXCEPTIONS_QUERIED',
-    );
+    this.logger.log({ dlqDepth }, 'ADMIN_TECHNICAL_EXCEPTIONS_QUERIED');
 
     return {
       dlqDepth,
-      openDisputes: 0, // Placeholder — Sprint 8 (Dispute model not yet in schema)
+      openDisputes: 0, // Sprint 8: AdminDisputeRepository.countOpen() fills this
+      returnSlaBreaches: 0, // Sprint 8: BullMQ return-sla worker increments Redis counter
+      disputeSlaBreaches: 0, // Sprint 8: BullMQ dispute-sla worker increments Redis counter
     };
   }
 }

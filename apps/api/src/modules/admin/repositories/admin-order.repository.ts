@@ -47,6 +47,7 @@ export interface OrderDetailDto extends OrderSummaryDto {
   discount: string;
   cancellationReason: string | null;
   statusHistory: OrderStatusHistoryItemDto[];
+  shippingAddressSnapshot: Record<string, unknown>; // GST inter-state determination
 }
 
 export interface OrderListResponse {
@@ -79,7 +80,7 @@ export class AdminOrderRepository {
       where: {
         isDeleted: false,
         ...(filter.status && { status: filter.status as OrderStatus }),
-        ...(filter.segment && { segment: filter.segment as any }),
+        ...(filter.segment && { segment: filter.segment }),
         ...(filter.buyerId && { buyerId: filter.buyerId }), // FOOTGUN-6-F: filter, NOT scope
         ...(filter.sellerId && { sellerId: filter.sellerId }), // filter, NOT scope restriction
         ...(filter.dateFrom && {
@@ -146,6 +147,10 @@ export class AdminOrderRepository {
       shippingCost: order.shippingCost.toString(),
       discount: order.discount.toString(),
       cancellationReason: order.cancellationReason ?? null,
+      shippingAddressSnapshot: (order.shippingAddressSnapshot ?? {}) as Record<
+        string,
+        unknown
+      >,
       statusHistory: history.map((h) => ({
         id: h.id,
         statusFrom: h.statusFrom ?? null,

@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 /**
  * @vyaparnet/types — Admin Audit Log & Exception Center Schemas
@@ -24,7 +24,7 @@ export const AuditLogListQuerySchema = z
       .number()
       .int()
       .min(1)
-      .max(100, { message: 'limit must be ≤ 100' })
+      .max(100, { message: "limit must be ≤ 100" })
       .default(20),
     entityType: z.string().optional(),
     entityId: z.string().optional(),
@@ -76,5 +76,7 @@ export type DlqRetryDto = z.infer<typeof DlqRetrySchema>;
 
 export interface TechnicalExceptionDto {
   dlqDepth: number;
-  openDisputes: number; // Placeholder for Sprint 8
+  openDisputes: number; // Sprint 8: filled by AdminDisputeRepository count
+  returnSlaBreaches: number; // Sprint 8: filled by ReturnSLA BullMQ worker counter
+  disputeSlaBreaches: number; // Sprint 8: filled by DisputeSLA BullMQ worker counter
 }
