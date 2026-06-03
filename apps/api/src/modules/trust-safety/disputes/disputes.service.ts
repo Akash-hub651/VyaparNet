@@ -1,18 +1,36 @@
-import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  ForbiddenException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { CreateDisputeDto, DisputeResponseDto } from '@vyaparnet/types';
-import { DisputeStatus, OrderStatus, DisputePriority, PayoutStatus } from '@vyaparnet/database';
+import {
+  DisputeStatus,
+  OrderStatus,
+  DisputePriority,
+  PayoutStatus,
+} from '@vyaparnet/database';
 import { formatYearMonth } from '../../../utils/date.utils';
+import { MetricsService } from '../../observability/metrics.service';
 
 @Injectable()
 export class DisputesService {
+  private readonly logger = new Logger(DisputesService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
+    private readonly metricsService: MetricsService,
   ) {}
 
-  validateDisputeTransition(currentStatus: DisputeStatus, newStatus: DisputeStatus): void {
+  validateDisputeTransition(
+    currentStatus: DisputeStatus,
+    newStatus: DisputeStatus,
+  ): void {
     const validTransitions: Record<DisputeStatus, DisputeStatus[]> = {
       OPEN: ['UNDER_REVIEW', 'RESOLVED_BUYER', 'RESOLVED_SELLER'],
       UNDER_REVIEW: ['ESCALATED', 'RESOLVED_BUYER', 'RESOLVED_SELLER'],
@@ -23,17 +41,23 @@ export class DisputesService {
     };
 
     if (!validTransitions[currentStatus]?.includes(newStatus)) {
-      throw new BadRequestException(`Invalid dispute state transition from ${currentStatus} to ${newStatus}`);
+      throw new BadRequestException(
+        `Invalid dispute state transition from ${currentStatus} to ${newStatus}`,
+      );
     }
   }
 
-  async createDispute(buyerId: string, dto: CreateDisputeDto): Promise<DisputeResponseDto> {
+  async createDispute(
+    buyerId: string,
+    dto: CreateDisputeDto,
+  ): Promise<DisputeResponseDto> {
     const order = await this.prisma.order.findUnique({
       where: { id: dto.orderId },
     });
 
     if (!order) throw new NotFoundException('Order not found');
-    if (order.buyerId !== buyerId) throw new ForbiddenException('Not authorized');
+    if (order.buyerId !== buyerId)
+      throw new ForbiddenException('Not authorized');
 
     if (order.status !== OrderStatus.DELIVERED) {
       throw new BadRequestException('Order has not been delivered yet');
@@ -50,7 +74,9 @@ export class DisputesService {
     });
 
     if (activeReturn) {
-      throw new BadRequestException('Cannot initiate dispute while an active return request exists for this order');
+      throw new BadRequestException(
+        'Cannot initiate dispute while an active return request exists for this order',
+      );
     }
 
     // Rule: Duplicate active dispute check
@@ -64,11 +90,15 @@ export class DisputesService {
     });
 
     if (existingDispute) {
-      throw new BadRequestException('An active dispute already exists for this order');
+      throw new BadRequestException(
+        'An active dispute already exists for this order',
+      );
     }
 
     const segment = order.segment;
-    const slaHours = this.configService.get('DISPUTE_SLA_HOURS') ? parseInt(this.configService.get('DISPUTE_SLA_HOURS')!) : 48;
+    const slaHours = this.configService.get('DISPUTE_SLA_HOURS')
+      ? parseInt(this.configService.get('DISPUTE_SLA_HOURS')!)
+      : 48;
     const slaBreachedAt = new Date(Date.now() + slaHours * 60 * 60 * 1000);
 
     const dispute = await this.prisma.$transaction(async (tx) => {
@@ -119,6 +149,27 @@ export class DisputesService {
       return createdDispute;
     });
 
+    // ─── Phase 9: Observability & Traces (§20.1, §20.2, §20.4, §20.5) ────────
+    // 1. Metric: Increment dispute opened counter
+    this.metricsService.disputeOpenedTotal.inc({ 
+      segment, 
+      priority: dispute.priority 
+    });
+    
+    // 2. Structured Log & Trace
+    this.logger.log({
+      level: 'info',
+      event: 'dispute.create',
+      trace_id: `trace_dispute_${dispute.id}`, // Trace bounds for dispute.create workflow
+      disputeId: dispute.id,
+      from: 'NONE',
+      to: dispute.status,
+      actorId: buyerId,
+      orderId: dispute.orderId,
+      segment,
+      msg: 'Dispute created, payout hold initiated, and outbox event emitted',
+    });
+
     return {
       id: dispute.id,
       orderId: dispute.orderId,
@@ -159,13 +210,17 @@ export class DisputesService {
     }));
   }
 
-  async getDisputeById(id: string, buyerId: string): Promise<DisputeResponseDto> {
+  async getDisputeById(
+    id: string,
+    buyerId: string,
+  ): Promise<DisputeResponseDto> {
     const dispute = await this.prisma.dispute.findUnique({
       where: { id },
     });
 
     if (!dispute) throw new NotFoundException('Dispute not found');
-    if (dispute.raisedBy !== buyerId) throw new ForbiddenException('Not authorized');
+    if (dispute.raisedBy !== buyerId)
+      throw new ForbiddenException('Not authorized');
 
     return {
       id: dispute.id,

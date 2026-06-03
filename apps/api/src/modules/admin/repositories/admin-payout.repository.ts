@@ -8,7 +8,7 @@ import type { AdminPayoutListQuery } from '@vyaparnet/types';
 export interface PayoutListItem {
   id: string;
   orderId: string;
-  sellerId: string;           // User.id — H-P0-3
+  sellerId: string; // User.id — H-P0-3
   sellerName: string | null;
   grossAmount: string;
   platformFee: string;
@@ -126,7 +126,7 @@ export class AdminPayoutRepository {
   }
 
   // ─── updateStatus (Phase 3) ───────────────────────────────────────────────
-  
+
   async updateStatus(
     id: string,
     status: PayoutStatus,
@@ -160,7 +160,7 @@ export class AdminPayoutRepository {
     return {
       id: payout.id,
       orderId: payout.orderId,
-      sellerId: payout.sellerId,       // User.id (H-P0-3 — set correctly in Phase 6)
+      sellerId: payout.sellerId, // User.id (H-P0-3 — set correctly in Phase 6)
       sellerName: payout.seller?.name ?? null,
       // FOOTGUN-8-C: Use Decimal.toFixed(2) — never JS float arithmetic
       grossAmount: payout.grossAmount.toFixed(2),

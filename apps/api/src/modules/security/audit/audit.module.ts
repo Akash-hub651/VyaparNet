@@ -6,9 +6,7 @@ import { AuthRepository } from '../../identity/auth/repositories/auth.repository
 import { AuthMetrics } from '../../identity/auth/auth.metrics';
 
 @Module({
-  imports: [
-    BullModule.registerQueue({ name: 'dead-letter' }),
-  ],
+  imports: [BullModule.registerQueue({ name: 'dead-letter' })],
   providers: [
     AuditSafeWriterService,
     AuditRepository,
@@ -18,4 +16,3 @@ import { AuthMetrics } from '../../identity/auth/auth.metrics';
   exports: [AuditSafeWriterService],
 })
 export class AuditModule {}
-

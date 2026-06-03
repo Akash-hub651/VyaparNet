@@ -32,19 +32,31 @@ const makeTicket = (overrides = {}) => ({
 
 describe('AdminTicketService — Phase 11', () => {
   let service: AdminTicketService;
-  let repo: any;
-  let prisma: any;
-  let auditWriter: any;
-  let notificationService: any;
-  let evidenceService: any;
+  let repo: unknown;
+  let prisma: unknown;
+  let auditWriter: unknown;
+  let notificationService: unknown;
+  let evidenceService: unknown;
 
   beforeEach(async () => {
     repo = {
-      findMany: vi.fn().mockResolvedValue({ data: [makeTicket()], nextCursor: null, hasMore: false }),
+      findMany: vi.fn().mockResolvedValue({
+        data: [makeTicket()],
+        nextCursor: null,
+        hasMore: false,
+      }),
       findById: vi.fn().mockResolvedValue(makeTicket()),
-      assign: vi.fn().mockResolvedValue(makeTicket({ status: 'IN_PROGRESS', assignedTo: ADMIN_ID })),
+      assign: vi
+        .fn()
+        .mockResolvedValue(
+          makeTicket({ status: 'IN_PROGRESS', assignedTo: ADMIN_ID }),
+        ),
       resolve: vi.fn().mockResolvedValue(makeTicket({ status: 'RESOLVED' })),
-      escalate: vi.fn().mockResolvedValue(makeTicket({ status: 'ESCALATED', priority: 'CRITICAL' })),
+      escalate: vi
+        .fn()
+        .mockResolvedValue(
+          makeTicket({ status: 'ESCALATED', priority: 'CRITICAL' }),
+        ),
     };
 
     prisma = {
@@ -81,13 +93,17 @@ describe('AdminTicketService — Phase 11', () => {
     it('computes slaBreachedAt dynamically', async () => {
       const result = await service.getTicketDetail('ticket-1');
       // createdAt + 24 hours
-      const expectedSla = new Date(result.createdAt.getTime() + 24 * 60 * 60 * 1000);
+      const expectedSla = new Date(
+        result.createdAt.getTime() + 24 * 60 * 60 * 1000,
+      );
       expect(result.slaBreachedAt).toEqual(expectedSla);
     });
 
     it('throws NotFoundException if missing', async () => {
       repo.findById.mockResolvedValue(null);
-      await expect(service.getTicketDetail('invalid')).rejects.toThrow(NotFoundException);
+      await expect(service.getTicketDetail('invalid')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -99,14 +115,19 @@ describe('AdminTicketService — Phase 11', () => {
           action: 'STATUS_CHANGE',
           entityType: 'SupportTicket',
           newValue: expect.objectContaining({ assignedTo: ADMIN_ID }),
-        })
+        }),
       );
     });
   });
 
   describe('resolveTicket', () => {
     it('updates status and creates AuditLog', async () => {
-      await service.resolveTicket('ticket-1', { resolutionNote: 'Done' }, ADMIN_ID, MOCK_REQUEST);
+      await service.resolveTicket(
+        'ticket-1',
+        { resolutionNote: 'Done' },
+        ADMIN_ID,
+        MOCK_REQUEST,
+      );
       expect(repo.resolve).toHaveBeenCalledWith('ticket-1', 'Done', prisma);
       expect(auditWriter.safeWrite).toHaveBeenCalled();
     });
@@ -114,8 +135,17 @@ describe('AdminTicketService — Phase 11', () => {
 
   describe('escalateTicket', () => {
     it('updates status and creates AuditLog', async () => {
-      await service.escalateTicket('ticket-1', { escalationReason: 'Important' }, ADMIN_ID, MOCK_REQUEST);
-      expect(repo.escalate).toHaveBeenCalledWith('ticket-1', 'Important', prisma);
+      await service.escalateTicket(
+        'ticket-1',
+        { escalationReason: 'Important' },
+        ADMIN_ID,
+        MOCK_REQUEST,
+      );
+      expect(repo.escalate).toHaveBeenCalledWith(
+        'ticket-1',
+        'Important',
+        prisma,
+      );
       expect(auditWriter.safeWrite).toHaveBeenCalled();
     });
   });
@@ -123,7 +153,7 @@ describe('AdminTicketService — Phase 11', () => {
 
 describe('AdminTicketsController — Phase 11', () => {
   let controller: AdminTicketsController;
-  let service: any;
+  let service: unknown;
 
   beforeEach(async () => {
     service = {
@@ -153,12 +183,24 @@ describe('AdminTicketsController — Phase 11', () => {
 
   it('assign defaults to caller ID if body is empty', async () => {
     await controller.assignTicket('ticket-1', {}, MOCK_REQUEST);
-    expect(service.assignTicket).toHaveBeenCalledWith('ticket-1', ADMIN_ID, MOCK_REQUEST);
+    expect(service.assignTicket).toHaveBeenCalledWith(
+      'ticket-1',
+      ADMIN_ID,
+      MOCK_REQUEST,
+    );
   });
 
   it('assign uses body adminUserId if provided', async () => {
-    await controller.assignTicket('ticket-1', { adminUserId: 'other-admin' }, MOCK_REQUEST);
-    expect(service.assignTicket).toHaveBeenCalledWith('ticket-1', 'other-admin', MOCK_REQUEST);
+    await controller.assignTicket(
+      'ticket-1',
+      { adminUserId: 'other-admin' },
+      MOCK_REQUEST,
+    );
+    expect(service.assignTicket).toHaveBeenCalledWith(
+      'ticket-1',
+      'other-admin',
+      MOCK_REQUEST,
+    );
   });
 
   it('FOOTGUN-11-A: reply endpoint is NOT present', () => {

@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { AuditSafeWriterService } from '../../security/audit/audit-safe-writer.service';
-import { AdminFlagRepository, type FeatureFlagRecord } from '../repositories/admin-flag.repository';
-import { RedisService } from '../../../core/redis/redis.service';
 import {
-  AuditAction,
-  SystemActorType,
-} from '@vyaparnet/types';
+  AdminFlagRepository,
+  type FeatureFlagRecord,
+} from '../repositories/admin-flag.repository';
+import { RedisService } from '../../../core/redis/redis.service';
+import { AuditAction, SystemActorType } from '@vyaparnet/types';
 import { Segment } from '@vyaparnet/database';
 import type { AdminUpdateFlagDto } from '@vyaparnet/types';
 import type { Request } from 'express';
@@ -120,7 +120,9 @@ export class AdminFlagService {
    */
   async getFlagValue(name: string): Promise<number | null> {
     const env = this.getEnv();
-    const flag = await this.flagRepo.findByName(name, env, null).catch(() => null);
+    const flag = await this.flagRepo
+      .findByName(name, env, null)
+      .catch(() => null);
     return flag?.rolloutPercent ?? null;
   }
 

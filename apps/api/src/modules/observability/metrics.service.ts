@@ -94,5 +94,48 @@ export class MetricsService {
     public readonly rateLimitAtomicFailureTotal: Counter<string>,
     @InjectMetric('webhook_double_consume_prevented_total')
     public readonly webhookDoubleConsumePreventedTotal: Counter<string>,
+
+    // ─── Sprint 8: Trust & Safety, Procurement, Financial ────────────────────────
+    // Return metrics
+    @InjectMetric('return_requests_total')
+    public readonly returnRequestsTotal: Counter<string>,
+    @InjectMetric('return_sla_breach_total')
+    public readonly returnSlaBreachTotal: Counter<string>,
+    @InjectMetric('return_qc_approval_rate')
+    public readonly returnQcApprovalRate: Gauge<string>,
+    @InjectMetric('return_refund_amount_total')
+    public readonly returnRefundAmountTotal: Counter<string>,
+
+    // Dispute metrics
+    @InjectMetric('dispute_opened_total')
+    public readonly disputeOpenedTotal: Counter<string>,
+    @InjectMetric('dispute_resolved_total')
+    public readonly disputeResolvedTotal: Counter<string>,
+    @InjectMetric('dispute_sla_breach_total')
+    public readonly disputeSlaBreachTotal: Counter<string>,
+    @InjectMetric('dispute_resolution_time_seconds')
+    public readonly disputeResolutionTimeSeconds: Histogram<string>,
+    @InjectMetric('dispute_payout_hold_total')
+    public readonly disputePayoutHoldTotal: Counter<string>,
+
+    // RFQ metrics
+    @InjectMetric('rfq_created_total')
+    public readonly rfqCreatedTotal: Counter<string>,
+    @InjectMetric('quote_submitted_total')
+    public readonly quoteSubmittedTotal: Counter<string>,
+    @InjectMetric('quote_accepted_total')
+    public readonly quoteAcceptedTotal: Counter<string>,
+    @InjectMetric('quote_converted_to_order_total')
+    public readonly quoteConvertedToOrderTotal: Counter<string>,
+    @InjectMetric('quote_expiry_total')
+    public readonly quoteExpiryTotal: Counter<string>,
+
+    // Refund metrics
+    @InjectMetric('refund_initiated_total')
+    public readonly refundInitiatedTotal: Counter<string>,
+    @InjectMetric('refund_amount_total')
+    public readonly refundAmountTotal: Gauge<string>,
+    @InjectMetric('buyer_ledger_entries_total')
+    public readonly buyerLedgerEntriesTotal: Counter<string>,
   ) {}
 }

@@ -38,8 +38,8 @@ import { RefundService } from './refunds/refund.service';
   ],
   controllers: [ReturnsController, DisputesController],
   providers: [
-    ReturnsService, 
-    DisputesService, 
+    ReturnsService,
+    DisputesService,
     EvidenceService,
     ReturnSlaWorker,
     DisputeSlaWorker,
@@ -49,11 +49,19 @@ import { RefundService } from './refunds/refund.service';
       provide: STORAGE_PROVIDER,
       useFactory: (configService: ConfigService) => {
         const useMock = configService.get('USE_MOCK_STORAGE') === 'true';
-        return useMock ? new MockStorageProvider() : new S3StorageProvider(configService);
+        return useMock
+          ? new MockStorageProvider()
+          : new S3StorageProvider(configService);
       },
       inject: [ConfigService],
-    }
+    },
   ],
-  exports: [ReturnsService, DisputesService, EvidenceService, BuyerLedgerRepository, RefundService],
+  exports: [
+    ReturnsService,
+    DisputesService,
+    EvidenceService,
+    BuyerLedgerRepository,
+    RefundService,
+  ],
 })
 export class TrustSafetyModule {}

@@ -1,21 +1,41 @@
-import { Injectable, UnprocessableEntityException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  UnprocessableEntityException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { BuyerLedgerRepository } from './buyer-ledger.repository';
-import { Prisma, ReturnStatus, BuyerLedgerType, Segment, PaymentStatus } from '@vyaparnet/database';
+import {
+  Prisma,
+  ReturnStatus,
+  BuyerLedgerType,
+  Segment,
+  PaymentStatus,
+} from '@vyaparnet/database';
 import { formatYearMonth } from '../../order/order-state-machine';
+
+import { MetricsService } from '../../observability/metrics.service';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class RefundService {
+  private readonly logger = new Logger(RefundService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly buyerLedgerRepo: BuyerLedgerRepository,
+    private readonly metricsService: MetricsService,
   ) {}
 
   /**
    * Initiates a refund for a return request.
    * State Machine: QC_APPROVED -> REFUND_INITIATED
    */
-  async initiateRefund(returnId: string, approvedAmount: string, actorId: string) {
+  async initiateRefund(
+    returnId: string,
+    approvedAmount: string,
+    actorId: string,
+  ) {
     const returnRequest = await this.prisma.returnRequest.findUnique({
       where: { id: returnId },
       include: { order: true },
@@ -24,26 +44,38 @@ export class RefundService {
     if (!returnRequest) throw new NotFoundException('Return not found');
 
     if (returnRequest.status !== ReturnStatus.QC_APPROVED) {
-      throw new UnprocessableEntityException('Return must be QC_APPROVED to initiate refund');
+      throw new UnprocessableEntityException(
+        'Return must be QC_APPROVED to initiate refund',
+      );
     }
 
-    const requestedAmountDecimal = new Prisma.Decimal(returnRequest.requestedRefundAmount);
+    const requestedAmountDecimal = new Prisma.Decimal(
+      returnRequest.requestedRefundAmount,
+    );
     const approvedAmountDecimal = new Prisma.Decimal(approvedAmount);
 
     // INV-S8-37: Refund amount cannot exceed requested amount
     if (approvedAmountDecimal.greaterThan(requestedAmountDecimal)) {
-      throw new UnprocessableEntityException('Approved amount exceeds requested amount');
+      throw new UnprocessableEntityException(
+        'Approved amount exceeds requested amount',
+      );
     }
 
     // INV-S8-41: Double-refund guard (checked BEFORE transaction)
-    const existingLedgerEntry = await this.buyerLedgerRepo.findByReturnId(returnId);
+    const existingLedgerEntry =
+      await this.buyerLedgerRepo.findByReturnId(returnId);
     if (existingLedgerEntry) {
-      throw new UnprocessableEntityException('Refund already initiated for this return');
+      throw new UnprocessableEntityException(
+        'Refund already initiated for this return',
+      );
     }
 
     const result = await this.prisma.$transaction(async (tx) => {
       // INV-S8-40: BuyerLedger balance MUST be read INSIDE $transaction
-      const currentBalance = await this.buyerLedgerRepo.findLatestBalance(tx, returnRequest.order.buyerId);
+      const currentBalance = await this.buyerLedgerRepo.findLatestBalance(
+        tx,
+        returnRequest.order.buyerId,
+      );
       const newBalance = currentBalance.add(approvedAmountDecimal);
 
       // Update ReturnRequest
@@ -58,7 +90,10 @@ export class RefundService {
       // Update Payment status (INV-S8-18)
       // We take the first CAPTURED or PARTIALLY_REFUNDED payment for the order
       const payment = await tx.payment.findFirst({
-        where: { orderId: returnRequest.orderId, status: { in: ['CAPTURED', 'PARTIALLY_REFUNDED'] } },
+        where: {
+          orderId: returnRequest.orderId,
+          status: { in: ['CAPTURED', 'PARTIALLY_REFUNDED'] },
+        },
       });
 
       if (payment) {
@@ -102,6 +137,31 @@ export class RefundService {
       return { updatedReturn, ledgerEntry };
     });
 
+    // ─── Phase 9: Observability & Traces (§20.1, §20.2, §20.4, §20.5) ────────
+    // 1. Metric: Increment refund initiated counters
+    this.metricsService.refundInitiatedTotal.inc({ segment: returnRequest.order.segment });
+    
+    // OBS-AR8-18: parseFloat ONLY for Prometheus gauge serialisation
+    this.metricsService.refundAmountTotal.set(
+      { segment: returnRequest.order.segment }, 
+      parseFloat(approvedAmountDecimal.toString())
+    );
+    this.metricsService.buyerLedgerEntriesTotal.inc({ type: 'REFUND' });
+    
+    // 2. Structured Log & Trace
+    this.logger.log({
+      level: 'info',
+      event: 'refund.initiate',
+      trace_id: `trace_refund_${returnRequest.id}`, // Trace bounds for refund.initiate workflow
+      returnId,
+      from: ReturnStatus.QC_APPROVED,
+      to: ReturnStatus.REFUND_INITIATED,
+      actorId,
+      orderId: returnRequest.orderId,
+      segment: returnRequest.order.segment,
+      msg: 'Refund initiated, buyer ledger updated, and outbox event emitted',
+    });
+
     return result;
   }
 
@@ -117,7 +177,9 @@ export class RefundService {
 
     if (!returnRequest) throw new NotFoundException('Return not found');
     if (returnRequest.status !== ReturnStatus.REFUND_INITIATED) {
-      throw new UnprocessableEntityException('Return must be REFUND_INITIATED to mark as refunded');
+      throw new UnprocessableEntityException(
+        'Return must be REFUND_INITIATED to mark as refunded',
+      );
     }
 
     const result = await this.prisma.$transaction(async (tx) => {
@@ -129,7 +191,10 @@ export class RefundService {
       });
 
       const payment = await tx.payment.findFirst({
-        where: { orderId: returnRequest.orderId, status: PaymentStatus.REFUND_INITIATED },
+        where: {
+          orderId: returnRequest.orderId,
+          status: PaymentStatus.REFUND_INITIATED,
+        },
       });
 
       if (payment) {
@@ -137,8 +202,10 @@ export class RefundService {
         const isFull = returnRequest.approvedRefundAmount.gte(payment.amount);
         await tx.payment.update({
           where: { id: payment.id },
-          data: { 
-            status: isFull ? PaymentStatus.FULLY_REFUNDED : PaymentStatus.PARTIALLY_REFUNDED,
+          data: {
+            status: isFull
+              ? PaymentStatus.FULLY_REFUNDED
+              : PaymentStatus.PARTIALLY_REFUNDED,
             refundedAt: new Date(),
           },
         });

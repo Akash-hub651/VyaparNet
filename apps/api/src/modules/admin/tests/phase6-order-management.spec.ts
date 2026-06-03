@@ -53,10 +53,10 @@ const makeOrder = (status: OrderStatus) => ({
 
 describe('AdminOrderService — Phase 6 Order Management', () => {
   let service: AdminOrderService;
-  let orderRepo: any;
-  let prismaService: any;
-  let notificationService: any;
-  let auditWriter: any;
+  let orderRepo: unknown;
+  let prismaService: unknown;
+  let notificationService: unknown;
+  let auditWriter: unknown;
 
   const buildTx = () => ({
     order: { update: vi.fn() },
@@ -82,7 +82,7 @@ describe('AdminOrderService — Phase 6 Order Management', () => {
     prismaService = {
       $transaction: vi
         .fn()
-        .mockImplementation(async (fn: (tx: any) => Promise<unknown>) =>
+        .mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
           fn(buildTx()),
         ),
       featureFlag: { findMany: vi.fn().mockResolvedValue([]) },
@@ -151,7 +151,7 @@ describe('AdminOrderService — Phase 6 Order Management', () => {
       ).toThrow(UnprocessableEntityException);
       try {
         validateAdminTransition(OrderStatus.PROCESSING, OrderStatus.DELIVERED);
-      } catch (e: any) {
+      } catch (e: unknown) {
         expect(e.response.code).toBe('INVALID_ADMIN_TRANSITION');
       }
     });
@@ -162,7 +162,7 @@ describe('AdminOrderService — Phase 6 Order Management', () => {
       ).toThrow(UnprocessableEntityException);
       try {
         validateAdminTransition(OrderStatus.COMPLETED, OrderStatus.CANCELLED);
-      } catch (e: any) {
+      } catch (e: unknown) {
         expect(e.response.code).toBe('ORDER_TERMINAL_STATE');
       }
     });
@@ -179,7 +179,7 @@ describe('AdminOrderService — Phase 6 Order Management', () => {
       ).toThrow(UnprocessableEntityException);
       try {
         validateAdminTransition(OrderStatus.PLACED, OrderStatus.CANCELLED);
-      } catch (e: any) {
+      } catch (e: unknown) {
         expect(e.response.code).toBe('CANCELLATION_REASON_REQUIRED');
       }
     });
@@ -190,7 +190,7 @@ describe('AdminOrderService — Phase 6 Order Management', () => {
       ).toThrow(UnprocessableEntityException);
       try {
         validateSellerTransition(OrderStatus.SHIPPED, OrderStatus.DELIVERED);
-      } catch (e: any) {
+      } catch (e: unknown) {
         expect(e.response.code).toBe('TRANSITION_RESERVED_FOR_ADMIN');
       }
     });
@@ -265,13 +265,13 @@ describe('AdminOrderService — Phase 6 Order Management', () => {
     it('INV-S7-6: OrderStatusChanged EventOutbox uses schemaVersion 5.0', async () => {
       orderRepo.findById.mockResolvedValueOnce(makeOrder(OrderStatus.SHIPPED));
 
-      let capturedPayload: any;
+      let capturedPayload: unknown;
       const tx = buildTx();
-      tx.eventOutbox.create.mockImplementationOnce((args: any) => {
+      tx.eventOutbox.create.mockImplementationOnce((args: unknown) => {
         capturedPayload = args.data;
         return { id: 'ev-1' };
       });
-      prismaService.$transaction.mockImplementationOnce(async (fn: any) =>
+      prismaService.$transaction.mockImplementationOnce(async (fn: unknown) =>
         fn(tx),
       );
 
@@ -284,7 +284,7 @@ describe('AdminOrderService — Phase 6 Order Management', () => {
     it('INV-S7-2: safeWrite() called OUTSIDE $transaction', async () => {
       const callOrder: string[] = [];
       orderRepo.findById.mockResolvedValueOnce(makeOrder(OrderStatus.SHIPPED));
-      prismaService.$transaction.mockImplementationOnce(async (fn: any) => {
+      prismaService.$transaction.mockImplementationOnce(async (fn: unknown) => {
         callOrder.push('$transaction');
         return fn(buildTx());
       });
@@ -320,7 +320,7 @@ describe('AdminOrderService — Phase 6 Order Management', () => {
   // ─── markCompleted ───────────────────────────────────────────────────────
 
   describe('markCompleted', () => {
-    let adminPayoutService: any;
+    let adminPayoutService: unknown;
 
     beforeEach(async () => {
       adminPayoutService = {
@@ -375,7 +375,7 @@ describe('AdminOrderService — Phase 6 Order Management', () => {
       });
 
       let txFnCalled = false;
-      prismaService.$transaction.mockImplementationOnce(async (fn: any) => {
+      prismaService.$transaction.mockImplementationOnce(async (fn: unknown) => {
         txFnCalled = true;
         const result = await fn(tx);
         payoutCallOrder.push('$transaction.resolved');
@@ -431,7 +431,9 @@ describe('AdminOrderService — Phase 6 Order Management', () => {
           { provide: AuditSafeWriterService, useValue: auditWriter },
           {
             provide: AdminPayoutService,
-            useValue: { calculatePayoutInsideTx: vi.fn().mockResolvedValue(undefined) },
+            useValue: {
+              calculatePayoutInsideTx: vi.fn().mockResolvedValue(undefined),
+            },
           },
         ],
       }).compile();
@@ -507,13 +509,13 @@ describe('AdminOrderService — Phase 6 Order Management', () => {
     it('INV-S7-6: force-cancel EventOutbox uses schemaVersion 5.0', async () => {
       orderRepo.findById.mockResolvedValueOnce(makeOrder(OrderStatus.PLACED));
 
-      let capturedPayload: any;
+      let capturedPayload: unknown;
       const tx = buildTx();
-      tx.eventOutbox.create.mockImplementationOnce((args: any) => {
+      tx.eventOutbox.create.mockImplementationOnce((args: unknown) => {
         capturedPayload = args.data;
         return { id: 'ev-1' };
       });
-      prismaService.$transaction.mockImplementationOnce(async (fn: any) =>
+      prismaService.$transaction.mockImplementationOnce(async (fn: unknown) =>
         fn(tx),
       );
 

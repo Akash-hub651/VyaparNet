@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../core/prisma/prisma.service';
-import { ReturnRequest, Prisma, Segment, ReturnStatus } from '@vyaparnet/database';
+import {
+  ReturnRequest,
+  Prisma,
+  Segment,
+  ReturnStatus,
+} from '@vyaparnet/database';
 
 @Injectable()
 export class AdminReturnRepository {

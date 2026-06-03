@@ -125,7 +125,7 @@ export class AuthController {
       ip ?? '0.0.0.0',
       userAgent ?? '',
     );
-    
+
     // Set httpOnly cookie for the admin panel
     res.cookie('admin_token', tokens.accessToken, {
       httpOnly: true,
@@ -168,10 +168,10 @@ export class AuthController {
   ): Promise<{ success: true; data: { message: string } }> {
     // Extract session ID from JWT jti or from request context
     await this.authService.logout(user.sub, user.jti, body.refreshToken);
-    
+
     // Clear admin_token cookie
     res.clearCookie('admin_token', { path: '/' });
-    
+
     return { success: true, data: { message: 'Logged out successfully.' } };
   }
 

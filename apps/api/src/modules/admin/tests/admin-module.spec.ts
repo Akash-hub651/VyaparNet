@@ -19,9 +19,9 @@ import { AdminKycService } from '../services/admin-kyc.service';
  */
 describe('AdminModule Integration — Guard Validation Gate', () => {
   let app: INestApplication;
-  let redisService: any;
-  let mockUser: any;
-  let mockKycService: any;
+  let redisService: unknown;
+  let mockUser: unknown;
+  let mockKycService: unknown;
 
   beforeEach(async () => {
     // Default to a valid admin user

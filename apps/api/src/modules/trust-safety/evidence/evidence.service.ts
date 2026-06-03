@@ -1,5 +1,13 @@
-import { Injectable, Inject, BadRequestException, Logger } from '@nestjs/common';
-import { STORAGE_PROVIDER, IStorageProvider } from './interfaces/storage-provider.interface';
+import {
+  Injectable,
+  Inject,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
+import {
+  STORAGE_PROVIDER,
+  IStorageProvider,
+} from './interfaces/storage-provider.interface';
 import { randomUUID } from 'crypto';
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB (INV-S8-30)
@@ -16,7 +24,8 @@ export class EvidenceService {
   private readonly logger = new Logger(EvidenceService.name);
 
   constructor(
-    @Inject(STORAGE_PROVIDER) private readonly storageProvider: IStorageProvider,
+    @Inject(STORAGE_PROVIDER)
+    private readonly storageProvider: IStorageProvider,
   ) {}
 
   /**
@@ -29,7 +38,9 @@ export class EvidenceService {
     fileBuffer: Buffer,
     originalFilename: string,
   ): Promise<string> {
-    this.logger.debug(`Uploading evidence for ${entityType} ${entityId} (filename: ${originalFilename})`);
+    this.logger.debug(
+      `Uploading evidence for ${entityType} ${entityId} (filename: ${originalFilename})`,
+    );
     // 1. Enforce size limit BEFORE processing (INV-S8-30)
     if (fileBuffer.length > MAX_FILE_SIZE_BYTES) {
       throw new BadRequestException('File size exceeds 5MB limit');
@@ -51,7 +62,9 @@ export class EvidenceService {
     }
 
     if (!ALLOWED_MIME_TYPES.has(fileType.mime)) {
-      throw new BadRequestException(`File type ${fileType.mime} is not allowed for evidence`);
+      throw new BadRequestException(
+        `File type ${fileType.mime} is not allowed for evidence`,
+      );
     }
 
     // 3. Generate deterministic S3 keys without storing signed URLs in DB (INV-S8-4)

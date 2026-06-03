@@ -359,10 +359,19 @@ export class AdminUserService {
   /**
    * Retrieves paginated buyer ledger for an admin view.
    */
-  async getBuyerLedger(buyerId: string, page: number, limit: number, segment?: any): Promise<any> {
+  async getBuyerLedger(
+    buyerId: string,
+    page: number,
+    limit: number,
+    segment?: any,
+  ): Promise<any> {
     const user = await this.prisma.user.findUnique({ where: { id: buyerId } });
     if (!user) throw new NotFoundException('Buyer not found');
 
-    return this.buyerLedgerRepo.findManyForBuyer(buyerId, { page, limit, segment });
+    return this.buyerLedgerRepo.findManyForBuyer(buyerId, {
+      page,
+      limit,
+      segment,
+    });
   }
 }

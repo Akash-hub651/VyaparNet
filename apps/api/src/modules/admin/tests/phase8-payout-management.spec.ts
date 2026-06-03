@@ -26,9 +26,9 @@ const makePayout = (status: PayoutStatus = PayoutStatus.PENDING) => ({
   sellerId: SELLER_USER_ID, // User.id — H-P0-3
   sellerName: 'Test Seller',
   grossAmount: '5000.00',
-  platformFee: '100.00',   // 2%
+  platformFee: '100.00', // 2%
   paymentGatewayFee: '100.00', // 2%
-  tdsAmount: '48.00',     // 1% of net
+  tdsAmount: '48.00', // 1% of net
   netPayout: '4752.00',
   status,
   utrNumber: null,
@@ -39,10 +39,10 @@ const makePayout = (status: PayoutStatus = PayoutStatus.PENDING) => ({
 
 describe('AdminPayoutService — Phase 8 Seller Payout Management', () => {
   let service: AdminPayoutService;
-  let payoutRepo: any;
-  let prismaService: any;
-  let auditWriter: any;
-  let metricsService: any;
+  let payoutRepo: unknown;
+  let prismaService: unknown;
+  let auditWriter: unknown;
+  let metricsService: unknown;
 
   beforeEach(async () => {
     payoutRepo = {
@@ -58,13 +58,13 @@ describe('AdminPayoutService — Phase 8 Seller Payout Management', () => {
     prismaService = {
       $transaction: vi
         .fn()
-        .mockImplementation(async (fn: (tx: any) => Promise<unknown>) =>
+        .mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
           fn({}),
         ),
     };
 
     auditWriter = { safeWrite: vi.fn().mockResolvedValue(undefined) };
-    
+
     metricsService = {
       payoutInitiatedTotal: { inc: vi.fn() },
       payoutAmountInitiatedInr: { inc: vi.fn() },
@@ -102,7 +102,10 @@ describe('AdminPayoutService — Phase 8 Seller Payout Management', () => {
       });
 
       expect(payoutRepo.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ status: 'PENDING', sellerId: SELLER_USER_ID }),
+        expect.objectContaining({
+          status: 'PENDING',
+          sellerId: SELLER_USER_ID,
+        }),
       );
     });
   });
@@ -118,7 +121,9 @@ describe('AdminPayoutService — Phase 8 Seller Payout Management', () => {
 
     it('throws NotFoundException for missing payout', async () => {
       payoutRepo.findById.mockResolvedValueOnce(null);
-      await expect(service.getPayoutDetail('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.getPayoutDetail('missing')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -135,7 +140,10 @@ describe('AdminPayoutService — Phase 8 Seller Payout Management', () => {
 
       // FOOTGUN-8-B: initiateById called INSIDE $transaction
       expect(prismaService.$transaction).toHaveBeenCalledOnce();
-      expect(payoutRepo.initiateById).toHaveBeenCalledWith(PAYOUT_ID, expect.anything());
+      expect(payoutRepo.initiateById).toHaveBeenCalledWith(
+        PAYOUT_ID,
+        expect.anything(),
+      );
 
       // INV-S7-2: safeWrite OUTSIDE $transaction
       expect(auditWriter.safeWrite).toHaveBeenCalledOnce();
@@ -148,7 +156,7 @@ describe('AdminPayoutService — Phase 8 Seller Payout Management', () => {
         .mockResolvedValueOnce(makePayout(PayoutStatus.PENDING))
         .mockResolvedValueOnce(makePayout(PayoutStatus.INITIATED));
 
-      prismaService.$transaction.mockImplementationOnce(async (fn: any) => {
+      prismaService.$transaction.mockImplementationOnce(async (fn: unknown) => {
         callOrder.push('$transaction');
         return fn({});
       });
@@ -164,7 +172,9 @@ describe('AdminPayoutService — Phase 8 Seller Payout Management', () => {
     });
 
     it('throws UnprocessableEntityException for non-PENDING payout', async () => {
-      payoutRepo.findById.mockResolvedValueOnce(makePayout(PayoutStatus.INITIATED));
+      payoutRepo.findById.mockResolvedValueOnce(
+        makePayout(PayoutStatus.INITIATED),
+      );
 
       await expect(
         service.initiatePayout(PAYOUT_ID, ADMIN_ID, MOCK_REQUEST),
@@ -175,7 +185,9 @@ describe('AdminPayoutService — Phase 8 Seller Payout Management', () => {
     });
 
     it('throws UnprocessableEntityException for TRANSFERRED payout', async () => {
-      payoutRepo.findById.mockResolvedValueOnce(makePayout(PayoutStatus.TRANSFERRED));
+      payoutRepo.findById.mockResolvedValueOnce(
+        makePayout(PayoutStatus.TRANSFERRED),
+      );
 
       await expect(
         service.initiatePayout(PAYOUT_ID, ADMIN_ID, MOCK_REQUEST),
@@ -218,7 +230,7 @@ describe('AdminPayoutService — Phase 8 Seller Payout Management', () => {
         .mockResolvedValueOnce(makePayout(PayoutStatus.INITIATED));
 
       let initiateCalledInsideTx = false;
-      prismaService.$transaction.mockImplementationOnce(async (fn: any) => {
+      prismaService.$transaction.mockImplementationOnce(async (fn: unknown) => {
         payoutRepo.initiateById.mockImplementationOnce(async () => {
           initiateCalledInsideTx = true;
         });

@@ -17,11 +17,7 @@ import {
   type AdminOrderListQuery,
   type AdminCancelDto,
 } from '@vyaparnet/types';
-import {
-  OrderStatus,
-  EventStatus,
-  SystemActorType,
-} from '@vyaparnet/database';
+import { OrderStatus, EventStatus, SystemActorType } from '@vyaparnet/database';
 import type { Request } from 'express';
 
 /**
@@ -244,7 +240,11 @@ export class AdminOrderService {
       // H-P1-9: rates pre-fetched BEFORE $transaction (getCommissionRates() called above)
       await this.adminPayoutService.calculatePayoutInsideTx(
         orderId,
-        { sellerId: order.sellerId, grandTotal: order.grandTotal, segment: order.segment },
+        {
+          sellerId: order.sellerId,
+          grandTotal: order.grandTotal,
+          segment: order.segment,
+        },
         tx,
         rates,
       );

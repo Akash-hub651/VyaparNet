@@ -86,7 +86,7 @@ export class AdminTicketsController {
       }
       assigneeId = parsed.data.adminUserId;
     }
-    
+
     return this.ticketService.assignTicket(id, assigneeId, req);
   }
 
@@ -152,7 +152,12 @@ export class AdminTicketsController {
         errors: parsed.error.issues,
       });
     }
-    return this.ticketService.replyToTicket(id, parsed.data, req.user.id, files || []);
+    return this.ticketService.replyToTicket(
+      id,
+      parsed.data,
+      req.user.id,
+      files || [],
+    );
   }
 
   /**

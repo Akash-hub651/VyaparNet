@@ -30,10 +30,10 @@ const makeFlag = (overrides = {}) => ({
 
 describe('AdminFlagService — Phase 9 Feature Flag Management', () => {
   let service: AdminFlagService;
-  let flagRepo: any;
-  let prismaService: any;
-  let auditWriter: any;
-  let redis: any;
+  let flagRepo: unknown;
+  let prismaService: unknown;
+  let auditWriter: unknown;
+  let redis: unknown;
 
   beforeEach(async () => {
     // Mock process.env.NODE_ENV
@@ -48,7 +48,7 @@ describe('AdminFlagService — Phase 9 Feature Flag Management', () => {
     prismaService = {
       $transaction: vi
         .fn()
-        .mockImplementation(async (fn: (tx: any) => Promise<unknown>) =>
+        .mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
           fn({}),
         ),
       featureFlag: {
@@ -154,7 +154,9 @@ describe('AdminFlagService — Phase 9 Feature Flag Management', () => {
 
   describe('getFlagValue', () => {
     it('returns rolloutPercent as numeric value', async () => {
-      flagRepo.findByName.mockResolvedValueOnce(makeFlag({ rolloutPercent: 2 }));
+      flagRepo.findByName.mockResolvedValueOnce(
+        makeFlag({ rolloutPercent: 2 }),
+      );
 
       const result = await service.getFlagValue(FLAG_NAME);
 
@@ -205,7 +207,7 @@ describe('AdminFlagService — Phase 9 Feature Flag Management', () => {
     it('FOOTGUN-9-C: AuditLog called OUTSIDE $transaction', async () => {
       const callOrder: string[] = [];
 
-      prismaService.$transaction.mockImplementationOnce(async (fn: any) => {
+      prismaService.$transaction.mockImplementationOnce(async (fn: unknown) => {
         callOrder.push('$transaction');
         return fn({});
       });
@@ -213,7 +215,12 @@ describe('AdminFlagService — Phase 9 Feature Flag Management', () => {
         callOrder.push('safeWrite');
       });
 
-      await service.toggleFlag(FLAG_NAME, { enabled: false }, ADMIN_ID, MOCK_REQUEST);
+      await service.toggleFlag(
+        FLAG_NAME,
+        { enabled: false },
+        ADMIN_ID,
+        MOCK_REQUEST,
+      );
 
       expect(callOrder.indexOf('safeWrite')).toBeGreaterThan(
         callOrder.indexOf('$transaction'),
@@ -221,7 +228,12 @@ describe('AdminFlagService — Phase 9 Feature Flag Management', () => {
     });
 
     it('FOOTGUN-9-A: cache invalidation uses SCAN+DEL — scan is called', async () => {
-      await service.toggleFlag(FLAG_NAME, { enabled: false }, ADMIN_ID, MOCK_REQUEST);
+      await service.toggleFlag(
+        FLAG_NAME,
+        { enabled: false },
+        ADMIN_ID,
+        MOCK_REQUEST,
+      );
 
       // FOOTGUN-9-A: SCAN must be used, not KEYS
       expect(redis.scan).toHaveBeenCalledWith(
@@ -239,7 +251,12 @@ describe('AdminFlagService — Phase 9 Feature Flag Management', () => {
         [`flag:${FLAG_NAME}:${ENV}:global`, `flag:${FLAG_NAME}:${ENV}:TEXTILE`],
       ]);
 
-      await service.toggleFlag(FLAG_NAME, { enabled: false }, ADMIN_ID, MOCK_REQUEST);
+      await service.toggleFlag(
+        FLAG_NAME,
+        { enabled: false },
+        ADMIN_ID,
+        MOCK_REQUEST,
+      );
 
       expect(redis.del).toHaveBeenCalledWith(
         `flag:${FLAG_NAME}:${ENV}:global`,

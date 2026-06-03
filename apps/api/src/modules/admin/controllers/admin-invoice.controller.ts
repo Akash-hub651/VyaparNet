@@ -1,17 +1,13 @@
-import {
-  Controller,
-  Post,
-  Get,
-  Param,
-  UseGuards,
-  Req,
-} from '@nestjs/common';
+import { Controller, Post, Get, Param, UseGuards, Req } from '@nestjs/common';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
 import { AdminContextGuard } from '../guards/admin-context.guard';
 import { AdminRateLimitGuard } from '../guards/admin-rate-limit.guard';
 import { AdminIdempotencyGuard } from '../guards/admin-idempotency.guard';
-import { AdminInvoiceService, TaxInvoiceDto } from '../services/admin-invoice.service';
+import {
+  AdminInvoiceService,
+  TaxInvoiceDto,
+} from '../services/admin-invoice.service';
 
 /**
  * AdminInvoicesController — Tax Invoice endpoints for Sprint 7 Phase 7.

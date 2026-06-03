@@ -16,7 +16,10 @@ export class RfqRepository {
     });
   }
 
-  async findByIdForBuyer(id: string, buyerId: string): Promise<(Rfq & { quotations: Quotation[] }) | null> {
+  async findByIdForBuyer(
+    id: string,
+    buyerId: string,
+  ): Promise<(Rfq & { quotations: Quotation[] }) | null> {
     return this.prisma.rfq.findFirst({
       where: { id, buyerId },
       include: { quotations: true },
@@ -51,13 +54,19 @@ export class RfqRepository {
     });
   }
 
-  async updateStatus(id: string, status: RfqStatus, tx?: Prisma.TransactionClient): Promise<Rfq> {
+  async updateStatus(
+    id: string,
+    status: RfqStatus,
+    tx?: Prisma.TransactionClient,
+  ): Promise<Rfq> {
     const client = tx || this.prisma;
     return client.rfq.update({
       where: { id },
       data: {
         status,
-        ...(status === RfqStatus.CLOSED || status === RfqStatus.CANCELLED ? { closedAt: new Date() } : {}),
+        ...(status === RfqStatus.CLOSED || status === RfqStatus.CANCELLED
+          ? { closedAt: new Date() }
+          : {}),
       },
     });
   }

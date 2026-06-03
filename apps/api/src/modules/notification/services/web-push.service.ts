@@ -32,7 +32,9 @@ export class WebPushService {
         this.logger.error('Failed to set VAPID details for Web Push', err);
       }
     } else {
-      this.logger.warn('VAPID_PUBLIC_KEY or VAPID_PRIVATE_KEY not set — Web Push notifications disabled');
+      this.logger.warn(
+        'VAPID_PUBLIC_KEY or VAPID_PRIVATE_KEY not set — Web Push notifications disabled',
+      );
     }
   }
 

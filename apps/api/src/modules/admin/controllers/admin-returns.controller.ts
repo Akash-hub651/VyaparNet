@@ -1,17 +1,27 @@
-import { Controller, Get, Patch, Post, Param, UseGuards, Req, Query, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Post,
+  Param,
+  UseGuards,
+  Req,
+  Query,
+  Body,
+} from '@nestjs/common';
 import { AdminReturnService } from '../services/admin-return.service';
 import { AdminRefundService } from '../services/admin-refund.service';
 import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
 import { ZodValidationPipe } from '../../../shared/pipes/zod-validation.pipe';
-import { 
-  AdminReturnListQueryDto, 
-  AdminReturnListQuerySchema, 
-  AdminReturnQcPassDto, 
+import {
+  AdminReturnListQueryDto,
+  AdminReturnListQuerySchema,
+  AdminReturnQcPassDto,
   AdminReturnQcPassSchema,
   AdminReturnInitiateRefundDto,
-  AdminReturnInitiateRefundSchema 
+  AdminReturnInitiateRefundSchema,
 } from '@vyaparnet/types';
 import { AdminIdempotencyGuard } from '../guards/admin-idempotency.guard';
 import { UserRole } from '@vyaparnet/types';
@@ -26,12 +36,23 @@ export class AdminReturnsController {
   ) {}
 
   @Get()
-  async getReturns(@Query(new ZodValidationPipe(AdminReturnListQuerySchema)) query: AdminReturnListQueryDto) {
-    return this.adminReturnService.listReturns(query.page, query.limit, query.segment, query.status);
+  async getReturns(
+    @Query(new ZodValidationPipe(AdminReturnListQuerySchema))
+    query: AdminReturnListQueryDto,
+  ) {
+    return this.adminReturnService.listReturns(
+      query.page,
+      query.limit,
+      query.segment,
+      query.status,
+    );
   }
 
   @Get(':id')
-  async getReturnDetail(@Req() req: any, @Param('id') id: string): Promise<any> {
+  async getReturnDetail(
+    @Req() req: any,
+    @Param('id') id: string,
+  ): Promise<any> {
     return this.adminReturnService.getReturnDetail(id, req.user.id);
   }
 
@@ -58,9 +79,14 @@ export class AdminReturnsController {
   async qcPass(
     @Req() req: any,
     @Param('id') id: string,
-    @Body(new ZodValidationPipe(AdminReturnQcPassSchema)) dto: AdminReturnQcPassDto,
+    @Body(new ZodValidationPipe(AdminReturnQcPassSchema))
+    dto: AdminReturnQcPassDto,
   ): Promise<any> {
-    return this.adminReturnService.qcPass(id, req.user.id, dto.approvedRefundAmount);
+    return this.adminReturnService.qcPass(
+      id,
+      req.user.id,
+      dto.approvedRefundAmount,
+    );
   }
 
   @Patch(':id/qc-fail')
@@ -80,7 +106,8 @@ export class AdminReturnsController {
   async initiateRefund(
     @Req() req: any,
     @Param('id') id: string,
-    @Body(new ZodValidationPipe(AdminReturnInitiateRefundSchema)) dto: AdminReturnInitiateRefundDto,
+    @Body(new ZodValidationPipe(AdminReturnInitiateRefundSchema))
+    dto: AdminReturnInitiateRefundDto,
   ): Promise<any> {
     return this.adminRefundService.initiateRefund(
       id,
@@ -91,13 +118,7 @@ export class AdminReturnsController {
 
   @Patch(':id/mark-refunded')
   @UseGuards(AdminIdempotencyGuard)
-  async markRefunded(
-    @Req() req: any,
-    @Param('id') id: string,
-  ): Promise<any> {
-    return this.adminRefundService.markRefunded(
-      id,
-      req.user.id,
-    );
+  async markRefunded(@Req() req: any, @Param('id') id: string): Promise<any> {
+    return this.adminRefundService.markRefunded(id, req.user.id);
   }
 }

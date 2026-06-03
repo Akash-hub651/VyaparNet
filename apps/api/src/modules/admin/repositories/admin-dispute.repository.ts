@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../core/prisma/prisma.service';
-import { Dispute, DisputeStatus, DisputePriority, Segment, Prisma } from '@vyaparnet/database';
+import {
+  Dispute,
+  DisputeStatus,
+  DisputePriority,
+  Segment,
+  Prisma,
+} from '@vyaparnet/database';
 
 @Injectable()
 export class AdminDisputeRepository {
@@ -29,10 +35,7 @@ export class AdminDisputeRepository {
         where,
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: [
-          { priority: 'desc' },
-          { createdAt: 'asc' },
-        ],
+        orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }],
         include: {
           order: { select: { segment: true } },
         },
@@ -43,7 +46,9 @@ export class AdminDisputeRepository {
     return { data, total };
   }
 
-  async findById(id: string): Promise<Dispute & { order: { segment: Segment } } | null> {
+  async findById(
+    id: string,
+  ): Promise<(Dispute & { order: { segment: Segment } }) | null> {
     return this.prisma.dispute.findUnique({
       where: { id },
       include: {
@@ -60,13 +65,13 @@ export class AdminDisputeRepository {
     tx?: Prisma.TransactionClient,
   ): Promise<Dispute> {
     const client = tx ?? this.prisma;
-    
+
     const data: Prisma.DisputeUpdateInput = { status };
     if (resolution) {
       data.resolution = resolution;
       data.resolvedAt = new Date();
     }
-    
+
     return client.dispute.update({
       where: { id },
       data,
@@ -77,7 +82,11 @@ export class AdminDisputeRepository {
     return this.prisma.dispute.count({
       where: {
         status: {
-          in: [DisputeStatus.OPEN, DisputeStatus.UNDER_REVIEW, DisputeStatus.ESCALATED],
+          in: [
+            DisputeStatus.OPEN,
+            DisputeStatus.UNDER_REVIEW,
+            DisputeStatus.ESCALATED,
+          ],
         },
       },
     });

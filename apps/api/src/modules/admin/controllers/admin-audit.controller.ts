@@ -42,7 +42,9 @@ export class AdminAuditController {
    */
   @Get()
   @HttpCode(HttpStatus.OK)
-  async listAuditLogs(@Query() rawQuery: Record<string, unknown>): Promise<AuditLogListResponse> {
+  async listAuditLogs(
+    @Query() rawQuery: Record<string, unknown>,
+  ): Promise<AuditLogListResponse> {
     const result = AuditLogListQuerySchema.safeParse(rawQuery);
     if (!result.success) {
       throw new UnprocessableEntityException({

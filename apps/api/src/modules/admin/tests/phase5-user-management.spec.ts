@@ -48,12 +48,12 @@ const MOCK_REQUEST = {
 
 describe('AdminUserService — Phase 5 User Management', () => {
   let service: AdminUserService;
-  let userRepo: any;
-  let prismaService: any;
-  let redisService: any;
-  let notificationService: any;
-  let auditWriter: any;
-  let metrics: any;
+  let userRepo: unknown;
+  let prismaService: unknown;
+  let redisService: unknown;
+  let notificationService: unknown;
+  let auditWriter: unknown;
+  let metrics: unknown;
 
   beforeEach(async () => {
     userRepo = {
@@ -72,7 +72,7 @@ describe('AdminUserService — Phase 5 User Management', () => {
     prismaService = {
       $transaction: vi
         .fn()
-        .mockImplementation(async (fn: (tx: any) => Promise<unknown>) =>
+        .mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
           fn({
             user: { update: vi.fn() },
             loginSession: { updateMany: vi.fn() },
@@ -228,7 +228,7 @@ describe('AdminUserService — Phase 5 User Management', () => {
       const callOrder: string[] = [];
 
       prismaService.$transaction.mockImplementationOnce(
-        async (fn: (tx: any) => Promise<unknown>) => {
+        async (fn: (tx: unknown) => Promise<unknown>) => {
           callOrder.push('$transaction');
           return fn({
             user: { update: vi.fn() },
@@ -258,7 +258,7 @@ describe('AdminUserService — Phase 5 User Management', () => {
       const callOrder: string[] = [];
 
       prismaService.$transaction.mockImplementationOnce(
-        async (fn: (tx: any) => Promise<unknown>) => {
+        async (fn: (tx: unknown) => Promise<unknown>) => {
           callOrder.push('$transaction');
           return fn({
             user: { update: vi.fn() },

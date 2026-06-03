@@ -318,4 +318,98 @@ export const metricProviders = [
     help: 'Total feature flag toggles by admin',
     labelNames: ['name', 'env', 'segment'],
   }),
+
+  // ─── Sprint 8: Trust & Safety, Procurement, Financial ────────────────────────
+  // Return metrics
+  makeCounterProvider({
+    name: 'return_requests_total',
+    help: 'Return requests total status changes',
+    labelNames: ['segment', 'status'],
+  }),
+  makeCounterProvider({
+    name: 'return_sla_breach_total',
+    help: 'Return SLA breaches',
+    labelNames: ['segment'],
+  }),
+  makeGaugeProvider({
+    name: 'return_qc_approval_rate',
+    help: 'Approved / total QC decisions',
+    labelNames: ['segment'],
+  }),
+  makeCounterProvider({
+    name: 'return_refund_amount_total',
+    help: 'Sum of approvedRefundAmount',
+    labelNames: ['segment'],
+  }),
+
+  // Dispute metrics
+  makeCounterProvider({
+    name: 'dispute_opened_total',
+    help: 'Total disputes opened',
+    labelNames: ['segment', 'priority'],
+  }),
+  makeCounterProvider({
+    name: 'dispute_resolved_total',
+    help: 'Total disputes resolved',
+    labelNames: ['segment', 'outcome'],
+  }),
+  makeCounterProvider({
+    name: 'dispute_sla_breach_total',
+    help: 'Dispute SLA breaches',
+    labelNames: ['segment'],
+  }),
+  makeHistogramProvider({
+    name: 'dispute_resolution_time_seconds',
+    help: 'Resolution time of disputes from createdAt to resolvedAt',
+    labelNames: ['segment'],
+  }),
+  makeCounterProvider({
+    name: 'dispute_payout_hold_total',
+    help: 'Total payouts put on hold due to dispute',
+    labelNames: ['segment'],
+  }),
+
+  // RFQ metrics
+  makeCounterProvider({
+    name: 'rfq_created_total',
+    help: 'Total RFQs created',
+    labelNames: ['segment'],
+  }),
+  makeCounterProvider({
+    name: 'quote_submitted_total',
+    help: 'Total quotes submitted',
+    labelNames: ['segment'],
+  }),
+  makeCounterProvider({
+    name: 'quote_accepted_total',
+    help: 'Total quotes accepted',
+    labelNames: ['segment'],
+  }),
+  makeCounterProvider({
+    name: 'quote_converted_to_order_total',
+    help: 'Total quotes converted to order',
+    labelNames: ['segment'],
+  }),
+  makeCounterProvider({
+    name: 'quote_expiry_total',
+    help: 'Total quotes expired by worker',
+    labelNames: ['segment'],
+  }),
+
+  // Refund metrics
+  makeCounterProvider({
+    name: 'refund_initiated_total',
+    help: 'Total refunds initiated',
+    labelNames: ['segment'],
+  }),
+  makeGaugeProvider({
+    name: 'refund_amount_total',
+    help: 'Total refund amount initiated',
+    labelNames: ['segment'],
+  }),
+  makeCounterProvider({
+    name: 'buyer_ledger_entries_total',
+    help: 'Total buyer ledger entries created',
+    labelNames: ['type'],
+  }),
 ];

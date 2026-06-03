@@ -39,14 +39,19 @@ export class BuyerTicketsController {
         errors: parsed.error.issues,
       });
     }
-    return this.ticketService.replyToTicket(id, parsed.data, req.user.id, files || []);
+    return this.ticketService.replyToTicket(
+      id,
+      parsed.data,
+      req.user.id,
+      files || [],
+    );
   }
 
   @Get(':id/messages')
   @HttpCode(HttpStatus.OK)
   async getTicketMessages(
     @Param('id') id: string,
-    @Req() req: Request & { user: { id: string } }
+    @Req() req: Request & { user: { id: string } },
   ) {
     return this.ticketService.getTicketMessages(id, req.user.id);
   }

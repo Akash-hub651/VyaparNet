@@ -27,7 +27,11 @@ export function createReturnInitiatedHandler() {
       userId: data.buyerId,
       contact,
       templateName: 'ReturnInitiated_BUYER_hi', // _hi logic handled via preference or fallback internally, passing standard name
-      variables: { returnId: data.returnId, orderId: data.orderId, reason: data.reason },
+      variables: {
+        returnId: data.returnId,
+        orderId: data.orderId,
+        reason: data.reason,
+      },
       entityId: data.returnId,
       eventType: 'ReturnInitiated',
       channels: ['sms', 'inApp'],
@@ -46,7 +50,9 @@ export function createReturnApprovedHandler() {
     // Notify Buyer
     const buyerDedupKey = `notif:${data.buyerId}:ReturnApproved:${data.returnId}:buyer`;
     if (!(await ctx.deduplicationService.isDuplicate(buyerDedupKey))) {
-      const buyerContact = await ctx.userContactService.getContact(data.buyerId);
+      const buyerContact = await ctx.userContactService.getContact(
+        data.buyerId,
+      );
       await ctx.notificationService.createAndEnqueue({
         userId: data.buyerId,
         contact: buyerContact,
@@ -60,7 +66,9 @@ export function createReturnApprovedHandler() {
     }
 
     // Notify Seller (INV-S8 Architecture Fix: Lookup sellerId via orderId since it's missing in §15.2 schema)
-    const sellerId = await ctx.userContactService.getOrderSellerId(data.orderId);
+    const sellerId = await ctx.userContactService.getOrderSellerId(
+      data.orderId,
+    );
     if (sellerId) {
       const sellerDedupKey = `notif:${sellerId}:ReturnApproved:${data.returnId}:seller`;
       if (!(await ctx.deduplicationService.isDuplicate(sellerDedupKey))) {
@@ -142,7 +150,11 @@ export function createDisputeOpenedHandler() {
       userId: data.buyerId,
       contact,
       templateName: 'DisputeOpened_BUYER_hi',
-      variables: { disputeId: data.disputeId, orderId: data.orderId, priority: data.priority },
+      variables: {
+        disputeId: data.disputeId,
+        orderId: data.orderId,
+        priority: data.priority,
+      },
       entityId: data.disputeId,
       eventType: 'DisputeOpened',
       channels: ['inApp'],
@@ -190,7 +202,11 @@ export function createQuoteCreatedHandler() {
       userId: data.buyerId,
       contact,
       templateName: 'QuoteReceived_BUYER_hi',
-      variables: { quotationId: data.quotationId, totalPrice: data.totalPrice, validUntil: data.validUntil },
+      variables: {
+        quotationId: data.quotationId,
+        totalPrice: data.totalPrice,
+        validUntil: data.validUntil,
+      },
       entityId: data.quotationId,
       eventType: 'QuoteCreated',
       channels: ['inApp'],

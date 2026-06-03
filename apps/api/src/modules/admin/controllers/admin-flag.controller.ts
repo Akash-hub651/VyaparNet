@@ -12,7 +12,10 @@ import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
 import { AdminContextGuard } from '../guards/admin-context.guard';
 import { AdminRateLimitGuard } from '../guards/admin-rate-limit.guard';
 import { AdminIdempotencyGuard } from '../guards/admin-idempotency.guard';
-import { AdminFlagService, type FeatureFlagDto } from '../services/admin-flag.service';
+import {
+  AdminFlagService,
+  type FeatureFlagDto,
+} from '../services/admin-flag.service';
 import { ZodValidationPipe } from '../../../shared/pipes/zod-validation.pipe';
 import {
   AdminUpdateFlagDtoSchema,

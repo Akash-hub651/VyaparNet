@@ -2,10 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import * as argon2 from 'argon2';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { AuditSafeWriterService } from '../../security/audit/audit-safe-writer.service';
-import {
-  AuditAction,
-  SystemActorType,
-} from '@vyaparnet/types';
+import { AuditAction, SystemActorType } from '@vyaparnet/types';
 import { UserRole, Segment } from '@vyaparnet/database';
 
 /**
@@ -20,7 +17,8 @@ import { UserRole, Segment } from '@vyaparnet/database';
 const DEFAULT_FLAGS = [
   {
     name: 'platform_commission_percent',
-    description: 'Platform commission rate (%). Stored in rolloutPercent field.',
+    description:
+      'Platform commission rate (%). Stored in rolloutPercent field.',
     enabled: true,
     rolloutPercent: 2,
   },
@@ -32,7 +30,8 @@ const DEFAULT_FLAGS = [
   },
   {
     name: 'payment_gateway_fee_percent',
-    description: 'Payment gateway fee rate (%). Stored in rolloutPercent field.',
+    description:
+      'Payment gateway fee rate (%). Stored in rolloutPercent field.',
     enabled: true,
     rolloutPercent: 2,
   },
@@ -111,10 +110,7 @@ export class AdminSeedService implements OnModuleInit {
       return;
     }
 
-    this.logger.log(
-      { phone },
-      'ADMIN_BOOTSTRAP: Creating initial admin user',
-    );
+    this.logger.log({ phone }, 'ADMIN_BOOTSTRAP: Creating initial admin user');
 
     // Hash password
     const hashedPassword = await argon2.hash(password, {
@@ -167,7 +163,7 @@ export class AdminSeedService implements OnModuleInit {
     for (const flag of DEFAULT_FLAGS) {
       const flagEnabled =
         flag.name === 'feature_kyc_enforcement_enabled'
-          ? isProduction  // true in prod, false in dev
+          ? isProduction // true in prod, false in dev
           : flag.enabled;
 
       await this.prisma.featureFlag.upsert({

@@ -112,7 +112,8 @@ export class AdminPayoutsController {
   async reversePayout(
     @Req() req: any,
     @Param('id') id: string,
-    @Body(new ZodValidationPipe(AdminPayoutReverseSchema)) dto: AdminPayoutReverseDto,
+    @Body(new ZodValidationPipe(AdminPayoutReverseSchema))
+    dto: AdminPayoutReverseDto,
   ): Promise<PayoutListItem> {
     return this.payoutService.reverse(id, req.user.id, req, dto.reversalReason);
   }

@@ -20,7 +20,10 @@ import {
   AdminSuspendUserDtoSchema,
   AdminChangeRoleDtoSchema,
 } from '@vyaparnet/types';
-import { BuyerLedgerListQuerySchema, BuyerLedgerListQueryDto } from '@vyaparnet/types';
+import {
+  BuyerLedgerListQuerySchema,
+  BuyerLedgerListQueryDto,
+} from '@vyaparnet/types';
 import { ZodValidationPipe } from '../../../shared/pipes/zod-validation.pipe';
 
 /**
@@ -81,9 +84,15 @@ export class AdminUsersController {
   @Get('buyers/:id/ledger')
   async getBuyerLedger(
     @Param('id') id: string,
-    @Query(new ZodValidationPipe(BuyerLedgerListQuerySchema)) query: BuyerLedgerListQueryDto,
+    @Query(new ZodValidationPipe(BuyerLedgerListQuerySchema))
+    query: BuyerLedgerListQueryDto,
   ): Promise<any> {
-    return this.userService.getBuyerLedger(id, query.page, query.limit, query.segment);
+    return this.userService.getBuyerLedger(
+      id,
+      query.page,
+      query.limit,
+      query.segment,
+    );
   }
 
   /**

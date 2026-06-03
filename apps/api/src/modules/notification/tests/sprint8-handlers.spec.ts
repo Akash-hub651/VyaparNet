@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createReturnInitiatedHandler } from '../handlers/sprint8.handlers';
 
 describe('Sprint 8 Handlers (INV-S6-3)', () => {
-  let ctx: any;
+  let ctx: unknown;
 
   beforeEach(() => {
     ctx = {
@@ -17,7 +17,10 @@ describe('Sprint 8 Handlers (INV-S6-3)', () => {
     const handler = createReturnInitiatedHandler();
     await handler({ returnId: 123 }, ctx); // Invalid payload
 
-    expect(ctx.logger.error).toHaveBeenCalledWith('Invalid ReturnInitiated payload', expect.any(Object));
+    expect(ctx.logger.error).toHaveBeenCalledWith(
+      'Invalid ReturnInitiated payload',
+      expect.any(Object),
+    );
     expect(ctx.notificationService.createAndEnqueue).not.toHaveBeenCalled();
   });
 
@@ -33,16 +36,21 @@ describe('Sprint 8 Handlers (INV-S6-3)', () => {
       itemId: 'cuid000',
       segment: 'TEXTILE',
       reason: 'Defective',
-      requestedAmount: '100.50'
+      requestedAmount: '100.50',
     };
 
     await handler(validPayload, ctx);
 
-    expect(ctx.notificationService.createAndEnqueue).toHaveBeenCalledWith(expect.objectContaining({
-      templateName: 'ReturnInitiated_BUYER_hi',
-      eventType: 'ReturnInitiated',
-      entityId: 'cuid123',
-    }));
-    expect(ctx.deduplicationService.setProcessed).toHaveBeenCalledWith(expect.any(String), 300);
+    expect(ctx.notificationService.createAndEnqueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        templateName: 'ReturnInitiated_BUYER_hi',
+        eventType: 'ReturnInitiated',
+        entityId: 'cuid123',
+      }),
+    );
+    expect(ctx.deduplicationService.setProcessed).toHaveBeenCalledWith(
+      expect.any(String),
+      300,
+    );
   });
 });

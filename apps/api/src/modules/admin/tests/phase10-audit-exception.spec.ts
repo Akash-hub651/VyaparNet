@@ -38,7 +38,7 @@ const makeAuditLog = (overrides = {}) => ({
 
 describe('AdminAuditService — Phase 10 Audit Log Viewer', () => {
   let service: AdminAuditService;
-  let auditRepo: any;
+  let auditRepo: unknown;
 
   beforeEach(async () => {
     auditRepo = {
@@ -104,7 +104,7 @@ describe('AdminAuditService — Phase 10 Audit Log Viewer', () => {
 
 describe('AdminAuditController — Phase 10 Validation Gate', () => {
   let controller: AdminAuditController;
-  let auditService: any;
+  let auditService: unknown;
 
   beforeEach(async () => {
     auditService = {
@@ -140,15 +140,15 @@ describe('AdminAuditController — Phase 10 Validation Gate', () => {
   });
 
   it('INV-S7-22: limit=101 → 422 LIMIT_EXCEEDED', async () => {
-    await expect(
-      controller.listAuditLogs({ limit: '101' }),
-    ).rejects.toThrow(UnprocessableEntityException);
+    await expect(controller.listAuditLogs({ limit: '101' })).rejects.toThrow(
+      UnprocessableEntityException,
+    );
   });
 
   it('FOOTGUN-10-D: limit > 100 rejected even if Zod passes (belt-and-suspenders)', async () => {
-    await expect(
-      controller.listAuditLogs({ limit: '200' }),
-    ).rejects.toThrow(UnprocessableEntityException);
+    await expect(controller.listAuditLogs({ limit: '200' })).rejects.toThrow(
+      UnprocessableEntityException,
+    );
   });
 
   it('entity timeline returns chronological logs', async () => {
@@ -163,9 +163,7 @@ describe('AdminAuditController — Phase 10 Validation Gate', () => {
 
   it('FOOTGUN-10-A: no write endpoint — only GET endpoints exist', () => {
     // AdminAuditController must NOT have POST/PATCH/DELETE that write audit logs
-    const proto = Object.getOwnPropertyNames(
-      Object.getPrototypeOf(controller),
-    );
+    const proto = Object.getOwnPropertyNames(Object.getPrototypeOf(controller));
     // These methods must NOT exist:
     expect(proto).not.toContain('createAuditLog');
     expect(proto).not.toContain('deleteAuditLog');
@@ -177,11 +175,11 @@ describe('AdminAuditController — Phase 10 Validation Gate', () => {
 
 describe('AdminExceptionService.getTechnicalExceptions — Phase 10 DLQ', () => {
   let service: AdminExceptionService;
-  let prisma: any;
-  let dlqQueue: any;
-  let metrics: any;
-  let disputeRepo: any;
-  let redis: any;
+  let prisma: unknown;
+  let dlqQueue: unknown;
+  let metrics: unknown;
+  let disputeRepo: unknown;
+  let redis: unknown;
 
   beforeEach(async () => {
     prisma = {
@@ -239,7 +237,7 @@ describe('AdminExceptionService.getTechnicalExceptions — Phase 10 DLQ', () => 
       return Promise.resolve('0');
     });
     disputeRepo.countOpen.mockResolvedValue(7);
-    
+
     const res = await service.getTechnicalExceptions();
     expect(res.dlqDepth).toBe(3);
     expect(res.openDisputes).toBe(7);

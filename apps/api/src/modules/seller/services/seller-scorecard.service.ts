@@ -360,25 +360,37 @@ export class SellerScorecardService {
   // Public API — Triggered by Event Queue (Sprint 8)
   // ─────────────────────────────────────────────────────────────────
 
-  async incrementReturnRate(businessId: string, segment: Segment): Promise<void> {
+  async incrementReturnRate(
+    businessId: string,
+    segment: Segment,
+  ): Promise<void> {
     await this.prisma.sellerScore.updateMany({
       where: { businessId },
       data: { returnRate: { increment: 1 } },
     });
     // Trigger recalculation which might emit EventOutbox if composite changes
     await this.computeScoreForBusiness(businessId, segment).catch((err) =>
-      this.logger.error({ err: (err as Error).message, businessId }, 'FAILED_TO_RECOMPUTE_SCORE_AFTER_RETURN'),
+      this.logger.error(
+        { err: (err as Error).message, businessId },
+        'FAILED_TO_RECOMPUTE_SCORE_AFTER_RETURN',
+      ),
     );
   }
 
-  async incrementDisputeRate(businessId: string, segment: Segment): Promise<void> {
+  async incrementDisputeRate(
+    businessId: string,
+    segment: Segment,
+  ): Promise<void> {
     await this.prisma.sellerScore.updateMany({
       where: { businessId },
       data: { disputeRate: { increment: 1 } },
     });
     // Trigger recalculation which might emit EventOutbox if composite changes
     await this.computeScoreForBusiness(businessId, segment).catch((err) =>
-      this.logger.error({ err: (err as Error).message, businessId }, 'FAILED_TO_RECOMPUTE_SCORE_AFTER_DISPUTE'),
+      this.logger.error(
+        { err: (err as Error).message, businessId },
+        'FAILED_TO_RECOMPUTE_SCORE_AFTER_DISPUTE',
+      ),
     );
   }
 

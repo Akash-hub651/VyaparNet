@@ -9,10 +9,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 describe('Phase 6: Support Ticket Threads - Buyer', () => {
   let service: BuyerTicketService;
-  let ticketRepo: any;
-  let notificationService: any;
-  let evidenceService: any;
-  let prisma: any;
+  let ticketRepo: unknown;
+  let notificationService: unknown;
+  let evidenceService: unknown;
+  let prisma: unknown;
 
   beforeEach(async () => {
     ticketRepo = {
@@ -51,21 +51,73 @@ describe('Phase 6: Support Ticket Threads - Buyer', () => {
   describe('replyToTicket', () => {
     it('should throw NotFoundException if ticket not found or wrong owner', async () => {
       ticketRepo.findByIdForBuyer.mockResolvedValue(null);
-      await expect(service.replyToTicket('t1', { message: 'hello', clientMessageId: '123' }, 'buyer1')).rejects.toThrow(NotFoundException);
+      await expect(
+        service.replyToTicket(
+          't1',
+          { message: 'hello', clientMessageId: '123' },
+          'buyer1',
+        ),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should add message and notify assigned admin if assigned', async () => {
-      ticketRepo.findByIdForBuyer.mockResolvedValue({ id: 't1', assignedTo: 'admin1' });
+      ticketRepo.findByIdForBuyer.mockResolvedValue({
+        id: 't1',
+        assignedTo: 'admin1',
+      });
       ticketRepo.addMessage.mockResolvedValue({ id: 'm1' });
       evidenceService.uploadEvidence.mockResolvedValue('s3://buyer/test.jpg');
 
-      const files: any[] = [{ buffer: Buffer.from('test'), originalname: 'test.jpg' }];
-      const result = await service.replyToTicket('t1', { message: 'hello', clientMessageId: '123' }, 'buyer1', files);
+      const files: unknown[] = [
+        { buffer: Buffer.from('test'), originalname: 'test.jpg' },
+      ];
+      const result = await service.replyToTicket(
+        't1',
+        { message: 'hello', clientMessageId: '123' },
+        'buyer1',
+        files,
+      );
 
-      expect(evidenceService.uploadEvidence).toHaveBeenCalledWith('ticket', 't1', expect.any(Buffer), 'test.jpg');
-      expect(ticketRepo.addMessage).toHaveBeenCalledWith('t1', 'buyer1', 'hello', ['s3://buyer/test.jpg'], '123');
-      expect(notificationService.sendDirect).toHaveBeenCalledWith('admin1', 'SupportTicketReplyReceived', { ticketId: 't1', messageId: 'm1' });
+      expect(evidenceService.uploadEvidence).toHaveBeenCalledWith(
+        'ticket',
+        't1',
+        expect.any(Buffer),
+        'test.jpg',
+      );
+      expect(ticketRepo.addMessage).toHaveBeenCalledWith(
+        't1',
+        'buyer1',
+        'hello',
+        ['s3://buyer/test.jpg'],
+        '123',
+      );
+      expect(notificationService.sendDirect).toHaveBeenCalledWith(
+        'admin1',
+        'SupportTicketReplyReceived',
+        { ticketId: 't1', messageId: 'm1' },
+      );
       expect(result).toEqual({ id: 'm1' });
+    });
+
+    it('should deduplicate messages using clientMessageId (OBS-AR8-17)', async () => {
+      // Simulate that the repository will return the existing message instead of creating a new one
+      ticketRepo.findByIdForBuyer.mockResolvedValue({ id: 't1' });
+      ticketRepo.addMessage.mockResolvedValue({ id: 'existing_m1', clientMessageId: 'dedup_123' });
+
+      const result = await service.replyToTicket(
+        't1',
+        { message: 'hello', clientMessageId: 'dedup_123' },
+        'buyer1',
+      );
+
+      expect(ticketRepo.addMessage).toHaveBeenCalledWith(
+        't1',
+        'buyer1',
+        'hello',
+        [],
+        'dedup_123',
+      );
+      expect(result).toEqual({ id: 'existing_m1', clientMessageId: 'dedup_123' });
     });
   });
 });

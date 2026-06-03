@@ -1,12 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../core/prisma/prisma.service';
-import { Quotation, Prisma, PriceNegotiation, QuotationStatus } from '@vyaparnet/database';
+import {
+  Quotation,
+  Prisma,
+  PriceNegotiation,
+  QuotationStatus,
+} from '@vyaparnet/database';
 
 @Injectable()
 export class QuotationRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: Prisma.QuotationUncheckedCreateInput, items: Prisma.QuotationItemCreateManyQuotationInput[], tx?: Prisma.TransactionClient): Promise<Quotation> {
+  async create(
+    data: Prisma.QuotationUncheckedCreateInput,
+    items: Prisma.QuotationItemCreateManyQuotationInput[],
+    tx?: Prisma.TransactionClient,
+  ): Promise<Quotation> {
     const client = tx || this.prisma;
     return client.quotation.create({
       data: {
@@ -20,21 +29,33 @@ export class QuotationRepository {
     });
   }
 
-  async findByIdForSeller(id: string, sellerId: string): Promise<(Quotation & { negotiations: PriceNegotiation[] }) | null> {
+  async findByIdForSeller(
+    id: string,
+    sellerId: string,
+  ): Promise<(Quotation & { negotiations: PriceNegotiation[] }) | null> {
     return this.prisma.quotation.findFirst({
       where: { id, sellerId },
       include: { negotiations: { orderBy: { createdAt: 'asc' } } },
     });
   }
 
-  async findByIdForBuyer(id: string, buyerId: string): Promise<(Quotation & { negotiations: PriceNegotiation[] }) | null> {
+  async findByIdForBuyer(
+    id: string,
+    buyerId: string,
+  ): Promise<(Quotation & { negotiations: PriceNegotiation[] }) | null> {
     return this.prisma.quotation.findFirst({
       where: { id, buyerId },
       include: { negotiations: { orderBy: { createdAt: 'asc' } } },
     });
   }
 
-  async addNegotiation(quotationId: string, proposedPrice: Prisma.Decimal, proposedBy: string, message?: string, tx?: Prisma.TransactionClient): Promise<PriceNegotiation> {
+  async addNegotiation(
+    quotationId: string,
+    proposedPrice: Prisma.Decimal,
+    proposedBy: string,
+    message?: string,
+    tx?: Prisma.TransactionClient,
+  ): Promise<PriceNegotiation> {
     const client = tx || this.prisma;
     return client.priceNegotiation.create({
       data: {
@@ -46,7 +67,11 @@ export class QuotationRepository {
     });
   }
 
-  async updateStatus(id: string, status: QuotationStatus, tx?: Prisma.TransactionClient): Promise<Quotation> {
+  async updateStatus(
+    id: string,
+    status: QuotationStatus,
+    tx?: Prisma.TransactionClient,
+  ): Promise<Quotation> {
     const client = tx || this.prisma;
     return client.quotation.update({
       where: { id },

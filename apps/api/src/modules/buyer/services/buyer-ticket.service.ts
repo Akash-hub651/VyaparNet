@@ -18,7 +18,12 @@ export class BuyerTicketService {
     return this.ticketRepo.getMessages(id);
   }
 
-  async replyToTicket(id: string, dto: SupportTicketReplyDto, buyerId: string, files: Express.Multer.File[] = []) {
+  async replyToTicket(
+    id: string,
+    dto: SupportTicketReplyDto,
+    buyerId: string,
+    files: Express.Multer.File[] = [],
+  ) {
     const ticket = await this.ticketRepo.findByIdForBuyer(id, buyerId);
     if (!ticket) throw new NotFoundException({ code: 'TICKET_NOT_FOUND', id });
 
@@ -29,7 +34,7 @@ export class BuyerTicketService {
           'ticket',
           id,
           file.buffer,
-          file.originalname
+          file.originalname,
         );
         attachmentKeys.push(key);
       }
@@ -40,14 +45,14 @@ export class BuyerTicketService {
       buyerId,
       dto.message,
       attachmentKeys,
-      dto.clientMessageId
+      dto.clientMessageId,
     );
 
     if (ticket.assignedTo) {
       await this.notificationService.sendDirect(
         ticket.assignedTo,
         'SupportTicketReplyReceived',
-        { ticketId: id, messageId: message.id }
+        { ticketId: id, messageId: message.id },
       );
     }
 

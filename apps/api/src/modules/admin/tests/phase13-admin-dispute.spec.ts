@@ -1,3 +1,4 @@
+import { MetricsService } from '../../observability/metrics.service';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AdminDisputeService } from '../services/admin-dispute.service';
@@ -8,7 +9,11 @@ import { PrismaService } from '../../../core/prisma/prisma.service';
 import { EvidenceService } from '../../trust-safety/evidence/evidence.service';
 import { NotificationService } from '../../notification/services/notification.service';
 import { getQueueToken } from '@nestjs/bull';
-import { DisputeStatus, PayoutStatus, DisputePriority } from '@vyaparnet/database';
+import {
+  DisputeStatus,
+  PayoutStatus,
+  DisputePriority,
+} from '@vyaparnet/database';
 import { AuditAction } from '@vyaparnet/types';
 
 describe('Phase 13: Admin Dispute Management + Payout Integration', () => {
@@ -16,7 +21,7 @@ describe('Phase 13: Admin Dispute Management + Payout Integration', () => {
   let disputeRepo: jest.Mocked<AdminDisputeRepository>;
   let payoutRepo: jest.Mocked<AdminPayoutRepository>;
   let auditWriter: jest.Mocked<AuditSafeWriterService>;
-  let prisma: any;
+  let prisma: unknown;
   const mockScorecardQueue = { add: vi.fn() };
 
   beforeEach(async () => {
@@ -24,7 +29,7 @@ describe('Phase 13: Admin Dispute Management + Payout Integration', () => {
       findById: vi.fn(),
       updateStatus: vi.fn(),
     } as any;
-    
+
     payoutRepo = {
       updateStatus: vi.fn(),
     } as any;
@@ -39,12 +44,31 @@ describe('Phase 13: Admin Dispute Management + Payout Integration', () => {
         findFirst: vi.fn(),
       },
       order: {
-        findUnique: vi.fn().mockResolvedValue({ sellerId: 'seller-1', segment: 'B2B' }),
+        findUnique: vi
+          .fn()
+          .mockResolvedValue({ sellerId: 'seller-1', segment: 'B2B' }),
       },
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        {
+          provide: MetricsService,
+          useValue: {
+            rfqCreatedTotal: { inc: vi.fn() },
+            quoteSubmittedTotal: { inc: vi.fn() },
+            quoteAcceptedTotal: { inc: vi.fn() },
+            quoteConvertedToOrderTotal: { inc: vi.fn() },
+            returnRequestsTotal: { inc: vi.fn() },
+            returnRefundAmountTotal: { inc: vi.fn() },
+            disputeOpenedTotal: { inc: vi.fn() },
+            disputeResolvedTotal: { inc: vi.fn() },
+            disputeResolutionTimeSeconds: { observe: vi.fn() },
+            refundInitiatedTotal: { inc: vi.fn() },
+            refundAmountTotal: { set: vi.fn() },
+            buyerLedgerEntriesTotal: { inc: vi.fn() },
+          },
+        },
         AdminDisputeService,
         { provide: AdminDisputeRepository, useValue: disputeRepo },
         { provide: AdminPayoutRepository, useValue: payoutRepo },
@@ -64,22 +88,50 @@ describe('Phase 13: Admin Dispute Management + Payout Integration', () => {
       id: 'dsp_123',
       orderId: 'ord_123',
       status: DisputeStatus.ESCALATED,
+      order: { segment: 'B2B' },
+      createdAt: new Date(),
     };
-    
-    disputeRepo.findById.mockResolvedValue(mockDispute as any);
-    disputeRepo.updateStatus.mockResolvedValue({ ...mockDispute, status: DisputeStatus.RESOLVED_BUYER } as any);
-    prisma.sellerPayout.findFirst.mockResolvedValue({ id: 'po_123', status: PayoutStatus.ON_HOLD } as any);
 
-    await service.resolveDispute('dsp_123', 'admin_1', 'BUYER_FAVORED', 'Refund to buyer');
+    disputeRepo.findById.mockResolvedValue(mockDispute as any);
+    disputeRepo.updateStatus.mockResolvedValue({
+      ...mockDispute,
+      status: DisputeStatus.RESOLVED_BUYER,
+    } as any);
+    prisma.sellerPayout.findFirst.mockResolvedValue({
+      id: 'po_123',
+      status: PayoutStatus.ON_HOLD,
+    } as any);
+
+    await service.resolveDispute(
+      'dsp_123',
+      'admin_1',
+      'BUYER_FAVORED',
+      'Refund to buyer',
+    );
 
     expect(prisma.$transaction).toHaveBeenCalled();
-    expect(disputeRepo.updateStatus).toHaveBeenCalledWith('dsp_123', DisputeStatus.RESOLVED_BUYER, 'admin_1', 'Refund to buyer', prisma);
-    expect(payoutRepo.updateStatus).toHaveBeenCalledWith('po_123', PayoutStatus.CANCELLED, prisma);
-    
+    expect(disputeRepo.updateStatus).toHaveBeenCalledWith(
+      'dsp_123',
+      DisputeStatus.RESOLVED_BUYER,
+      'admin_1',
+      'Refund to buyer',
+      prisma,
+    );
+    expect(payoutRepo.updateStatus).toHaveBeenCalledWith(
+      'po_123',
+      PayoutStatus.CANCELLED,
+      prisma,
+    );
+
     // INV-S7-2 / INV-S8-1: safeWrite OUTSIDE transaction
-    expect(auditWriter.safeWrite).toHaveBeenCalledWith(expect.objectContaining({
-      action: AuditAction.STATUS_CHANGE,
-      newValue: { status: DisputeStatus.RESOLVED_BUYER, resolution: 'Refund to buyer' }, // INV-S8-11
-    }));
+    expect(auditWriter.safeWrite).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: AuditAction.STATUS_CHANGE,
+        newValue: {
+          status: DisputeStatus.RESOLVED_BUYER,
+          resolution: 'Refund to buyer',
+        }, // INV-S8-11
+      }),
+    );
   });
 });

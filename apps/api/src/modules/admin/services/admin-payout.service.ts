@@ -6,7 +6,11 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { AuditSafeWriterService } from '../../security/audit/audit-safe-writer.service';
-import { AdminPayoutRepository, type PayoutListItem, type PayoutListResult } from '../repositories/admin-payout.repository';
+import {
+  AdminPayoutRepository,
+  type PayoutListItem,
+  type PayoutListResult,
+} from '../repositories/admin-payout.repository';
 import { AdminMetricsService } from './admin-metrics.service';
 import { Prisma, PayoutStatus } from '@vyaparnet/database';
 import {
@@ -64,19 +68,36 @@ export class AdminPayoutService {
    */
   async calculatePayoutInsideTx(
     orderId: string,
-    order: { sellerId: string; grandTotal: Prisma.Decimal | string; segment: string | null },
+    order: {
+      sellerId: string;
+      grandTotal: Prisma.Decimal | string;
+      segment: string | null;
+    },
     tx: Parameters<Parameters<PrismaService['$transaction']>[0]>[0],
-    rates: { commissionPercent: number; tdsRatePercent: number; gatewayFeePercent: number },
+    rates: {
+      commissionPercent: number;
+      tdsRatePercent: number;
+      gatewayFeePercent: number;
+    },
   ): Promise<void> {
     const { commissionPercent, tdsRatePercent, gatewayFeePercent } = rates;
 
     // FOOTGUN-8-C: All arithmetic via Prisma.Decimal — never JS float
     const grossAmount = new Prisma.Decimal(order.grandTotal.toString());
-    const platformFee = grossAmount.mul(new Prisma.Decimal(commissionPercent).div(100));
-    const gatewayFee = grossAmount.mul(new Prisma.Decimal(gatewayFeePercent).div(100));
+    const platformFee = grossAmount.mul(
+      new Prisma.Decimal(commissionPercent).div(100),
+    );
+    const gatewayFee = grossAmount.mul(
+      new Prisma.Decimal(gatewayFeePercent).div(100),
+    );
     // TDS calculated on net-of-commission amount
-    const tdsAmount = grossAmount.sub(platformFee).mul(new Prisma.Decimal(tdsRatePercent).div(100));
-    const netPayout = grossAmount.sub(platformFee).sub(gatewayFee).sub(tdsAmount);
+    const tdsAmount = grossAmount
+      .sub(platformFee)
+      .mul(new Prisma.Decimal(tdsRatePercent).div(100));
+    const netPayout = grossAmount
+      .sub(platformFee)
+      .sub(gatewayFee)
+      .sub(tdsAmount);
 
     // INV-S7-35 / H-P0-3: Resolve Business.ownerId — order.sellerId = Business.id, NOT User.id
     const business = await tx.business.findUnique({
@@ -84,7 +105,9 @@ export class AdminPayoutService {
       select: { ownerId: true },
     });
     if (!business) {
-      throw new Error(`Business not found for sellerId ${order.sellerId} — cannot create payout`);
+      throw new Error(
+        `Business not found for sellerId ${order.sellerId} — cannot create payout`,
+      );
     }
 
     // Create SellerPayout (PENDING) — INSIDE $transaction (INV-S7-35)
@@ -202,11 +225,18 @@ export class AdminPayoutService {
 
   // ─── Phase 3: hold, releaseHold, cancel, reverse ──────────────────────────
 
-  async hold(id: string, adminUserId: string, req: Request): Promise<PayoutListItem> {
+  async hold(
+    id: string,
+    adminUserId: string,
+    req: Request,
+  ): Promise<PayoutListItem> {
     const existing = await this.payoutRepo.findById(id);
-    if (!existing) throw new NotFoundException({ code: 'PAYOUT_NOT_FOUND', payoutId: id });
+    if (!existing)
+      throw new NotFoundException({ code: 'PAYOUT_NOT_FOUND', payoutId: id });
     if (existing.status !== PayoutStatus.PENDING) {
-      throw new UnprocessableEntityException(`Payout ${id} is ${existing.status} — only PENDING payouts can be held.`);
+      throw new UnprocessableEntityException(
+        `Payout ${id} is ${existing.status} — only PENDING payouts can be held.`,
+      );
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -228,11 +258,18 @@ export class AdminPayoutService {
     return (await this.payoutRepo.findById(id))!;
   }
 
-  async releaseHold(id: string, adminUserId: string, req: Request): Promise<PayoutListItem> {
+  async releaseHold(
+    id: string,
+    adminUserId: string,
+    req: Request,
+  ): Promise<PayoutListItem> {
     const existing = await this.payoutRepo.findById(id);
-    if (!existing) throw new NotFoundException({ code: 'PAYOUT_NOT_FOUND', payoutId: id });
+    if (!existing)
+      throw new NotFoundException({ code: 'PAYOUT_NOT_FOUND', payoutId: id });
     if (existing.status !== PayoutStatus.ON_HOLD) {
-      throw new UnprocessableEntityException(`Payout ${id} is ${existing.status} — only ON_HOLD payouts can be released.`);
+      throw new UnprocessableEntityException(
+        `Payout ${id} is ${existing.status} — only ON_HOLD payouts can be released.`,
+      );
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -254,11 +291,21 @@ export class AdminPayoutService {
     return (await this.payoutRepo.findById(id))!;
   }
 
-  async cancel(id: string, adminUserId: string, req: Request): Promise<PayoutListItem> {
+  async cancel(
+    id: string,
+    adminUserId: string,
+    req: Request,
+  ): Promise<PayoutListItem> {
     const existing = await this.payoutRepo.findById(id);
-    if (!existing) throw new NotFoundException({ code: 'PAYOUT_NOT_FOUND', payoutId: id });
-    if (existing.status !== PayoutStatus.ON_HOLD && existing.status !== PayoutStatus.PENDING) {
-      throw new UnprocessableEntityException(`Payout ${id} is ${existing.status} — cannot be cancelled.`);
+    if (!existing)
+      throw new NotFoundException({ code: 'PAYOUT_NOT_FOUND', payoutId: id });
+    if (
+      existing.status !== PayoutStatus.ON_HOLD &&
+      existing.status !== PayoutStatus.PENDING
+    ) {
+      throw new UnprocessableEntityException(
+        `Payout ${id} is ${existing.status} — cannot be cancelled.`,
+      );
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -280,11 +327,19 @@ export class AdminPayoutService {
     return (await this.payoutRepo.findById(id))!;
   }
 
-  async reverse(id: string, adminUserId: string, req: Request, reversalReason: string): Promise<PayoutListItem> {
+  async reverse(
+    id: string,
+    adminUserId: string,
+    req: Request,
+    reversalReason: string,
+  ): Promise<PayoutListItem> {
     const existing = await this.payoutRepo.findById(id);
-    if (!existing) throw new NotFoundException({ code: 'PAYOUT_NOT_FOUND', payoutId: id });
+    if (!existing)
+      throw new NotFoundException({ code: 'PAYOUT_NOT_FOUND', payoutId: id });
     if (existing.status !== PayoutStatus.TRANSFERRED) {
-      throw new UnprocessableEntityException(`Payout ${id} is ${existing.status} — only TRANSFERRED payouts can be reversed.`);
+      throw new UnprocessableEntityException(
+        `Payout ${id} is ${existing.status} — only TRANSFERRED payouts can be reversed.`,
+      );
     }
 
     await this.prisma.$transaction(async (tx) => {

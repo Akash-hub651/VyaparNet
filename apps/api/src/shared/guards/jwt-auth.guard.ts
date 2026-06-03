@@ -110,13 +110,16 @@ export class JwtAuthGuard implements CanActivate {
     // Fallback: Check for admin_token cookie (for Admin Panel)
     const cookieHeader = request.headers.cookie;
     if (cookieHeader) {
-      const cookies = cookieHeader.split(';').reduce((acc, cookieString) => {
-        const [key, value] = cookieString.split('=').map((c) => c.trim());
-        if (key && value) {
-          acc[key] = value;
-        }
-        return acc;
-      }, {} as Record<string, string>);
+      const cookies = cookieHeader.split(';').reduce(
+        (acc, cookieString) => {
+          const [key, value] = cookieString.split('=').map((c) => c.trim());
+          if (key && value) {
+            acc[key] = value;
+          }
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
 
       if (cookies['admin_token']) {
         return cookies['admin_token'];

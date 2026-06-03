@@ -1,3 +1,4 @@
+import { MetricsService } from '../../observability/metrics.service';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { RefundService } from '../../trust-safety/refunds/refund.service';
@@ -10,8 +11,8 @@ import { getQueueToken } from '@nestjs/bull';
 describe('Phase 4: Refund + BuyerLedger Integration', () => {
   let refundService: RefundService;
   let buyerLedgerRepo: BuyerLedgerRepository;
-  let prisma: any;
-  let scorecardQueue: any;
+  let prisma: unknown;
+  let scorecardQueue: unknown;
 
   beforeEach(async () => {
     buyerLedgerRepo = {
@@ -24,10 +25,15 @@ describe('Phase 4: Refund + BuyerLedger Integration', () => {
       $transaction: vi.fn((cb) => cb(prisma)),
       returnRequest: {
         findUnique: vi.fn(),
-        update: vi.fn().mockResolvedValue({ id: 'ret-1', status: ReturnStatus.REFUND_INITIATED }),
+        update: vi.fn().mockResolvedValue({
+          id: 'ret-1',
+          status: ReturnStatus.REFUND_INITIATED,
+        }),
       },
       payment: {
-        findFirst: vi.fn().mockResolvedValue({ id: 'pay-1', amount: new Prisma.Decimal(100) }),
+        findFirst: vi
+          .fn()
+          .mockResolvedValue({ id: 'pay-1', amount: new Prisma.Decimal(100) }),
         update: vi.fn(),
       },
       eventOutbox: {
@@ -41,6 +47,23 @@ describe('Phase 4: Refund + BuyerLedger Integration', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        {
+          provide: MetricsService,
+          useValue: {
+            rfqCreatedTotal: { inc: vi.fn() },
+            quoteSubmittedTotal: { inc: vi.fn() },
+            quoteAcceptedTotal: { inc: vi.fn() },
+            quoteConvertedToOrderTotal: { inc: vi.fn() },
+            returnRequestsTotal: { inc: vi.fn() },
+            returnRefundAmountTotal: { inc: vi.fn() },
+            disputeOpenedTotal: { inc: vi.fn() },
+            disputeResolvedTotal: { inc: vi.fn() },
+            disputeResolutionTimeSeconds: { observe: vi.fn() },
+            refundInitiatedTotal: { inc: vi.fn() },
+            refundAmountTotal: { set: vi.fn() },
+            buyerLedgerEntriesTotal: { inc: vi.fn() },
+          },
+        },
         RefundService,
         { provide: BuyerLedgerRepository, useValue: buyerLedgerRepo },
         { provide: PrismaService, useValue: prisma },
@@ -64,7 +87,10 @@ describe('Phase 4: Refund + BuyerLedger Integration', () => {
       await refundService.initiateRefund('ret-1', '100', 'actor-1');
 
       // Assert balance is read inside transaction block
-      expect(buyerLedgerRepo.findLatestBalance).toHaveBeenCalledWith(prisma, 'buyer-1');
+      expect(buyerLedgerRepo.findLatestBalance).toHaveBeenCalledWith(
+        prisma,
+        'buyer-1',
+      );
       expect(buyerLedgerRepo.create).toHaveBeenCalled();
     });
   });
@@ -79,9 +105,13 @@ describe('Phase 4: Refund + BuyerLedger Integration', () => {
         order: { buyerId: 'buyer-1', segment: 'TEXTILE' },
       });
 
-      buyerLedgerRepo.findByReturnId = vi.fn().mockResolvedValue({ id: 'ledger-1' });
+      buyerLedgerRepo.findByReturnId = vi
+        .fn()
+        .mockResolvedValue({ id: 'ledger-1' });
 
-      await expect(refundService.initiateRefund('ret-1', '100', 'actor-1')).rejects.toThrow(UnprocessableEntityException);
+      await expect(
+        refundService.initiateRefund('ret-1', '100', 'actor-1'),
+      ).rejects.toThrow(UnprocessableEntityException);
     });
   });
 
@@ -95,7 +125,9 @@ describe('Phase 4: Refund + BuyerLedger Integration', () => {
         order: { buyerId: 'buyer-1', segment: 'TEXTILE' },
       });
 
-      await expect(refundService.initiateRefund('ret-1', '150', 'actor-1')).rejects.toThrow(UnprocessableEntityException);
+      await expect(
+        refundService.initiateRefund('ret-1', '150', 'actor-1'),
+      ).rejects.toThrow(UnprocessableEntityException);
     });
   });
 
@@ -107,7 +139,9 @@ describe('Phase 4: Refund + BuyerLedger Integration', () => {
         requestedRefundAmount: new Prisma.Decimal(100),
       });
 
-      await expect(refundService.initiateRefund('ret-1', '100', 'actor-1')).rejects.toThrow(UnprocessableEntityException);
+      await expect(
+        refundService.initiateRefund('ret-1', '100', 'actor-1'),
+      ).rejects.toThrow(UnprocessableEntityException);
     });
 
     it('should emit outbox event during initiateRefund', async () => {
@@ -123,12 +157,14 @@ describe('Phase 4: Refund + BuyerLedger Integration', () => {
 
       await refundService.initiateRefund('ret-1', '100', 'actor-1');
 
-      expect(prisma.eventOutbox.create).toHaveBeenCalledWith(expect.objectContaining({
-        data: expect.objectContaining({
-          eventType: 'RefundInitiated',
-          schemaVersion: '8.0',
-        })
-      }));
+      expect(prisma.eventOutbox.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            eventType: 'RefundInitiated',
+            schemaVersion: '8.0',
+          }),
+        }),
+      );
     });
   });
 });

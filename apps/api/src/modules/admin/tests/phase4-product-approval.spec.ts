@@ -54,12 +54,12 @@ const MOCK_REQUEST = {
 
 describe('AdminProductService — Phase 4 Product Approval', () => {
   let service: AdminProductService;
-  let productRepo: any;
-  let prismaService: any;
-  let redisService: any;
-  let notificationService: any;
-  let auditWriter: any;
-  let metrics: any;
+  let productRepo: unknown;
+  let prismaService: unknown;
+  let redisService: unknown;
+  let notificationService: unknown;
+  let auditWriter: unknown;
+  let metrics: unknown;
 
   beforeEach(async () => {
     productRepo = {
@@ -74,7 +74,7 @@ describe('AdminProductService — Phase 4 Product Approval', () => {
     prismaService = {
       $transaction: vi
         .fn()
-        .mockImplementation(async (fn: (tx: any) => Promise<unknown>) =>
+        .mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
           fn({
             product: { update: vi.fn().mockResolvedValue(MOCK_ACTIVE_PRODUCT) },
             eventOutbox: { create: vi.fn().mockResolvedValue({ id: 'ev-1' }) },
@@ -198,7 +198,7 @@ describe('AdminProductService — Phase 4 Product Approval', () => {
 
       const callOrder: string[] = [];
       prismaService.$transaction.mockImplementationOnce(
-        async (fn: (tx: any) => Promise<unknown>) => {
+        async (fn: (tx: unknown) => Promise<unknown>) => {
           callOrder.push('$transaction');
           return fn({
             product: { update: vi.fn().mockResolvedValue(MOCK_ACTIVE_PRODUCT) },

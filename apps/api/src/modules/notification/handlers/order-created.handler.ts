@@ -23,7 +23,8 @@ export async function handleOrderCreated(
   payload: OrderCreatedPayload,
   ctx: HandlerContext,
 ): Promise<void> {
-  const { orderId, orderNumber, buyerId, sellerId, grandTotal, buyerCode } = payload;
+  const { orderId, orderNumber, buyerId, sellerId, grandTotal, buyerCode } =
+    payload;
 
   // ─── Step 1: Buyer dedup check (INV-S6-6) ────────────────────────────────────
   // INV-S6-25: This is the BUYER key — separate from seller key below

@@ -206,7 +206,12 @@ export class AdminTicketService {
   /**
    * replyToTicket
    */
-  async replyToTicket(id: string, dto: SupportTicketReplyDto, adminUserId: string, files: Express.Multer.File[] = []) {
+  async replyToTicket(
+    id: string,
+    dto: SupportTicketReplyDto,
+    adminUserId: string,
+    files: Express.Multer.File[] = [],
+  ) {
     const ticket = await this.ticketRepo.findById(id);
     if (!ticket) throw new NotFoundException({ code: 'TICKET_NOT_FOUND', id });
 
@@ -218,7 +223,7 @@ export class AdminTicketService {
           'ticket',
           id,
           file.buffer,
-          file.originalname
+          file.originalname,
         );
         attachmentKeys.push(key);
       }
@@ -230,14 +235,14 @@ export class AdminTicketService {
       'ADMIN',
       dto.message,
       attachmentKeys,
-      dto.clientMessageId
+      dto.clientMessageId,
     );
 
     // Send direct notification (NO EventOutbox) (D-TKT-2)
     await this.notificationService.sendDirect(
       ticket.userId,
       'SupportTicketReplyReceived',
-      { ticketId: id, messageId: message.id }
+      { ticketId: id, messageId: message.id },
     );
 
     return message;
@@ -246,12 +251,23 @@ export class AdminTicketService {
   /**
    * linkDispute
    */
-  async linkDispute(id: string, dto: AdminLinkDisputeDto, adminUserId: string, req: Request) {
+  async linkDispute(
+    id: string,
+    dto: AdminLinkDisputeDto,
+    adminUserId: string,
+    req: Request,
+  ) {
     const ticket = await this.ticketRepo.findById(id);
     if (!ticket) throw new NotFoundException({ code: 'TICKET_NOT_FOUND', id });
 
-    const dispute = await this.prisma.dispute.findUnique({ where: { id: dto.disputeId } });
-    if (!dispute) throw new NotFoundException({ code: 'DISPUTE_NOT_FOUND', id: dto.disputeId });
+    const dispute = await this.prisma.dispute.findUnique({
+      where: { id: dto.disputeId },
+    });
+    if (!dispute)
+      throw new NotFoundException({
+        code: 'DISPUTE_NOT_FOUND',
+        id: dto.disputeId,
+      });
 
     const updated = await this.ticketRepo.linkDispute(id, dto.disputeId);
 

@@ -1,9 +1,24 @@
-import { Controller, Post, Get, Param, Body, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Param,
+  Body,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { RfqService } from './rfq.service';
 import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
-import { CreateRfqDto, CreateRfqSchema, NegotiatePriceDto, NegotiatePriceSchema, RfqConvertDto, RfqConvertSchema } from '@vyaparnet/types';
+import {
+  CreateRfqDto,
+  CreateRfqSchema,
+  NegotiatePriceDto,
+  NegotiatePriceSchema,
+  RfqConvertDto,
+  RfqConvertSchema,
+} from '@vyaparnet/types';
 import { ZodValidationPipe } from '../../../shared/pipes/zod-validation.pipe';
 import { Rfq, Quotation, PriceNegotiation } from '@vyaparnet/database';
 
@@ -16,7 +31,7 @@ export class BuyerRfqController {
   @Post()
   async createRfq(
     @Req() req: any,
-    @Body(new ZodValidationPipe(CreateRfqSchema)) dto: CreateRfqDto
+    @Body(new ZodValidationPipe(CreateRfqSchema)) dto: CreateRfqDto,
   ): Promise<Rfq> {
     return this.rfqService.createRfq(req.user.id, dto);
   }
@@ -27,7 +42,10 @@ export class BuyerRfqController {
   }
 
   @Get(':id')
-  async getRfqDetails(@Req() req: any, @Param('id') id: string): Promise<Rfq & { quotations: Quotation[] }> {
+  async getRfqDetails(
+    @Req() req: any,
+    @Param('id') id: string,
+  ): Promise<Rfq & { quotations: Quotation[] }> {
     return this.rfqService.getBuyerRfqDetails(id, req.user.id);
   }
 
@@ -35,7 +53,7 @@ export class BuyerRfqController {
   async acceptQuotation(
     @Req() req: any,
     @Param('id') rfqId: string,
-    @Param('quotationId') quotationId: string
+    @Param('quotationId') quotationId: string,
   ): Promise<Quotation> {
     return this.rfqService.acceptQuotation(rfqId, quotationId, req.user.id);
   }
@@ -45,9 +63,15 @@ export class BuyerRfqController {
     @Req() req: any,
     @Param('id') rfqId: string,
     @Param('quotationId') quotationId: string,
-    @Body(new ZodValidationPipe(RfqConvertSchema)) dto: RfqConvertDto
+    @Body(new ZodValidationPipe(RfqConvertSchema)) dto: RfqConvertDto,
   ): Promise<any> {
-    return this.rfqService.convertToOrder(rfqId, quotationId, req.user.id, dto, req.ip);
+    return this.rfqService.convertToOrder(
+      rfqId,
+      quotationId,
+      req.user.id,
+      dto,
+      req.ip,
+    );
   }
 
   @Post(':id/negotiate/:quotationId')
@@ -55,8 +79,13 @@ export class BuyerRfqController {
     @Req() req: any,
     @Param('id') _rfqId: string,
     @Param('quotationId') quotationId: string,
-    @Body(new ZodValidationPipe(NegotiatePriceSchema)) dto: NegotiatePriceDto
+    @Body(new ZodValidationPipe(NegotiatePriceSchema)) dto: NegotiatePriceDto,
   ): Promise<PriceNegotiation> {
-    return this.rfqService.negotiatePrice(quotationId, req.user.id, 'BUYER', dto);
+    return this.rfqService.negotiatePrice(
+      quotationId,
+      req.user.id,
+      'BUYER',
+      dto,
+    );
   }
 }

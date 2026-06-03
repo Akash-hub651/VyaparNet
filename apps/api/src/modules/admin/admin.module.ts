@@ -10,7 +10,6 @@ import { ObservabilityModule } from '../observability/observability.module';
 import { AuditModule } from '../security/audit/audit.module';
 import { AuthModule } from '../identity/auth/auth.module';
 
-
 import { AdminContextGuard } from './guards/admin-context.guard';
 import { AdminIdempotencyGuard } from './guards/admin-idempotency.guard';
 import { AdminRateLimitGuard } from './guards/admin-rate-limit.guard';
@@ -103,6 +102,9 @@ import { TrustSafetyModule } from '../trust-safety/trust-safety.module';
  *  TaxInvoice.pdfUrl = S3 key (FOOTGUN-7-C: never presigned URL in DB).
  *  Manual admin trigger ONLY (FOOTGUN-7-D: INV-S7-17).
  */
+import { AdminLedgerService } from './services/admin-ledger.service';
+import { AdminLedgerController } from './controllers/admin-ledger.controller';
+
 @Module({
   imports: [
     PrismaModule,
@@ -120,17 +122,18 @@ import { TrustSafetyModule } from '../trust-safety/trust-safety.module';
   ],
   controllers: [
     AdminBusinessesController, // Phase 3: KYC
-    AdminProductsController,   // Phase 4: Product Approval
-    AdminUsersController,      // Phase 5: User Management
-    AdminOrdersController,     // Phase 6: Order Management
-    AdminInvoicesController,   // Phase 7: Tax Invoice
-    AdminPayoutsController,    // Phase 8: Payout Management
-    AdminFlagsController,      // Phase 9: Feature Flags
-    AdminAuditController,      // Phase 10: Audit Log Viewer
+    AdminProductsController, // Phase 4: Product Approval
+    AdminUsersController, // Phase 5: User Management
+    AdminOrdersController, // Phase 6: Order Management
+    AdminInvoicesController, // Phase 7: Tax Invoice
+    AdminPayoutsController, // Phase 8: Payout Management
+    AdminFlagsController, // Phase 9: Feature Flags
+    AdminAuditController, // Phase 10: Audit Log Viewer
     AdminExceptionsController, // Phase 10: Exception Center + DLQ
-    AdminTicketsController,    // Phase 11: Support Tickets
-    AdminReturnsController,    // Phase 12: Return Management
-    AdminDisputesController,   // Phase 13: Dispute Management
+    AdminTicketsController, // Phase 11: Support Tickets
+    AdminReturnsController, // Phase 12: Return Management
+    AdminDisputesController, // Phase 13: Dispute Management
+    AdminLedgerController,
   ],
   providers: [
     // Guards
@@ -173,7 +176,7 @@ import { TrustSafetyModule } from '../trust-safety/trust-safety.module';
     AdminAuditRepository,
     AdminAuditService,
     // AdminExceptionService already registered in Phase 6 — Phase 10 extends it with getTechnicalExceptions()
-    
+
     // Phase 11: Support Ticket Workflow
     AdminTicketRepository,
     AdminTicketService,
@@ -186,6 +189,7 @@ import { TrustSafetyModule } from '../trust-safety/trust-safety.module';
     AdminPayoutService,
     AdminDisputeService,
     AdminRefundService,
+    AdminLedgerService,
   ],
   exports: [], // FOOTGUN-2-B: AdminModule is a leaf, it exports nothing.
 })

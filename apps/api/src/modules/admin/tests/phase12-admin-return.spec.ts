@@ -1,3 +1,4 @@
+import { MetricsService } from '../../observability/metrics.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AdminReturnService } from '../services/admin-return.service';
 import { AdminReturnRepository } from '../repositories/admin-return.repository';
@@ -5,15 +6,18 @@ import { AuditSafeWriterService } from '../../security/audit/audit-safe-writer.s
 import { EvidenceService } from '../../trust-safety/evidence/evidence.service';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { ReturnStatus, Prisma } from '@vyaparnet/database';
-import { UnprocessableEntityException, NotFoundException } from '@nestjs/common';
+import {
+  UnprocessableEntityException,
+  NotFoundException,
+} from '@nestjs/common';
 import { vi, describe, beforeEach, it, expect } from 'vitest';
 
 describe('AdminReturnService', () => {
   let service: AdminReturnService;
-  let repository: any;
-  let auditSafeWriter: any;
-  let evidenceService: any;
-  let prisma: any;
+  let repository: unknown;
+  let auditSafeWriter: unknown;
+  let evidenceService: unknown;
+  let prisma: unknown;
 
   beforeEach(async () => {
     repository = {
@@ -41,6 +45,23 @@ describe('AdminReturnService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        {
+          provide: MetricsService,
+          useValue: {
+            rfqCreatedTotal: { inc: vi.fn() },
+            quoteSubmittedTotal: { inc: vi.fn() },
+            quoteAcceptedTotal: { inc: vi.fn() },
+            quoteConvertedToOrderTotal: { inc: vi.fn() },
+            returnRequestsTotal: { inc: vi.fn() },
+            returnRefundAmountTotal: { inc: vi.fn() },
+            disputeOpenedTotal: { inc: vi.fn() },
+            disputeResolvedTotal: { inc: vi.fn() },
+            disputeResolutionTimeSeconds: { observe: vi.fn() },
+            refundInitiatedTotal: { inc: vi.fn() },
+            refundAmountTotal: { set: vi.fn() },
+            buyerLedgerEntriesTotal: { inc: vi.fn() },
+          },
+        },
         AdminReturnService,
         { provide: AdminReturnRepository, useValue: repository },
         { provide: AuditSafeWriterService, useValue: auditSafeWriter },
@@ -54,27 +75,52 @@ describe('AdminReturnService', () => {
 
   describe('approveReturn', () => {
     it('should transition PENDING -> APPROVED_FOR_PICKUP and audit', async () => {
-      repository.findById.mockResolvedValue({ status: ReturnStatus.PENDING, id: 'ret_1' });
-      repository.updateStatus.mockResolvedValue({ id: 'ret_1', status: ReturnStatus.APPROVED_FOR_PICKUP });
+      repository.findById.mockResolvedValue({
+        status: ReturnStatus.PENDING,
+        id: 'ret_1',
+      });
+      repository.updateStatus.mockResolvedValue({
+        id: 'ret_1',
+        status: ReturnStatus.APPROVED_FOR_PICKUP,
+      });
 
       await service.approveReturn('ret_1', 'admin_1');
 
-      expect(repository.updateStatus).toHaveBeenCalledWith('ret_1', ReturnStatus.APPROVED_FOR_PICKUP, 'admin_1');
+      expect(repository.updateStatus).toHaveBeenCalledWith(
+        'ret_1',
+        ReturnStatus.APPROVED_FOR_PICKUP,
+        'admin_1',
+      );
       expect(auditSafeWriter.safeWrite).toHaveBeenCalled();
     });
 
     it('should reject invalid transition', async () => {
-      repository.findById.mockResolvedValue({ status: ReturnStatus.QC_REJECTED, id: 'ret_1' });
-      await expect(service.approveReturn('ret_1', 'admin_1')).rejects.toThrow(UnprocessableEntityException);
+      repository.findById.mockResolvedValue({
+        status: ReturnStatus.QC_REJECTED,
+        id: 'ret_1',
+      });
+      await expect(service.approveReturn('ret_1', 'admin_1')).rejects.toThrow(
+        UnprocessableEntityException,
+      );
     });
   });
 
   describe('markReceived', () => {
     it('should transition APPROVED_FOR_PICKUP -> RECEIVED_AT_QC and create InventoryMovement', async () => {
-      repository.findById.mockResolvedValue({ status: ReturnStatus.APPROVED_FOR_PICKUP, id: 'ret_1', itemId: 'item_1' });
-      repository.updateStatus.mockResolvedValue({ id: 'ret_1', status: ReturnStatus.RECEIVED_AT_QC });
-      
-      prisma.orderItem.findUnique.mockResolvedValue({ productId: 'prod_1', quantity: 2 });
+      repository.findById.mockResolvedValue({
+        status: ReturnStatus.APPROVED_FOR_PICKUP,
+        id: 'ret_1',
+        itemId: 'item_1',
+      });
+      repository.updateStatus.mockResolvedValue({
+        id: 'ret_1',
+        status: ReturnStatus.RECEIVED_AT_QC,
+      });
+
+      prisma.orderItem.findUnique.mockResolvedValue({
+        productId: 'prod_1',
+        quantity: 2,
+      });
       prisma.inventory.findUnique.mockResolvedValue({ id: 'inv_1' });
 
       await service.markReceived('ret_1', 'admin_1');
@@ -85,7 +131,7 @@ describe('AdminReturnService', () => {
           inventoryId: 'inv_1',
           type: 'RETURN_RECEIVED',
           quantity: 2,
-        })
+        }),
       });
       expect(auditSafeWriter.safeWrite).toHaveBeenCalled();
     });
@@ -98,7 +144,10 @@ describe('AdminReturnService', () => {
         status: ReturnStatus.RECEIVED_AT_QC,
         requestedRefundAmount: new Prisma.Decimal('100.00'),
       });
-      repository.updateStatus.mockResolvedValue({ id: 'ret_1', status: ReturnStatus.QC_APPROVED });
+      repository.updateStatus.mockResolvedValue({
+        id: 'ret_1',
+        status: ReturnStatus.QC_APPROVED,
+      });
 
       await service.qcPass('ret_1', 'admin_1', '100.00');
 
@@ -118,7 +167,9 @@ describe('AdminReturnService', () => {
         requestedRefundAmount: new Prisma.Decimal('100.00'),
       });
 
-      await expect(service.qcPass('ret_1', 'admin_1', '150.00')).rejects.toThrow('Approved amount cannot exceed requested amount');
+      await expect(
+        service.qcPass('ret_1', 'admin_1', '150.00'),
+      ).rejects.toThrow('Approved amount cannot exceed requested amount');
     });
   });
 });

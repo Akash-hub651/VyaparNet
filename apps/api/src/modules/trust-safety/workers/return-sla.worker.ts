@@ -22,12 +22,16 @@ export class ReturnSlaWorker extends WorkerHost implements OnModuleInit {
 
   async onModuleInit() {
     this.logger.log('Registering Return SLA repeatable job...');
-    await this.queue.add('check-sla', {}, {
-      repeat: {
-        pattern: '*/30 * * * *',
+    await this.queue.add(
+      'check-sla',
+      {},
+      {
+        repeat: {
+          pattern: '*/30 * * * *',
+        },
+        jobId: 'return-sla-repeatable', // Idempotency
       },
-      jobId: 'return-sla-repeatable', // Idempotency
-    });
+    );
   }
 
   async process(_job: Job<any, any, string>) {
@@ -66,7 +70,11 @@ export class ReturnSlaWorker extends WorkerHost implements OnModuleInit {
           returnId: returnReq.id,
           segment: returnReq.order.segment,
         })
-        .catch((err) => this.logger.error(`Failed to send SLA breach notification: ${err.message}`));
+        .catch((err) =>
+          this.logger.error(
+            `Failed to send SLA breach notification: ${err.message}`,
+          ),
+        );
     }
   }
 }

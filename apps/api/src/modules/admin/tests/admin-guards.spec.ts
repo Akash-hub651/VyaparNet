@@ -16,7 +16,7 @@ describe('AdminContextGuard (INV-S7-1)', () => {
     guard = new AdminContextGuard();
   });
 
-  const mockContext = (user: any) =>
+  const mockContext = (user: unknown) =>
     ({
       switchToHttp: () => ({
         getRequest: () => ({ user }),
@@ -46,7 +46,7 @@ describe('AdminContextGuard (INV-S7-1)', () => {
 
 describe('AdminIdempotencyGuard (INV-S7-7)', () => {
   let guard: AdminIdempotencyGuard;
-  let redisService: any;
+  let redisService: unknown;
 
   beforeEach(() => {
     redisService = {
@@ -55,7 +55,7 @@ describe('AdminIdempotencyGuard (INV-S7-7)', () => {
     guard = new AdminIdempotencyGuard(redisService);
   });
 
-  const mockContext = (headers: any) =>
+  const mockContext = (headers: unknown) =>
     ({
       switchToHttp: () => ({
         getRequest: () => ({ headers }),
@@ -100,7 +100,7 @@ describe('AdminIdempotencyGuard (INV-S7-7)', () => {
     try {
       await guard.canActivate(context);
       expect.fail('Should have thrown HttpException');
-    } catch (e: any) {
+    } catch (e: unknown) {
       expect(e).toBeInstanceOf(HttpException);
       expect(e.getStatus()).toBe(200);
       expect(e.getResponse()).toEqual(cachedResponse);
@@ -110,7 +110,7 @@ describe('AdminIdempotencyGuard (INV-S7-7)', () => {
 
 describe('AdminRateLimitGuard (H-P1-3)', () => {
   let guard: AdminRateLimitGuard;
-  let redisService: any;
+  let redisService: unknown;
 
   beforeEach(() => {
     redisService = {
@@ -123,7 +123,7 @@ describe('AdminRateLimitGuard (H-P1-3)', () => {
     guard = new AdminRateLimitGuard(redisService);
   });
 
-  const mockContext = (user: any) =>
+  const mockContext = (user: unknown) =>
     ({
       switchToHttp: () => ({
         getRequest: () => ({ user }),
@@ -151,7 +151,7 @@ describe('AdminRateLimitGuard (H-P1-3)', () => {
     try {
       await guard.canActivate(context);
       expect.fail('Should have thrown HttpException');
-    } catch (e: any) {
+    } catch (e: unknown) {
       expect(e).toBeInstanceOf(HttpException);
       expect(e.getStatus()).toBe(429); // TOO_MANY_REQUESTS
     }

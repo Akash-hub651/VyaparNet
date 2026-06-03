@@ -8,7 +8,12 @@ export class BuyerLedgerService {
   /**
    * Retrieves paginated ledger entries for the buyer.
    */
-  async getLedger(buyerId: string, page: number, limit: number, segment?: any): Promise<any> {
+  async getLedger(
+    buyerId: string,
+    page: number,
+    limit: number,
+    segment?: any,
+  ): Promise<any> {
     return this.ledgerRepo.findManyForBuyer(buyerId, { page, limit, segment });
   }
 }

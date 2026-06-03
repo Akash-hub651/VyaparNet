@@ -16,11 +16,19 @@ export class AdminRefundService {
   ) {}
 
   /**
-   * Orchestrates the refund initiation and ledger modification, 
+   * Orchestrates the refund initiation and ledger modification,
    * followed by an out-of-band audit log write (INV-S7-2).
    */
-  async initiateRefund(returnId: string, approvedAmount: string, actorId: string): Promise<any> {
-    const result = await this.refundService.initiateRefund(returnId, approvedAmount, actorId);
+  async initiateRefund(
+    returnId: string,
+    approvedAmount: string,
+    actorId: string,
+  ): Promise<unknown> {
+    const result = await this.refundService.initiateRefund(
+      returnId,
+      approvedAmount,
+      actorId,
+    );
 
     // INV-S7-2: Audit write MUST be outside the $transaction to prevent connection starvation
     await this.auditWriter.safeWrite({
@@ -41,7 +49,7 @@ export class AdminRefundService {
   /**
    * Orchestrates the completion of a refund.
    */
-  async markRefunded(returnId: string, actorId: string): Promise<any> {
+  async markRefunded(returnId: string, actorId: string): Promise<unknown> {
     const updatedReturn = await this.refundService.markRefunded(returnId);
 
     await this.auditWriter.safeWrite({

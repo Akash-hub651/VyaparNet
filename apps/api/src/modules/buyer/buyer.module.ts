@@ -29,8 +29,20 @@ import { NotificationModule } from '../notification/notification.module';
     TrustSafetyModule,
     NotificationModule,
   ],
-  controllers: [BuyerOrdersController, BuyerDashboardController, BuyerLedgerController, BuyerTicketsController], // FIX-5: §7.1 structure
-  providers: [BuyerOrderService, BuyerOrderRepository, BuyerReorderService, BuyerLedgerService, BuyerTicketService, BuyerTicketRepository],
+  controllers: [
+    BuyerOrdersController,
+    BuyerDashboardController,
+    BuyerLedgerController,
+    BuyerTicketsController,
+  ], // FIX-5: §7.1 structure
+  providers: [
+    BuyerOrderService,
+    BuyerOrderRepository,
+    BuyerReorderService,
+    BuyerLedgerService,
+    BuyerTicketService,
+    BuyerTicketRepository,
+  ],
   exports: [BuyerOrderService, BuyerReorderService],
 })
 export class BuyerModule {}

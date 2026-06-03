@@ -1,7 +1,22 @@
-import { Controller, Post, Get, Body, Param, UseGuards, Req, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Param,
+  UseGuards,
+  Req,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+} from '@nestjs/common';
 import { DisputesService } from './disputes.service';
 import { EvidenceService } from '../evidence/evidence.service';
-import { CreateDisputeDto, CreateDisputeDtoSchema, DisputeResponseDto } from '@vyaparnet/types';
+import {
+  CreateDisputeDto,
+  CreateDisputeDtoSchema,
+  DisputeResponseDto,
+} from '@vyaparnet/types';
 import { ZodValidationPipe } from '../../../shared/pipes/zod-validation.pipe';
 import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';

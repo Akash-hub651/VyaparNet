@@ -23,7 +23,7 @@ export class BuyerTicketRepository {
     senderId: string,
     message: string,
     attachments: string[],
-    clientMessageId: string
+    clientMessageId: string,
   ) {
     const existing = await this.prisma.supportTicketMessage.findFirst({
       where: { ticketId, senderId, clientMessageId },

@@ -26,7 +26,12 @@ const makeCompletedOrder = () => ({
   placedAt: '2026-06-01T00:00:00.000Z',
   createdAt: '2026-06-01T00:00:00.000Z',
   updatedAt: '2026-06-01T00:00:00.000Z',
-  buyer: { id: 'buyer-1', phone: '+91987654321', email: 'buyer@test.com', name: 'Test Buyer' },
+  buyer: {
+    id: 'buyer-1',
+    phone: '+91987654321',
+    email: 'buyer@test.com',
+    name: 'Test Buyer',
+  },
   taxAmount: '1525.42',
   shippingCost: '0.00',
   discount: '0.00',
@@ -54,10 +59,10 @@ const makeInvoiceRecord = () => ({
 
 describe('AdminInvoiceService — Phase 7 Tax Invoice Generation', () => {
   let service: AdminInvoiceService;
-  let orderRepo: any;
-  let prismaService: any;
-  let s3Service: any;
-  let invoiceQueue: any;
+  let orderRepo: unknown;
+  let prismaService: unknown;
+  let s3Service: unknown;
+  let invoiceQueue: unknown;
 
   beforeEach(async () => {
     orderRepo = {
@@ -74,7 +79,9 @@ describe('AdminInvoiceService — Phase 7 Tax Invoice Generation', () => {
 
     s3Service = {
       uploadBuffer: vi.fn().mockResolvedValue(undefined),
-      getSignedUrl: vi.fn().mockResolvedValue('https://s3.example.com/signed-url?token=xxx'),
+      getSignedUrl: vi
+        .fn()
+        .mockResolvedValue('https://s3.example.com/signed-url?token=xxx'),
     };
 
     invoiceQueue = {
@@ -87,7 +94,10 @@ describe('AdminInvoiceService — Phase 7 Tax Invoice Generation', () => {
         { provide: AdminOrderRepository, useValue: orderRepo },
         { provide: PrismaService, useValue: prismaService },
         { provide: S3Service, useValue: s3Service },
-        { provide: getQueueToken('invoice-generation'), useValue: invoiceQueue },
+        {
+          provide: getQueueToken('invoice-generation'),
+          useValue: invoiceQueue,
+        },
       ],
     }).compile();
 
@@ -120,7 +130,9 @@ describe('AdminInvoiceService — Phase 7 Tax Invoice Generation', () => {
       expect(result.sgstAmount.greaterThan(0)).toBe(true);
       expect(result.igstAmount.equals(0)).toBe(true);
       // CGST + SGST should equal totalTaxAmount
-      expect(result.cgstAmount.add(result.sgstAmount).toFixed(2)).toBe(result.totalTaxAmount.toFixed(2));
+      expect(result.cgstAmount.add(result.sgstAmount).toFixed(2)).toBe(
+        result.totalTaxAmount.toFixed(2),
+      );
     });
 
     it('returns inter-state IGST when different state', () => {
@@ -150,7 +162,9 @@ describe('AdminInvoiceService — Phase 7 Tax Invoice Generation', () => {
       const result = service.calculateGst(order as any);
 
       // taxableValue should be subtotal (8474.58), NOT grandTotal (10000.00)
-      expect(result.taxableValue.toFixed(2)).toBe(new Prisma.Decimal('8474.58').toFixed(2));
+      expect(result.taxableValue.toFixed(2)).toBe(
+        new Prisma.Decimal('8474.58').toFixed(2),
+      );
     });
   });
 
@@ -159,7 +173,9 @@ describe('AdminInvoiceService — Phase 7 Tax Invoice Generation', () => {
   describe('generateInvoice — idempotency', () => {
     it('returns existing invoice if already generated (idempotent)', async () => {
       // Simulate existing invoice in DB
-      prismaService.taxInvoice.findUnique.mockResolvedValueOnce(makeInvoiceRecord());
+      prismaService.taxInvoice.findUnique.mockResolvedValueOnce(
+        makeInvoiceRecord(),
+      );
 
       const result = await service.generateInvoice(ORDER_ID, ADMIN_ID);
 
@@ -171,7 +187,9 @@ describe('AdminInvoiceService — Phase 7 Tax Invoice Generation', () => {
 
     it('throws NotFoundException for missing order', async () => {
       orderRepo.findById.mockResolvedValueOnce(null);
-      await expect(service.generateInvoice('missing', ADMIN_ID)).rejects.toThrow(NotFoundException);
+      await expect(
+        service.generateInvoice('missing', ADMIN_ID),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -229,28 +247,36 @@ describe('AdminInvoiceService — Phase 7 Tax Invoice Generation', () => {
 
   describe('getInvoice', () => {
     it('returns invoice with signed URL at response time (FOOTGUN-7-C)', async () => {
-      prismaService.taxInvoice.findUnique.mockResolvedValueOnce(makeInvoiceRecord());
+      prismaService.taxInvoice.findUnique.mockResolvedValueOnce(
+        makeInvoiceRecord(),
+      );
 
-      const result = await service.getInvoice(ORDER_ID) as any;
+      const result = (await service.getInvoice(ORDER_ID)) as any;
 
       // FOOTGUN-7-C: pdfSignedUrl generated at response time
       expect(s3Service.getSignedUrl).toHaveBeenCalledWith(
         makeInvoiceRecord().pdfUrl, // S3 key stored in DB
         300, // INV-S7-9: 5 min TTL
       );
-      expect(result.pdfSignedUrl).toBe('https://s3.example.com/signed-url?token=xxx');
+      expect(result.pdfSignedUrl).toBe(
+        'https://s3.example.com/signed-url?token=xxx',
+      );
     });
 
     it('throws NotFoundException for missing invoice', async () => {
       prismaService.taxInvoice.findUnique.mockResolvedValueOnce(null);
-      await expect(service.getInvoice('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.getInvoice('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('pdfSignedUrl is null for invoice without PDF (GENERATING state)', async () => {
       const invoiceWithoutPdf = { ...makeInvoiceRecord(), pdfUrl: null };
-      prismaService.taxInvoice.findUnique.mockResolvedValueOnce(invoiceWithoutPdf);
+      prismaService.taxInvoice.findUnique.mockResolvedValueOnce(
+        invoiceWithoutPdf,
+      );
 
-      const result = await service.getInvoice(ORDER_ID) as any;
+      const result = (await service.getInvoice(ORDER_ID)) as any;
 
       // s3Service.getSignedUrl should NOT be called when pdfUrl is null
       expect(s3Service.getSignedUrl).not.toHaveBeenCalled();
@@ -262,11 +288,13 @@ describe('AdminInvoiceService — Phase 7 Tax Invoice Generation', () => {
 
   describe('FOOTGUN-7-C: S3 key storage invariant', () => {
     it('DB stores S3 key, NOT presigned URL or full URL', async () => {
-      let capturedData: any;
-      prismaService.taxInvoice.update.mockImplementationOnce((args: any) => {
-        capturedData = args.data;
-        return makeInvoiceRecord();
-      });
+      let capturedData: unknown;
+      prismaService.taxInvoice.update.mockImplementationOnce(
+        (args: unknown) => {
+          capturedData = args.data;
+          return makeInvoiceRecord();
+        },
+      );
 
       await service.generateInvoice(ORDER_ID, ADMIN_ID);
 

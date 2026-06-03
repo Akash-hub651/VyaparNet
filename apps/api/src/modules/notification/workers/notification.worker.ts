@@ -80,10 +80,12 @@ export class NotificationWorker {
       });
       // Update status to SENT on successful push delivery
       if (job.data.notificationId) {
-        await this.prisma.notification.update({
-          where: { id: job.data.notificationId },
-          data: { status: 'SENT' }, // NotificationDeliveryStatus.SENT
-        }).catch(() => {}); // fire and forget
+        await this.prisma.notification
+          .update({
+            where: { id: job.data.notificationId },
+            data: { status: 'SENT' }, // NotificationDeliveryStatus.SENT
+          })
+          .catch(() => {}); // fire and forget
       }
     } catch (err) {
       // FOOTGUN-10-A avoidance: Push = best-effort. Log WARN, do NOT rethrow.
@@ -130,15 +132,17 @@ export class NotificationWorker {
         { jobId: job.id, channel: job.data?.channel },
         'NOTIFICATION_DLQ',
       );
-      
+
       // Update status to FAILED on DLQ placement
       if (job.data?.notificationId) {
-        this.prisma.notification.update({
-          where: { id: job.data.notificationId },
-          data: { status: 'FAILED' }, // NotificationDeliveryStatus.FAILED
-        }).catch((e) => {
-          this.logger.error('Failed to mark Notification FAILED on DLQ', e);
-        });
+        this.prisma.notification
+          .update({
+            where: { id: job.data.notificationId },
+            data: { status: 'FAILED' }, // NotificationDeliveryStatus.FAILED
+          })
+          .catch((e) => {
+            this.logger.error('Failed to mark Notification FAILED on DLQ', e);
+          });
       }
     }
   }
@@ -168,10 +172,12 @@ export class NotificationWorker {
       });
       // Update status to SENT on successful delivery
       if (data.notificationId) {
-        await this.prisma.notification.update({
-          where: { id: data.notificationId },
-          data: { status: 'SENT' }, // NotificationDeliveryStatus.SENT
-        }).catch(() => {});
+        await this.prisma.notification
+          .update({
+            where: { id: data.notificationId },
+            data: { status: 'SENT' }, // NotificationDeliveryStatus.SENT
+          })
+          .catch(() => {});
       }
     } catch (err) {
       this.metrics.notificationFailedTotal.inc({

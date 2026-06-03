@@ -22,12 +22,16 @@ export class DisputeSlaWorker extends WorkerHost implements OnModuleInit {
 
   async onModuleInit() {
     this.logger.log('Registering Dispute SLA repeatable job...');
-    await this.queue.add('check-sla', {}, {
-      repeat: {
-        pattern: '*/30 * * * *',
+    await this.queue.add(
+      'check-sla',
+      {},
+      {
+        repeat: {
+          pattern: '*/30 * * * *',
+        },
+        jobId: 'dispute-sla-repeatable', // Idempotency
       },
-      jobId: 'dispute-sla-repeatable', // Idempotency
-    });
+    );
   }
 
   async process(_job: Job<any, any, string>) {
@@ -64,7 +68,11 @@ export class DisputeSlaWorker extends WorkerHost implements OnModuleInit {
           disputeId: dispute.id,
           segment: dispute.order.segment,
         })
-        .catch((err) => this.logger.error(`Failed to send SLA breach notification: ${err.message}`));
+        .catch((err) =>
+          this.logger.error(
+            `Failed to send SLA breach notification: ${err.message}`,
+          ),
+        );
     }
   }
 }

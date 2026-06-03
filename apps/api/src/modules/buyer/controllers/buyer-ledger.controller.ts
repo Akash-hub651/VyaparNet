@@ -5,7 +5,10 @@ import { Roles } from '../../../shared/decorators/roles.decorator';
 import { UserRole } from '@vyaparnet/types';
 import { BuyerLedgerService } from '../services/buyer-ledger.service';
 import { ZodValidationPipe } from '../../../shared/pipes/zod-validation.pipe';
-import { BuyerLedgerListQuerySchema, BuyerLedgerListQueryDto } from '@vyaparnet/types';
+import {
+  BuyerLedgerListQuerySchema,
+  BuyerLedgerListQueryDto,
+} from '@vyaparnet/types';
 
 @Controller('buyer/ledger')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -16,8 +19,14 @@ export class BuyerLedgerController {
   @Get()
   async getMyLedger(
     @Req() req: any,
-    @Query(new ZodValidationPipe(BuyerLedgerListQuerySchema)) query: BuyerLedgerListQueryDto,
+    @Query(new ZodValidationPipe(BuyerLedgerListQuerySchema))
+    query: BuyerLedgerListQueryDto,
   ): Promise<any> {
-    return this.ledgerService.getLedger(req.user.id, query.page, query.limit, query.segment);
+    return this.ledgerService.getLedger(
+      req.user.id,
+      query.page,
+      query.limit,
+      query.segment,
+    );
   }
 }

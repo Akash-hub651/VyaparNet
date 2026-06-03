@@ -191,6 +191,9 @@ export class S3Service {
     });
 
     await this.s3Client.send(command);
-    this.logger.debug({ s3Key, contentType, bytes: buffer.byteLength }, 'S3_UPLOAD_COMPLETE');
+    this.logger.debug(
+      { s3Key, contentType, bytes: buffer.byteLength },
+      'S3_UPLOAD_COMPLETE',
+    );
   }
 }

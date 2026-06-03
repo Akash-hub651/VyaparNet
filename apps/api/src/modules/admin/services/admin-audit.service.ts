@@ -32,7 +32,9 @@ export class AdminAuditService {
    * INV-S7-22: max limit 100.
    * FOOTGUN-10-D: Never unbounded.
    */
-  async listLogs(filter: AdminAuditLogListQuery): Promise<AuditLogListResponse> {
+  async listLogs(
+    filter: AdminAuditLogListQuery,
+  ): Promise<AuditLogListResponse> {
     this.logger.log(
       {
         entityType: filter.entityType,
@@ -57,10 +59,7 @@ export class AdminAuditService {
     entityType: string,
     entityId: string,
   ): Promise<AuditLogDto[]> {
-    this.logger.log(
-      { entityType, entityId },
-      'ADMIN_AUDIT_ENTITY_TIMELINE',
-    );
+    this.logger.log({ entityType, entityId }, 'ADMIN_AUDIT_ENTITY_TIMELINE');
 
     return this.auditRepo.findByEntity(entityType, entityId);
   }

@@ -14,7 +14,10 @@ import type { Request } from 'express';
 import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
 import { AdminContextGuard } from '../guards/admin-context.guard';
 import { AdminIdempotencyGuard } from '../guards/admin-idempotency.guard';
-import { AdminExceptionService, BusinessExceptionsDto } from '../services/admin-exception.service';
+import {
+  AdminExceptionService,
+  BusinessExceptionsDto,
+} from '../services/admin-exception.service';
 import { AuditSafeWriterService } from '../../security/audit/audit-safe-writer.service';
 import { AuditAction } from '@vyaparnet/types';
 import type { TechnicalExceptionDto } from '@vyaparnet/types';
@@ -52,9 +55,7 @@ export class AdminExceptionsController {
    */
   @Get()
   @HttpCode(HttpStatus.OK)
-  async getExceptions(
-    @Req() req: Request & { user: { id: string } },
-  ): Promise<{
+  async getExceptions(@Req() req: Request & { user: { id: string } }): Promise<{
     business: BusinessExceptionsDto;
     technical: TechnicalExceptionDto;
   }> {

@@ -654,7 +654,12 @@ export class OrdersService {
   async createFromQuotation(
     quotationId: string,
     userId: string,
-    dto: { shippingAddressId: string; billingAddressId: string; paymentMethod: 'COD' | 'ONLINE_UPI' | 'ONLINE_CARD'; clientIdempotencyKey: string },
+    dto: {
+      shippingAddressId: string;
+      billingAddressId: string;
+      paymentMethod: 'COD' | 'ONLINE_UPI' | 'ONLINE_CARD';
+      clientIdempotencyKey: string;
+    },
     ipAddress: string,
   ): Promise<OrderResponseDto> {
     this.metrics.checkoutFunnelStepTotal.inc({
@@ -664,7 +669,10 @@ export class OrdersService {
     const idempotencyKey = `order_idem:${userId}:${dto.clientIdempotencyKey}`;
     const cached = await this.redis.get(idempotencyKey);
     if (cached) {
-      this.logger.log({ userId, idempotencyKey }, 'Order idempotency hit — returning cached response');
+      this.logger.log(
+        { userId, idempotencyKey },
+        'Order idempotency hit — returning cached response',
+      );
       return JSON.parse(cached);
     }
 
@@ -680,7 +688,10 @@ export class OrdersService {
     }
 
     if (quotation.status !== 'ACCEPTED_BY_BUYER') {
-      throw new BadRequestException({ code: 'QUOTATION_NOT_ACCEPTED', message: 'Quotation must be accepted before conversion' });
+      throw new BadRequestException({
+        code: 'QUOTATION_NOT_ACCEPTED',
+        message: 'Quotation must be accepted before conversion',
+      });
     }
 
     if (quotation.validUntil < new Date()) {
@@ -691,7 +702,7 @@ export class OrdersService {
     const products = await this.prisma.product.findMany({
       where: { id: { in: productIds } },
     });
-    
+
     if (products.length !== productIds.length) {
       throw new BadRequestException({ code: 'PRODUCT_NOT_FOUND' });
     }
@@ -729,12 +740,23 @@ export class OrdersService {
     const shippingAddress = await this.prisma.address.findFirst({
       where: { id: dto.shippingAddressId, userId, isDeleted: false },
     });
-    if (!shippingAddress) throw new BadRequestException({ code: 'ADDRESS_NOT_FOUND', message: 'Shipping address not found' });
-    
-    const billingAddress = dto.billingAddressId === dto.shippingAddressId ? shippingAddress : await this.prisma.address.findFirst({
-      where: { id: dto.billingAddressId, userId, isDeleted: false },
-    });
-    if (!billingAddress) throw new BadRequestException({ code: 'ADDRESS_NOT_FOUND', message: 'Billing address not found' });
+    if (!shippingAddress)
+      throw new BadRequestException({
+        code: 'ADDRESS_NOT_FOUND',
+        message: 'Shipping address not found',
+      });
+
+    const billingAddress =
+      dto.billingAddressId === dto.shippingAddressId
+        ? shippingAddress
+        : await this.prisma.address.findFirst({
+            where: { id: dto.billingAddressId, userId, isDeleted: false },
+          });
+    if (!billingAddress)
+      throw new BadRequestException({
+        code: 'ADDRESS_NOT_FOUND',
+        message: 'Billing address not found',
+      });
 
     const addressSnapshot = {
       name: shippingAddress.name,
@@ -760,14 +782,24 @@ export class OrdersService {
           idempotencyKey: `reserve-${dto.clientIdempotencyKey}-${item.productId}`,
           paymentMethod: dto.paymentMethod,
         });
-        reservations.push({ id: result.reservationId, productId: item.productId });
+        reservations.push({
+          id: result.reservationId,
+          productId: item.productId,
+        });
       }
     } catch (err) {
       for (const res of reservations) {
         try {
-          await this.inventoryService.release(res.id, 'ORDER_CANCELLED', 'SYSTEM');
+          await this.inventoryService.release(
+            res.id,
+            'ORDER_CANCELLED',
+            'SYSTEM',
+          );
         } catch (releaseErr) {
-          this.logger.error({ reservationId: res.id, err: releaseErr }, 'Failed to release reservation');
+          this.logger.error(
+            { reservationId: res.id, err: releaseErr },
+            'Failed to release reservation',
+          );
         }
       }
       throw err;
@@ -802,7 +834,10 @@ export class OrdersService {
               });
               break;
             } catch (err) {
-              if (isPrismaUniqueConstraintError(err, 'orderNumber') && attempt < 2) {
+              if (
+                isPrismaUniqueConstraintError(err, 'orderNumber') &&
+                attempt < 2
+              ) {
                 this.metrics.orderNumberCollisionTotal.inc();
                 continue;
               }
@@ -916,7 +951,12 @@ export class OrdersService {
                 eventType: 'OrderConfirmed',
                 eventVersion: '1.0',
                 schemaVersion: '8.0',
-                payload: { orderId: order.id, paymentMethod: dto.paymentMethod, confirmedAt: new Date().toISOString(), grandTotal: grandTotal.toNumber() },
+                payload: {
+                  orderId: order.id,
+                  paymentMethod: dto.paymentMethod,
+                  confirmedAt: new Date().toISOString(),
+                  grandTotal: grandTotal.toNumber(),
+                },
                 deduplicationKey: `order-confirmed-${order.id}`,
                 eventMonth,
                 status: 'PENDING',
@@ -939,12 +979,22 @@ export class OrdersService {
         { timeout: 10000, isolationLevel: 'ReadCommitted' },
       );
     } catch (txErr) {
-      this.logger.error({ userId, paymentMethod: dto.paymentMethod, err: txErr }, 'Order $transaction failed');
+      this.logger.error(
+        { userId, paymentMethod: dto.paymentMethod, err: txErr },
+        'Order $transaction failed',
+      );
       for (const res of reservations) {
         try {
-          await this.inventoryService.release(res.id, 'ORDER_CANCELLED', 'SYSTEM');
+          await this.inventoryService.release(
+            res.id,
+            'ORDER_CANCELLED',
+            'SYSTEM',
+          );
         } catch (releaseErr) {
-          this.logger.error({ reservationId: res.id, err: releaseErr }, 'Failed to release reservation during post-tx compensation');
+          this.logger.error(
+            { reservationId: res.id, err: releaseErr },
+            'Failed to release reservation during post-tx compensation',
+          );
         }
       }
       throw txErr;
@@ -959,7 +1009,9 @@ export class OrdersService {
     };
 
     if (!isOnline) {
-      await this.redis.set(idempotencyKey, JSON.stringify(baseResponse), 'EX', 3600).catch(() => null);
+      await this.redis
+        .set(idempotencyKey, JSON.stringify(baseResponse), 'EX', 3600)
+        .catch(() => null);
       return baseResponse;
     }
 
@@ -975,11 +1027,16 @@ export class OrdersService {
       );
       paymentUrl = paymentResult.paymentUrl;
     } catch (paymentErr) {
-      this.logger.error({ orderId: createdOrder.id, userId, err: paymentErr }, 'Payment initiation failed after order creation');
+      this.logger.error(
+        { orderId: createdOrder.id, userId, err: paymentErr },
+        'Payment initiation failed after order creation',
+      );
     }
 
     const onlineResponse: OrderResponseDto = { ...baseResponse, paymentUrl };
-    await this.redis.set(idempotencyKey, JSON.stringify(onlineResponse), 'EX', 3600).catch(() => null);
+    await this.redis
+      .set(idempotencyKey, JSON.stringify(onlineResponse), 'EX', 3600)
+      .catch(() => null);
 
     return onlineResponse;
   }

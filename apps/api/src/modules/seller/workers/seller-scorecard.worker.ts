@@ -2,6 +2,7 @@ import { Processor, Process, InjectQueue } from '@nestjs/bull';
 import { Logger, OnModuleInit } from '@nestjs/common';
 import { Job, Queue } from 'bull';
 import { SellerScorecardService } from '../services/seller-scorecard.service';
+import { Segment } from '@vyaparnet/database';
 
 /**
  * SellerScorecardWorker — Phase 7
@@ -70,14 +71,30 @@ export class SellerScorecardWorker implements OnModuleInit {
   }
 
   @Process('increment-return-rate')
-  async handleReturnRate(job: Job<{ businessId: string; segment: any }>): Promise<void> {
-    this.logger.log({ businessId: job.data.businessId }, 'Processing increment-return-rate');
-    await this.sellerScorecardService.incrementReturnRate(job.data.businessId, job.data.segment);
+  async handleReturnRate(
+    job: Job<{ businessId: string; segment: unknown }>,
+  ): Promise<void> {
+    this.logger.log(
+      { businessId: job.data.businessId },
+      'Processing increment-return-rate',
+    );
+    await this.sellerScorecardService.incrementReturnRate(
+      job.data.businessId,
+      job.data.segment as Segment,
+    );
   }
 
   @Process('increment-dispute-rate')
-  async handleDisputeRate(job: Job<{ businessId: string; segment: any }>): Promise<void> {
-    this.logger.log({ businessId: job.data.businessId }, 'Processing increment-dispute-rate');
-    await this.sellerScorecardService.incrementDisputeRate(job.data.businessId, job.data.segment);
+  async handleDisputeRate(
+    job: Job<{ businessId: string; segment: unknown }>,
+  ): Promise<void> {
+    this.logger.log(
+      { businessId: job.data.businessId },
+      'Processing increment-dispute-rate',
+    );
+    await this.sellerScorecardService.incrementDisputeRate(
+      job.data.businessId,
+      job.data.segment as Segment,
+    );
   }
 }

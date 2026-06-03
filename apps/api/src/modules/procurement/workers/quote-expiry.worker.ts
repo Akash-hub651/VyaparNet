@@ -11,18 +11,18 @@ export class QuoteExpiryWorker extends WorkerHost {
 
   constructor(
     private readonly quotationRepo: QuotationRepository,
-    private readonly auditSafeWriter: AuditSafeWriterService
+    private readonly auditSafeWriter: AuditSafeWriterService,
   ) {
     super();
   }
 
   async process(job: Job<any, any, string>): Promise<any> {
     this.logger.log({ jobId: job.id }, 'QuoteExpiryWorker started processing');
-    
+
     try {
       const count = await this.quotationRepo.markExpired(new Date());
       this.logger.log({ expiredCount: count }, 'Expired quotes marked');
-      
+
       if (count > 0) {
         // this.metrics.quoteExpiredTotal?.inc(count);
         // We log one system event for the batch to save space, but in a real system we might log each if we load the IDs first.

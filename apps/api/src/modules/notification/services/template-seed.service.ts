@@ -570,7 +570,8 @@ export class TemplateSeedService implements OnModuleInit {
         titleHi: 'Return request bheja gaya',
         bodyHi: 'Order #{{orderId}} ka return request submit ho gaya hai.',
         titleEn: 'Return Initiated',
-        bodyEn: 'Your return request for order #{{orderId}} has been submitted.',
+        bodyEn:
+          'Your return request for order #{{orderId}} has been submitted.',
         isActive: true,
       },
       {
@@ -580,7 +581,8 @@ export class TemplateSeedService implements OnModuleInit {
         titleHi: 'Return request bheja gaya',
         bodyHi: 'Order #{{orderId}} ka return request submit ho gaya hai.',
         titleEn: 'Return Initiated',
-        bodyEn: 'Your return request for order #{{orderId}} has been submitted.',
+        bodyEn:
+          'Your return request for order #{{orderId}} has been submitted.',
         isActive: true,
       },
       {
@@ -588,9 +590,11 @@ export class TemplateSeedService implements OnModuleInit {
         type: NotificationType.SYSTEM,
         channels: [NotificationChannel.IN_APP, NotificationChannel.SMS],
         titleHi: 'Return approve ho gaya',
-        bodyHi: 'Order #{{orderId}} ka return approve ho gaya hai. Pick up jaldi hoga.',
+        bodyHi:
+          'Order #{{orderId}} ka return approve ho gaya hai. Pick up jaldi hoga.',
         titleEn: 'Return Approved',
-        bodyEn: 'Your return for order #{{orderId}} has been approved. Pickup will be scheduled soon.',
+        bodyEn:
+          'Your return for order #{{orderId}} has been approved. Pickup will be scheduled soon.',
         isActive: true,
       },
       {
@@ -598,9 +602,11 @@ export class TemplateSeedService implements OnModuleInit {
         type: NotificationType.SYSTEM,
         channels: [NotificationChannel.IN_APP, NotificationChannel.SMS],
         titleHi: 'Return approve ho gaya',
-        bodyHi: 'Order #{{orderId}} ka return approve ho gaya hai. Pick up jaldi hoga.',
+        bodyHi:
+          'Order #{{orderId}} ka return approve ho gaya hai. Pick up jaldi hoga.',
         titleEn: 'Return Approved',
-        bodyEn: 'Your return for order #{{orderId}} has been approved. Pickup will be scheduled soon.',
+        bodyEn:
+          'Your return for order #{{orderId}} has been approved. Pickup will be scheduled soon.',
         isActive: true,
       },
       {
@@ -626,21 +632,31 @@ export class TemplateSeedService implements OnModuleInit {
       {
         name: 'RefundInitiated_BUYER_hi',
         type: NotificationType.SYSTEM,
-        channels: [NotificationChannel.IN_APP, NotificationChannel.SMS, NotificationChannel.EMAIL],
+        channels: [
+          NotificationChannel.IN_APP,
+          NotificationChannel.SMS,
+          NotificationChannel.EMAIL,
+        ],
         titleHi: 'Refund process shuru',
         bodyHi: '₹{{amount}} ka refund aapke account me jaldi aayega.',
         titleEn: 'Refund Initiated',
-        bodyEn: 'A refund of ₹{{amount}} has been initiated and will reflect soon.',
+        bodyEn:
+          'A refund of ₹{{amount}} has been initiated and will reflect soon.',
         isActive: true,
       },
       {
         name: 'RefundInitiated_BUYER_en',
         type: NotificationType.SYSTEM,
-        channels: [NotificationChannel.IN_APP, NotificationChannel.SMS, NotificationChannel.EMAIL],
+        channels: [
+          NotificationChannel.IN_APP,
+          NotificationChannel.SMS,
+          NotificationChannel.EMAIL,
+        ],
         titleHi: 'Refund process shuru',
         bodyHi: '₹{{amount}} ka refund aapke account me jaldi aayega.',
         titleEn: 'Refund Initiated',
-        bodyEn: 'A refund of ₹{{amount}} has been initiated and will reflect soon.',
+        bodyEn:
+          'A refund of ₹{{amount}} has been initiated and will reflect soon.',
         isActive: true,
       },
       {
@@ -648,9 +664,11 @@ export class TemplateSeedService implements OnModuleInit {
         type: NotificationType.SYSTEM,
         channels: [NotificationChannel.IN_APP],
         titleHi: 'Dispute open ho gaya',
-        bodyHi: 'Aapka dispute (ID: {{disputeId}}) open ho gaya hai aur priority: {{priority}} hai.',
+        bodyHi:
+          'Aapka dispute (ID: {{disputeId}}) open ho gaya hai aur priority: {{priority}} hai.',
         titleEn: 'Dispute Opened',
-        bodyEn: 'Your dispute (ID: {{disputeId}}) has been opened with {{priority}} priority.',
+        bodyEn:
+          'Your dispute (ID: {{disputeId}}) has been opened with {{priority}} priority.',
         isActive: true,
       },
       {
@@ -658,9 +676,11 @@ export class TemplateSeedService implements OnModuleInit {
         type: NotificationType.SYSTEM,
         channels: [NotificationChannel.IN_APP],
         titleHi: 'Dispute open ho gaya',
-        bodyHi: 'Aapka dispute (ID: {{disputeId}}) open ho gaya hai aur priority: {{priority}} hai.',
+        bodyHi:
+          'Aapka dispute (ID: {{disputeId}}) open ho gaya hai aur priority: {{priority}} hai.',
         titleEn: 'Dispute Opened',
-        bodyEn: 'Your dispute (ID: {{disputeId}}) has been opened with {{priority}} priority.',
+        bodyEn:
+          'Your dispute (ID: {{disputeId}}) has been opened with {{priority}} priority.',
         isActive: true,
       },
       {
@@ -668,9 +688,11 @@ export class TemplateSeedService implements OnModuleInit {
         type: NotificationType.SYSTEM,
         channels: [NotificationChannel.IN_APP, NotificationChannel.SMS],
         titleHi: 'Dispute resolve ho gaya',
-        bodyHi: 'Dispute (ID: {{disputeId}}) resolve ho gaya hai. Outcome: {{outcome}}',
+        bodyHi:
+          'Dispute (ID: {{disputeId}}) resolve ho gaya hai. Outcome: {{outcome}}',
         titleEn: 'Dispute Resolved',
-        bodyEn: 'Dispute (ID: {{disputeId}}) has been resolved. Outcome: {{outcome}}',
+        bodyEn:
+          'Dispute (ID: {{disputeId}}) has been resolved. Outcome: {{outcome}}',
         isActive: true,
       },
       {
@@ -678,9 +700,11 @@ export class TemplateSeedService implements OnModuleInit {
         type: NotificationType.SYSTEM,
         channels: [NotificationChannel.IN_APP, NotificationChannel.SMS],
         titleHi: 'Dispute resolve ho gaya',
-        bodyHi: 'Dispute (ID: {{disputeId}}) resolve ho gaya hai. Outcome: {{outcome}}',
+        bodyHi:
+          'Dispute (ID: {{disputeId}}) resolve ho gaya hai. Outcome: {{outcome}}',
         titleEn: 'Dispute Resolved',
-        bodyEn: 'Dispute (ID: {{disputeId}}) has been resolved. Outcome: {{outcome}}',
+        bodyEn:
+          'Dispute (ID: {{disputeId}}) has been resolved. Outcome: {{outcome}}',
         isActive: true,
       },
       {
@@ -688,9 +712,11 @@ export class TemplateSeedService implements OnModuleInit {
         type: NotificationType.SYSTEM,
         channels: [NotificationChannel.IN_APP],
         titleHi: 'Naya quotation aaya hai',
-        bodyHi: 'Aapko ek naya quotation (ID: {{quotationId}}) mila hai. Total Price: ₹{{totalPrice}}. Valid until: {{validUntil}}',
+        bodyHi:
+          'Aapko ek naya quotation (ID: {{quotationId}}) mila hai. Total Price: ₹{{totalPrice}}. Valid until: {{validUntil}}',
         titleEn: 'New Quotation Received',
-        bodyEn: 'You received a new quotation (ID: {{quotationId}}). Total Price: ₹{{totalPrice}}. Valid until: {{validUntil}}',
+        bodyEn:
+          'You received a new quotation (ID: {{quotationId}}). Total Price: ₹{{totalPrice}}. Valid until: {{validUntil}}',
         isActive: true,
       },
       {
@@ -698,9 +724,11 @@ export class TemplateSeedService implements OnModuleInit {
         type: NotificationType.SYSTEM,
         channels: [NotificationChannel.IN_APP],
         titleHi: 'Naya quotation aaya hai',
-        bodyHi: 'Aapko ek naya quotation (ID: {{quotationId}}) mila hai. Total Price: ₹{{totalPrice}}. Valid until: {{validUntil}}',
+        bodyHi:
+          'Aapko ek naya quotation (ID: {{quotationId}}) mila hai. Total Price: ₹{{totalPrice}}. Valid until: {{validUntil}}',
         titleEn: 'New Quotation Received',
-        bodyEn: 'You received a new quotation (ID: {{quotationId}}). Total Price: ₹{{totalPrice}}. Valid until: {{validUntil}}',
+        bodyEn:
+          'You received a new quotation (ID: {{quotationId}}). Total Price: ₹{{totalPrice}}. Valid until: {{validUntil}}',
         isActive: true,
       },
       {
@@ -708,7 +736,8 @@ export class TemplateSeedService implements OnModuleInit {
         type: NotificationType.SYSTEM,
         channels: [NotificationChannel.IN_APP, NotificationChannel.SMS],
         titleHi: 'Quotation accept ho gaya',
-        bodyHi: 'Buyer ne aapka quotation (ID: {{quotationId}}) accept kar liya hai.',
+        bodyHi:
+          'Buyer ne aapka quotation (ID: {{quotationId}}) accept kar liya hai.',
         titleEn: 'Quotation Accepted',
         bodyEn: 'Buyer has accepted your quotation (ID: {{quotationId}}).',
         isActive: true,
@@ -718,7 +747,8 @@ export class TemplateSeedService implements OnModuleInit {
         type: NotificationType.SYSTEM,
         channels: [NotificationChannel.IN_APP, NotificationChannel.SMS],
         titleHi: 'Quotation accept ho gaya',
-        bodyHi: 'Buyer ne aapka quotation (ID: {{quotationId}}) accept kar liya hai.',
+        bodyHi:
+          'Buyer ne aapka quotation (ID: {{quotationId}}) accept kar liya hai.',
         titleEn: 'Quotation Accepted',
         bodyEn: 'Buyer has accepted your quotation (ID: {{quotationId}}).',
         isActive: true,
@@ -742,7 +772,7 @@ export class TemplateSeedService implements OnModuleInit {
         titleEn: 'Return Approved',
         bodyEn: 'A return has been approved for your order #{{orderId}}.',
         isActive: true,
-      }
+      },
     ];
   }
 }

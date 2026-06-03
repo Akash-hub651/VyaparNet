@@ -43,7 +43,10 @@ export class BuyerLedgerRepository {
    * Retrieves the latest balance for a buyer (segment-aware if necessary, but ledger is typically cross-segment for buyer, though segment is tracked).
    * MUST be executed inside $transaction to prevent race conditions during updates.
    */
-  async findLatestBalance(tx: Prisma.TransactionClient, buyerId: string): Promise<Prisma.Decimal> {
+  async findLatestBalance(
+    tx: Prisma.TransactionClient,
+    buyerId: string,
+  ): Promise<Prisma.Decimal> {
     const latest = await tx.buyerLedger.findFirst({
       where: { buyerId },
       orderBy: { createdAt: 'desc' },

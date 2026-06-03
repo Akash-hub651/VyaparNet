@@ -1,7 +1,16 @@
-import { Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { AdminDisputeRepository } from '../repositories/admin-dispute.repository';
 import { AdminPayoutRepository } from '../repositories/admin-payout.repository';
-import { DisputeStatus, Segment, DisputePriority, PayoutStatus } from '@vyaparnet/database';
+import {
+  DisputeStatus,
+  Segment,
+  DisputePriority,
+  PayoutStatus,
+} from '@vyaparnet/database';
 import { AuditSafeWriterService } from '../../security/audit/audit-safe-writer.service';
 import { AuditAction } from '@vyaparnet/types';
 import { PrismaService } from '../../../core/prisma/prisma.service';
@@ -9,9 +18,17 @@ import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { EvidenceService } from '../../trust-safety/evidence/evidence.service';
 import { NotificationService } from '../../notification/services/notification.service';
+import { MetricsService } from '../../observability/metrics.service';
+import { Logger } from '@nestjs/common';
 
 const DISPUTE_ADMIN_TRANSITIONS: Record<DisputeStatus, DisputeStatus[]> = {
-  OPEN: ['UNDER_REVIEW', 'RESOLVED_BUYER', 'RESOLVED_SELLER', 'CLOSED', 'ESCALATED'],
+  OPEN: [
+    'UNDER_REVIEW',
+    'RESOLVED_BUYER',
+    'RESOLVED_SELLER',
+    'CLOSED',
+    'ESCALATED',
+  ],
   UNDER_REVIEW: ['ESCALATED', 'RESOLVED_BUYER', 'RESOLVED_SELLER', 'CLOSED'],
   ESCALATED: ['RESOLVED_BUYER', 'RESOLVED_SELLER', 'CLOSED'],
   RESOLVED_BUYER: ['CLOSED'],
@@ -21,6 +38,8 @@ const DISPUTE_ADMIN_TRANSITIONS: Record<DisputeStatus, DisputeStatus[]> = {
 
 @Injectable()
 export class AdminDisputeService {
+  private readonly logger = new Logger(AdminDisputeService.name);
+
   constructor(
     private readonly repository: AdminDisputeRepository,
     private readonly payoutRepository: AdminPayoutRepository,
@@ -29,18 +48,27 @@ export class AdminDisputeService {
     private readonly evidenceService: EvidenceService,
     private readonly notificationService: NotificationService,
     @InjectQueue('scorecard') private readonly scorecardQueue: Queue,
+    private readonly metricsService: MetricsService,
   ) {}
 
-  async listDisputes(page: number, limit: number, segment?: Segment, status?: DisputeStatus, priority?: DisputePriority) {
+  async listDisputes(
+    page: number,
+    limit: number,
+    segment?: Segment,
+    status?: DisputeStatus,
+    priority?: DisputePriority,
+  ) {
     return this.repository.findMany(page, limit, segment, status, priority);
   }
 
-  async getDisputeDetail(id: string, _adminId: string): Promise<any> {
+  async getDisputeDetail(id: string, _adminId: string): Promise<unknown> {
     const dispute = await this.repository.findById(id);
     if (!dispute) throw new NotFoundException('Dispute not found');
 
     const imagesWithUrls = await Promise.all(
-      (await this.prisma.disputeEvidence.findMany({ where: { disputeId: id } })).map(async (ev) => ({
+      (
+        await this.prisma.disputeEvidence.findMany({ where: { disputeId: id } })
+      ).map(async (ev) => ({
         url: await this.evidenceService.getEvidenceUrl(ev.fileUrl),
       })),
     );
@@ -57,13 +85,16 @@ export class AdminDisputeService {
     };
   }
 
-  private validateTransition(currentStatus: DisputeStatus, nextStatus: DisputeStatus) {
+  private validateTransition(
+    currentStatus: DisputeStatus,
+    nextStatus: DisputeStatus,
+  ) {
     if (!DISPUTE_ADMIN_TRANSITIONS[currentStatus].includes(nextStatus)) {
-      throw new UnprocessableEntityException(`Invalid transition from ${currentStatus} to ${nextStatus}`);
+      throw new UnprocessableEntityException(
+        `Invalid transition from ${currentStatus} to ${nextStatus}`,
+      );
     }
   }
-
-
 
   async underReview(id: string, adminId: string) {
     const dispute = await this.repository.findById(id);
@@ -71,7 +102,11 @@ export class AdminDisputeService {
 
     this.validateTransition(dispute.status, DisputeStatus.UNDER_REVIEW);
 
-    const updated = await this.repository.updateStatus(id, DisputeStatus.UNDER_REVIEW, adminId);
+    const updated = await this.repository.updateStatus(
+      id,
+      DisputeStatus.UNDER_REVIEW,
+      adminId,
+    );
 
     await this.auditSafeWriter.safeWrite({
       entityType: 'DISPUTE',
@@ -91,7 +126,11 @@ export class AdminDisputeService {
 
     this.validateTransition(dispute.status, DisputeStatus.ESCALATED);
 
-    const updated = await this.repository.updateStatus(id, DisputeStatus.ESCALATED, adminId);
+    const updated = await this.repository.updateStatus(
+      id,
+      DisputeStatus.ESCALATED,
+      adminId,
+    );
 
     await this.auditSafeWriter.safeWrite({
       entityType: 'DISPUTE',
@@ -102,28 +141,50 @@ export class AdminDisputeService {
       newValue: { status: DisputeStatus.ESCALATED },
     });
 
-    await this.notificationService.sendDirect('admin_group', 'DisputeEscalated_ADMIN_hi', {
-      disputeId: id,
-      segment: dispute.order.segment,
-    }).catch(err => console.error(err));
+    await this.notificationService
+      .sendDirect('admin_group', 'DisputeEscalated_ADMIN_hi', {
+        disputeId: id,
+        segment: dispute.order.segment,
+      })
+      .catch((err) => console.error(err));
 
     return updated;
   }
 
-  async resolveDispute(id: string, adminId: string, outcome: 'BUYER_FAVORED' | 'SELLER_FAVORED', resolutionText: string) {
+  async resolveDispute(
+    id: string,
+    adminId: string,
+    outcome: 'BUYER_FAVORED' | 'SELLER_FAVORED',
+    resolutionText: string,
+  ) {
     const dispute = await this.repository.findById(id);
     if (!dispute) throw new NotFoundException('Dispute not found');
 
-    const nextStatus = outcome === 'BUYER_FAVORED' ? DisputeStatus.RESOLVED_BUYER : DisputeStatus.RESOLVED_SELLER;
+    const nextStatus =
+      outcome === 'BUYER_FAVORED'
+        ? DisputeStatus.RESOLVED_BUYER
+        : DisputeStatus.RESOLVED_SELLER;
     this.validateTransition(dispute.status, nextStatus);
 
     const result = await this.prisma.$transaction(async (tx) => {
-      const updated = await this.repository.updateStatus(id, nextStatus, adminId, resolutionText, tx);
+      const updated = await this.repository.updateStatus(
+        id,
+        nextStatus,
+        adminId,
+        resolutionText,
+        tx,
+      );
 
       if (nextStatus === DisputeStatus.RESOLVED_BUYER) {
-        const payout = await tx.sellerPayout.findFirst({ where: { orderId: dispute.orderId } });
+        const payout = await tx.sellerPayout.findFirst({
+          where: { orderId: dispute.orderId },
+        });
         if (payout && payout.status === PayoutStatus.ON_HOLD) {
-          await this.payoutRepository.updateStatus(payout.id, PayoutStatus.CANCELLED, tx);
+          await this.payoutRepository.updateStatus(
+            payout.id,
+            PayoutStatus.CANCELLED,
+            tx,
+          );
         }
       }
 
@@ -152,6 +213,32 @@ export class AdminDisputeService {
       }
     }
 
+    // ─── Phase 9: Observability & Traces (§20.1, §20.2, §20.4, §20.5) ────────
+    // 1. Metric: Increment dispute resolved counter
+    this.metricsService.disputeResolvedTotal.inc({
+      segment: dispute.order.segment,
+      outcome: outcome === 'BUYER_FAVORED' ? 'BUYER' : 'SELLER',
+    });
+
+    const resolutionTimeSecs = (Date.now() - dispute.createdAt.getTime()) / 1000;
+    this.metricsService.disputeResolutionTimeSeconds.observe({
+      segment: dispute.order.segment,
+    }, resolutionTimeSecs);
+
+    // 2. Structured Log & Trace
+    this.logger.log({
+      level: 'info',
+      event: 'dispute.resolve',
+      trace_id: `trace_dispute_${dispute.id}`, // Trace bounds for dispute.resolve workflow
+      disputeId: dispute.id,
+      from: dispute.status,
+      to: nextStatus,
+      actorId: adminId,
+      orderId: dispute.orderId,
+      segment: dispute.order.segment,
+      msg: `Dispute resolved in favor of ${outcome}`,
+    });
+
     return result;
   }
 
@@ -161,7 +248,11 @@ export class AdminDisputeService {
 
     this.validateTransition(dispute.status, DisputeStatus.CLOSED);
 
-    const updated = await this.repository.updateStatus(id, DisputeStatus.CLOSED, adminId);
+    const updated = await this.repository.updateStatus(
+      id,
+      DisputeStatus.CLOSED,
+      adminId,
+    );
 
     await this.auditSafeWriter.safeWrite({
       entityType: 'DISPUTE',

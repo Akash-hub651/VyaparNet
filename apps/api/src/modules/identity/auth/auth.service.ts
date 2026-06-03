@@ -304,7 +304,7 @@ export class AuthService {
     userAgent: string,
   ): Promise<{ tokens: AuthTokensResponse; user: any }> {
     const { email, password } = dto;
-    
+
     // Find user by email
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user || user.role !== UserRole.ADMIN || !user.password) {
@@ -370,7 +370,10 @@ export class AuthService {
       });
     } catch (error) {
       const err = error as Error;
-      this.logger.error({ error: err.message }, 'Admin Auth transaction failed');
+      this.logger.error(
+        { error: err.message },
+        'Admin Auth transaction failed',
+      );
       throw new InternalServerErrorException({
         code: 'AUTH_TRANSACTION_FAILED',
         message: 'Authentication failed. Please try again.',

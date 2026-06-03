@@ -1,9 +1,24 @@
-import { Controller, Get, Patch, Param, Body, UseGuards, Req, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Param,
+  Body,
+  UseGuards,
+  Req,
+  Query,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
 import { ZodValidationPipe } from '../../../shared/pipes/zod-validation.pipe';
-import { UserRole, AdminDisputeListQuerySchema, AdminDisputeListQueryDto, AdminDisputeResolveSchema, AdminDisputeResolveDto } from '@vyaparnet/types';
+import {
+  UserRole,
+  AdminDisputeListQuerySchema,
+  AdminDisputeListQueryDto,
+  AdminDisputeResolveSchema,
+  AdminDisputeResolveDto,
+} from '@vyaparnet/types';
 import { AdminIdempotencyGuard } from '../guards/admin-idempotency.guard';
 import { AdminDisputeService } from '../services/admin-dispute.service';
 
@@ -14,16 +29,26 @@ export class AdminDisputesController {
   constructor(private readonly disputeService: AdminDisputeService) {}
 
   @Get()
-  async listDisputes(@Query(new ZodValidationPipe(AdminDisputeListQuerySchema)) query: AdminDisputeListQueryDto): Promise<any> {
-    return this.disputeService.listDisputes(query.page, query.limit, query.segment, query.status, query.priority);
+  async listDisputes(
+    @Query(new ZodValidationPipe(AdminDisputeListQuerySchema))
+    query: AdminDisputeListQueryDto,
+  ): Promise<any> {
+    return this.disputeService.listDisputes(
+      query.page,
+      query.limit,
+      query.segment,
+      query.status,
+      query.priority,
+    );
   }
 
   @Get(':id')
-  async getDisputeDetail(@Req() req: any, @Param('id') id: string): Promise<any> {
+  async getDisputeDetail(
+    @Req() req: any,
+    @Param('id') id: string,
+  ): Promise<any> {
     return this.disputeService.getDisputeDetail(id, req.user.id);
   }
-
-
 
   @Patch(':id/under-review')
   @UseGuards(AdminIdempotencyGuard)
@@ -42,9 +67,15 @@ export class AdminDisputesController {
   async resolveDispute(
     @Req() req: any,
     @Param('id') id: string,
-    @Body(new ZodValidationPipe(AdminDisputeResolveSchema)) dto: AdminDisputeResolveDto,
+    @Body(new ZodValidationPipe(AdminDisputeResolveSchema))
+    dto: AdminDisputeResolveDto,
   ): Promise<any> {
-    return this.disputeService.resolveDispute(id, req.user.id, dto.resolutionOutcome, dto.resolutionText);
+    return this.disputeService.resolveDispute(
+      id,
+      req.user.id,
+      dto.resolutionOutcome,
+      dto.resolutionText,
+    );
   }
 
   @Patch(':id/close')

@@ -141,7 +141,7 @@ export class AdminTicketRepository {
     senderRole: 'ADMIN' | 'BUYER' | 'SELLER',
     message: string,
     attachments: string[],
-    clientMessageId: string
+    clientMessageId: string,
   ) {
     // OBS-AR8-17: deduplication via findFirst
     const existing = await this.prisma.supportTicketMessage.findFirst({
@@ -174,7 +174,11 @@ export class AdminTicketRepository {
   /**
    * linkDispute — links a dispute to the ticket
    */
-  async linkDispute(id: string, disputeId: string, tx?: Prisma.TransactionClient) {
+  async linkDispute(
+    id: string,
+    disputeId: string,
+    tx?: Prisma.TransactionClient,
+  ) {
     const client = tx || this.prisma;
     return client.supportTicket.update({
       where: { id },
