@@ -1,22 +1,21 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { Processor, Process } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
-import { Job } from 'bullmq';
+import { Job } from 'bull';
 import { QuotationRepository } from '../rfq/quotation.repository';
 import { AuditSafeWriterService } from '../../security/audit/audit-safe-writer.service';
 import { SystemActorType } from '@vyaparnet/types';
 
 @Processor('quote-expiry')
-export class QuoteExpiryWorker extends WorkerHost {
+export class QuoteExpiryWorker {
   private readonly logger = new Logger(QuoteExpiryWorker.name);
 
   constructor(
     private readonly quotationRepo: QuotationRepository,
     private readonly auditSafeWriter: AuditSafeWriterService,
-  ) {
-    super();
-  }
+  ) {}
 
-  async process(job: Job<any, any, string>): Promise<any> {
+  @Process()
+  async process(job: Job<any>): Promise<any> {
     this.logger.log({ jobId: job.id }, 'QuoteExpiryWorker started processing');
 
     try {

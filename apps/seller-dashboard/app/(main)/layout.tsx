@@ -1,44 +1,89 @@
+'use client';
+
 /**
  * Seller Dashboard Main Layout — apps/seller-dashboard/app/(main)/layout.tsx
  *
- * Authority: SPRINT2_IMPLEMENTATION_LOCKED_final_v2.0.md Section 9.4
+ * Authority:
+ *   seller_dashboard_architecture.md §10 (Permission Architecture — Auth Guard)
+ *   seller_dashboard_screen_system.md §G.1 (Application Shell)
  *
- * Shell with:
- * - Collapsible left sidebar (Products, Dashboard, Settings)
- * - Top header with user info and logout
- * - Main content area
+ * Rules:
+ * - isLoading → show FullPageLoader (never flash unauthenticated content)
+ * - !isAuthenticated → redirect to /login
+ * - isSuspended → show SuspendedBanner above everything (always visible)
+ * - Sidebar: fixed, left side, w-56 (expanded) or w-14 (collapsed)
+ * - Header: fixed, top, left-56 (shifts with sidebar)
+ * - Main: margin-left 224px + padding-top 64px (header clearance)
  */
 
-import React from 'react';
-import type { Metadata } from 'next';
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../contexts/auth.context';
 import SellerSidebar from '../../components/SellerSidebar';
 import SellerHeader from '../../components/SellerHeader';
-
-export const metadata: Metadata = {
-  title: 'VyaparNet Seller Dashboard',
-  description: 'Manage your wholesale products, orders, and inventory on VyaparNet.',
-};
+import { FullPageLoader } from '../../components/ui/Skeleton';
+import { SuspendedBanner } from '../../components/ui/ErrorBanner';
 
 export default function SellerMainLayout({
   children,
 }: {
   children: React.ReactNode;
 }): React.JSX.Element {
+  const { isLoading, isAuthenticated, user } = useAuth();
+  const router = useRouter();
+
+  // Auth guard — redirect to login if not authenticated
+  // Authority: architecture §10 "Auth Guard — Main Layout"
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [isLoading, isAuthenticated, router]);
+
+  // Show loader while auth state is being determined
+  if (isLoading || !isAuthenticated) {
+    return <FullPageLoader />;
+  }
+
+  // Derive suspension status from user object
+  // Authority: architecture §10 "SUSPENDED STATE (ARCH-REV-SD-13 RESOLVED)"
+  const isSuspended = (
+    (user as unknown as Record<string, Record<string, string>>)?.['business']?.['status'] === 'SUSPENDED'
+  );
+
   return (
-    <div className="flex h-screen bg-[#F8FAFC] overflow-hidden">
-      {/* Sidebar */}
+    <div className="min-h-screen bg-surface-app">
+      {/* Suspended account banner — always visible above everything */}
+      {isSuspended && <SuspendedBanner />}
+
+      {/* Fixed Sidebar */}
       <SellerSidebar />
 
-      {/* Right panel: header + content */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <SellerHeader />
-        <main
-          id="seller-main-content"
-          className="flex-1 overflow-y-auto p-6"
-        >
+      {/* Fixed Header — positioned to the right of sidebar */}
+      <SellerHeader />
+
+      {/*
+        Main content area
+        - margin-left: 224px (sidebar expanded width w-56)
+        - padding-top: 64px (header height h-16)
+        - bg: surface-app (#F8FAFC)
+        Authority: screen_system §G.1
+      */}
+      <main
+        id="seller-main-content"
+        className="ml-56 pt-16 min-h-screen bg-surface-app"
+        aria-label="Main content"
+      >
+        {/* Skip link target */}
+        <a href="#seller-main-content" className="skip-link">
+          Main content pe jaiye
+        </a>
+
+        {/* Page content — max-width centered on very large screens */}
+        <div className="max-w-page mx-auto p-6">
           {children}
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

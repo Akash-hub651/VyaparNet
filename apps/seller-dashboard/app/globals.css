@@ -1,28 +1,289 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  --font-manrope: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-}
+/* ════════════════════════════════════════════════════════════════
+   VYAPARNET SELLER DASHBOARD — DESIGN TOKEN SYSTEM
+   Authority: seller_dashboard_uxui_system.md §3.2 (Complete Color Token Set)
+              seller_dashboard_screen_system.md §23.3 (Skeleton Animation)
+   Version: v1.0 — Phase 0 Foundation
+   ════════════════════════════════════════════════════════════════ */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter), var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* ── BRAND ──────────────────────────────────────────────── */
+    --color-brand-50:        hsl(221, 100%, 98%);  /* #F0F7FF  Subtle brand tint bg     */
+    --color-brand-100:       hsl(221, 91%,  96%);  /* #EFF6FF  Brand tint bg (selected) */
+    --color-brand-500:       hsl(221, 83%,  53%);  /* #2563EB  Hover, focus ring        */
+    --color-brand-600:       hsl(221, 83%,  43%);  /* #1D4ED8  Primary CTA bg           */
+    --color-brand-700:       hsl(221, 83%,  35%);  /* #1E40AF  Active press state       */
+
+    /* ── SURFACE ────────────────────────────────────────────── */
+    --color-surface-app:     hsl(220, 20%, 98%);   /* #F8FAFC  Page background          */
+    --color-surface-card:    hsl(0,   0%,  100%);  /* #FFFFFF  Card, panel bg           */
+    --color-surface-sidebar: hsl(222, 47%, 11%);   /* #0F172A  Sidebar background       */
+    --color-surface-header:  hsl(0,   0%,  100%);  /* #FFFFFF  Top header bg            */
+    --color-surface-hover:   hsl(220, 14%, 96%);   /* #F1F5F9  Row/item hover bg        */
+    --color-surface-selected:hsl(221, 91%, 96%);   /* #EFF6FF  Selected row bg          */
+
+    /* ── TEXT ───────────────────────────────────────────────── */
+    --color-text-primary:    hsl(222, 47%, 11%);   /* #0F172A  Headings, data           */
+    --color-text-secondary:  hsl(215, 16%, 47%);   /* #64748B  Labels, supporting text  */
+    --color-text-muted:      hsl(214, 14%, 65%);   /* #94A3B8  Timestamps, placeholders */
+    --color-text-on-dark:    hsl(0,   0%,  100%);  /* #FFFFFF  Text on sidebar          */
+    --color-text-on-brand:   hsl(0,   0%,  100%);  /* #FFFFFF  Text on brand buttons    */
+
+    /* ── BORDER ─────────────────────────────────────────────── */
+    --color-border-default:  hsl(214, 32%, 91%);   /* #E2E8F0  Cards, table dividers    */
+    --color-border-strong:   hsl(215, 20%, 82%);   /* #CBD5E1  Input borders            */
+    --color-border-focus:    hsl(221, 83%, 53%);   /* #2563EB  Input focus state        */
+
+    /* ── SUCCESS ────────────────────────────────────────────── */
+    --color-success-50:      hsl(138, 76%, 97%);   /* #ECFDF5                           */
+    --color-success-100:     hsl(141, 84%, 93%);   /* #D1FAE5  Badge background         */
+    --color-success-500:     hsl(160, 84%, 39%);   /* #10B981  Icon                     */
+    --color-success-700:     hsl(161, 79%, 28%);   /* #0D7A55  Text on badge            */
+
+    /* ── WARNING ────────────────────────────────────────────── */
+    --color-warning-50:      hsl(48, 100%, 96%);   /* #FFFBEB                           */
+    --color-warning-100:     hsl(48,  96%,  89%);  /* #FEF3C7  Badge background         */
+    --color-warning-500:     hsl(38,  92%,  50%);  /* #F59E0B  Icon                     */
+    --color-warning-700:     hsl(32,  95%,  32%);  /* #92400E  Text on badge            */
+
+    /* ── ERROR ──────────────────────────────────────────────── */
+    --color-error-50:        hsl(0,  86%,  97%);   /* #FFF1F1                           */
+    --color-error-100:       hsl(0,  93%,  94%);   /* #FEE2E2  Badge background         */
+    --color-error-500:       hsl(0,  84%,  60%);   /* #EF4444  Icon, destructive btn    */
+    --color-error-600:       hsl(0,  72%,  50%);   /* #DC2626  Destructive button bg    */
+    --color-error-700:       hsl(0,  72%,  38%);   /* #B91C1C  Text on badge            */
+
+    /* ── INFO ───────────────────────────────────────────────── */
+    --color-info-50:         hsl(204, 100%, 97%);  /* #F0F9FF                           */
+    --color-info-100:        hsl(204,  94%,  94%); /* #E0F2FE  Badge background         */
+    --color-info-500:        hsl(199,  89%,  48%); /* #0EA5E9  Icon                     */
+    --color-info-700:        hsl(210,  86%,  35%); /* #0B559A  Text on badge            */
+
+    /* ── NEUTRAL ────────────────────────────────────────────── */
+    --color-neutral-50:      hsl(210, 40%, 98%);   /* #F8FAFC                           */
+    --color-neutral-100:     hsl(220, 14%, 96%);   /* #F1F5F9  Badge background         */
+    --color-neutral-200:     hsl(214, 32%, 91%);   /* #E2E8F0  Toggle off, divider      */
+    --color-neutral-300:     hsl(213, 27%, 84%);   /* #CBD5E1                           */
+    --color-neutral-400:     hsl(215, 20%, 65%);   /* #94A3B8  Muted icons              */
+    --color-neutral-700:     hsl(215, 25%, 40%);   /* #475569  Text on neutral badge    */
+
+    /* ── ACCENT (RFQ / Special) ─────────────────────────────── */
+    --color-accent-100:      hsl(253, 100%, 97%);  /* #F5F3FF  Badge background         */
+    --color-accent-600:      hsl(258,  90%,  50%); /* #7C3AED  Icon, accent badge text  */
+
+    /* ── TYPOGRAPHY SCALE ───────────────────────────────────── */
+    /* Authority: seller_dashboard_uxui_system.md §4.2           */
+    --text-2xs:  0.625rem;   /* 10px  nav group headers, table metadata       */
+    --text-xs:   0.750rem;   /* 12px  badge labels, timestamps, chip text     */
+    --text-sm:   0.875rem;   /* 14px  table cells, form labels, body copy     */
+    --text-base: 1.000rem;   /* 16px  primary body, sidebar nav items         */
+    --text-lg:   1.125rem;   /* 18px  card titles, section headers            */
+    --text-xl:   1.250rem;   /* 20px  page h2, modal titles                   */
+    --text-2xl:  1.500rem;   /* 24px  page h1, revenue display                */
+    --text-3xl:  1.875rem;   /* 30px  primary KPI values                      */
+    --text-4xl:  2.250rem;   /* 36px  celebration empty state                 */
+
+    /* ── FONT WEIGHTS ───────────────────────────────────────── */
+    --font-normal:   400;
+    --font-medium:   500;
+    --font-semibold: 600;
+    --font-bold:     700;
+
+    /* ── RADIUS ─────────────────────────────────────────────── */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
+    --radius-2xl:16px;
+    --radius-full: 9999px;
+
+    /* ── SHADOW ─────────────────────────────────────────────── */
+    --shadow-1: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.08);
+    --shadow-2: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.05);
+    --shadow-3: 0 10px 15px rgba(0,0,0,0.08), 0 4px 6px rgba(0,0,0,0.04);
+
+    /* ── Z-INDEX HIERARCHY ──────────────────────────────────── */
+    /* Authority: seller_dashboard_screen_system.md §G.14.4      */
+    --z-sidebar:   30;
+    --z-header:    40;
+    --z-bottom-nav:40;
+    --z-drawer:    50;
+    --z-modal:     60;
+    --z-toast:     70;
+
+    /* ── FONTS ──────────────────────────────────────────────── */
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ════════════════════════════════════════════════════════════════
+   GLOBAL BASE STYLES
+   ════════════════════════════════════════════════════════════════ */
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    border-color: var(--color-border-default);
+  }
+
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-surface-app);
+    color: var(--color-text-primary);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  /* Tabular numerals for all financial data */
+  /* Authority: seller_dashboard_uxui_system.md §4.5 */
+  .numeric-data,
+  .amount-cell {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+  .amount-cell {
+    text-align: right;
+  }
+
+  /* Focus ring — all interactive elements */
+  /* Authority: screen_system §G.8 */
+  :focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+    border-radius: var(--radius-md);
+  }
+
+  /* Skip link for accessibility */
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+  .skip-link:focus {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: auto;
+    height: auto;
+    padding: 8px 16px;
+    background: var(--color-brand-600);
+    color: white;
+    z-index: 9999;
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SKELETON SHIMMER ANIMATION
+   Authority: seller_dashboard_screen_system.md §23.3
+   ════════════════════════════════════════════════════════════════ */
+@layer utilities {
+  @keyframes skeleton-shimmer {
+    from { background-position: -200% 0; }
+    to   { background-position:  200% 0; }
+  }
+
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      hsl(220, 14%, 96%) 25%,
+      hsl(220, 14%, 92%) 50%,
+      hsl(220, 14%, 96%) 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+    border-radius: var(--radius-md);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton {
+      animation: none;
+      background: hsl(220, 14%, 96%);
+    }
+  }
+
+  /* Button press micro-interaction */
+  /* Authority: screen_system §G.8 */
+  .btn-press:active {
+    transform: scale(0.98);
+    transition: transform 100ms ease;
+  }
+
+  /* Spinner rotation animation */
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  .animate-spin-fast {
+    animation: spin 700ms linear infinite;
+  }
+
+  /* Toast slide-in animation */
+  @keyframes toast-slide-in {
+    from { transform: translateX(100%); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+  }
+  .animate-toast-in {
+    animation: toast-slide-in 200ms ease-out forwards;
+  }
+
+  /* Modal scale-in animation */
+  @keyframes modal-in {
+    from { opacity: 0; transform: scale(0.95); }
+    to   { opacity: 1; transform: scale(1);    }
+  }
+  .animate-modal-in {
+    animation: modal-in 150ms ease-out forwards;
+  }
+
+  /* Bottom sheet slide-up */
+  @keyframes sheet-up {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0);    }
+  }
+  .animate-sheet-up {
+    animation: sheet-up 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Badge spring scale on count change */
+  @keyframes badge-spring {
+    0%   { transform: scale(1);   }
+    40%  { transform: scale(1.3); }
+    70%  { transform: scale(0.9); }
+    100% { transform: scale(1);   }
+  }
+  .animate-badge-spring {
+    animation: badge-spring 200ms ease forwards;
+  }
+
+  /* OTP Error Shake — §34.7 "Box shake animation (±4px, 200ms)" */
+  @keyframes shake {
+    0%, 100% { transform: translateX(0);    }
+    20%       { transform: translateX(-4px); }
+    40%       { transform: translateX( 4px); }
+    60%       { transform: translateX(-4px); }
+    80%       { transform: translateX( 4px); }
+  }
+
+  /* Reduced motion: disable all keyframe animations */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-badge-spring,
+    .animate-toast-in,
+    .animate-modal-in,
+    .animate-sheet-up,
+    .animate-spin-fast {
+      animation: none !important;
+    }
+  }
 }

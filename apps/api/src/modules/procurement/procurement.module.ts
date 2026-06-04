@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { BullModule } from '@nestjs/bullmq';
+import { BullModule } from '@nestjs/bull';
 import { BuyerRfqController } from './rfq/buyer-rfq.controller';
 import { SellerRfqController } from './rfq/seller-rfq.controller';
 import { BuyerProcurementTemplateController } from './templates/buyer-template.controller';
