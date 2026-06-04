@@ -114,7 +114,7 @@ export function ShippingModal({ orderId, orderNumber, isOpen, onClose, onSuccess
             value={trackingNumber}
             onChange={(e) => setTrackingNumber(e.target.value)}
             placeholder="e.g. 1234567890"
-            className="w-full px-3 py-2 text-base sm:text-sm border border-border-default rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 bg-surface-default"
+            className="w-full px-3 py-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-border-default rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 bg-surface-default"
             disabled={isSubmitting}
             required
           />

@@ -67,7 +67,7 @@ export function ActionPanel({ orderId, status, onActionClick, isActionLoading }:
             
             <a 
               href={`#track-${orderId}`}
-              className="mt-4 flex items-center justify-center gap-2 w-full text-sm font-medium text-brand-600 hover:text-brand-800 transition-colors"
+              className="mt-4 flex items-center justify-center gap-2 w-full min-h-[44px] text-sm font-medium text-brand-600 hover:text-brand-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
             >
               View Tracking <ExternalLink size={14} />
             </a>
@@ -94,7 +94,7 @@ export function ActionPanel({ orderId, status, onActionClick, isActionLoading }:
             
             <a 
               href={`/support/dispute?order=${orderId}`}
-              className="mt-4 flex items-center justify-center gap-2 w-full text-sm font-medium text-text-muted hover:text-text-primary transition-colors"
+              className="mt-4 flex items-center justify-center gap-2 w-full min-h-[44px] text-sm font-medium text-text-muted hover:text-text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
             >
               Dispute Open Hai? <HelpCircle size={14} />
             </a>
@@ -136,7 +136,7 @@ export function ActionPanel({ orderId, status, onActionClick, isActionLoading }:
             </Button>
             <a 
               href={`/disputes/${orderId}`}
-              className="mt-4 flex items-center justify-center gap-2 w-full text-sm font-medium text-brand-600 hover:text-brand-800 transition-colors"
+              className="mt-4 flex items-center justify-center gap-2 w-full min-h-[44px] text-sm font-medium text-brand-600 hover:text-brand-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
             >
               Dispute Details
             </a>

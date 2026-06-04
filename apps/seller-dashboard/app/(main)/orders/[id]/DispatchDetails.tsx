@@ -28,7 +28,7 @@ export function DispatchDetails({ dispatch, onEditClick, canEdit }: DispatchDeta
         {canEdit && (
           <button 
             onClick={onEditClick}
-            className="flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded px-2 py-1"
+            className="flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded p-2 sm:px-2 sm:py-1 min-h-[44px] sm:min-h-0"
           >
             <Edit2 size={14} />
             Tracking update karein
@@ -48,7 +48,7 @@ export function DispatchDetails({ dispatch, onEditClick, canEdit }: DispatchDeta
             <span className="text-sm font-medium text-text-primary">{dispatch.trackingNumber}</span>
             <button 
               onClick={handleCopy}
-              className="text-text-muted hover:text-brand-600 transition-colors focus-visible:outline-none"
+              className="w-11 h-11 flex items-center justify-center -ml-2 text-text-muted hover:text-brand-600 transition-colors focus-visible:outline-none rounded-md"
               aria-label="Copy tracking number"
             >
               <Copy size={14} />
@@ -57,7 +57,7 @@ export function DispatchDetails({ dispatch, onEditClick, canEdit }: DispatchDeta
               href={`https://www.google.com/search?q=${encodeURIComponent(dispatch.carrier + ' tracking ' + dispatch.trackingNumber)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-brand-600 hover:text-brand-800 transition-colors focus-visible:outline-none"
+              className="w-11 h-11 flex items-center justify-center -ml-2 text-brand-600 hover:text-brand-800 transition-colors focus-visible:outline-none rounded-md"
               aria-label="Track Live externally"
               title="Track Live"
             >
@@ -82,9 +82,9 @@ export function DispatchDetails({ dispatch, onEditClick, canEdit }: DispatchDeta
               href={dispatch.proofUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-medium text-brand-600 hover:text-brand-800 group"
+              className="inline-flex items-center gap-2 text-sm font-medium text-brand-600 hover:text-brand-800 group min-h-[44px]"
             >
-              <div className="w-8 h-8 rounded bg-brand-50 flex items-center justify-center group-hover:bg-brand-100 transition-colors">
+              <div className="w-11 h-11 sm:w-8 sm:h-8 rounded bg-brand-50 flex items-center justify-center group-hover:bg-brand-100 transition-colors">
                 <FileText size={16} />
               </div>
               Dekhein

@@ -162,7 +162,7 @@ export default function OrderDetailPage() {
                 <h1 className="text-2xl font-bold text-text-primary">{order.orderNumber}</h1>
                 <button 
                   onClick={handleCopyOrderNumber}
-                  className="text-text-muted hover:text-brand-600 transition-colors focus-visible:outline-none"
+                  className="w-11 h-11 flex items-center justify-center -ml-2 text-text-muted hover:text-brand-600 transition-colors focus-visible:outline-none rounded-md"
                   aria-label="Order number copy karein"
                 >
                   <Copy size={16} />
