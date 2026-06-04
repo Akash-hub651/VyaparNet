@@ -1,4 +1,4 @@
-import { apiGet, apiPatch, ApiResult } from './client';
+import { apiGet, apiPatch, apiPost, ApiResult } from './client';
 
 export type OrderStatus = 
   | 'PLACED' 
@@ -17,12 +17,62 @@ export type OrderStatus =
 export interface OrderPreviewDto {
   id: string;
   orderNumber: string;
-  buyerName: string;
   amount: string;
   itemCount: number;
   status: OrderStatus;
   createdAt: string;
+  buyerName: string;
   segment: string;
+}
+
+export interface TimelineEvent {
+  status: OrderStatus;
+  timestamp: string;
+  actor: string;
+  note?: string;
+}
+
+export interface OrderItemDto {
+  id: string;
+  name: string;
+  sku: string;
+  qty: number;
+  price: string;
+  total: string;
+  imageUrl?: string;
+}
+
+export interface OrderDetailDto {
+  id: string;
+  orderNumber: string;
+  status: OrderStatus;
+  createdAt: string;
+  segment: string;
+  buyerContact: {
+    name: string;
+    phone: string;
+    email: string;
+    address: string;
+  };
+  items: OrderItemDto[];
+  payment: {
+    method: string;
+    status: string;
+    subtotal: string;
+    tax: string;
+    total: string;
+    payoutStatus?: string;
+    payoutDate?: string;
+    payoutAmount?: string;
+    platformFee?: string;
+  };
+  dispatch?: {
+    carrier: string;
+    trackingNumber: string;
+    shipDate: string;
+    proofUrl?: string;
+  };
+  timeline: TimelineEvent[];
 }
 
 export interface OrderListResponseDto {
@@ -65,4 +115,29 @@ export interface ShipOrderPayload {
 
 export async function shipOrder(id: string, payload: ShipOrderPayload, token: string): Promise<ApiResult<void>> {
   return apiPatch<void>(`/seller/orders/${id}/ship`, token, payload);
+}
+
+// ----------------------------------------------------------------------------
+// SINGLE ORDER DETAILS (SCREEN 03)
+// ----------------------------------------------------------------------------
+
+export async function getOrderById(id: string, token: string): Promise<ApiResult<OrderDetailDto>> {
+  return apiGet<OrderDetailDto>(`/seller/orders/${id}`, token);
+}
+
+export async function updateOrderStatus(id: string, status: OrderStatus, token: string): Promise<ApiResult<void>> {
+  return apiPatch<void>(`/seller/orders/${id}/status`, token, { status });
+}
+
+export interface UploadUrlResponse {
+  uploadUrl: string;
+  key: string;
+}
+
+export async function getDispatchProofUploadUrl(id: string, fileName: string, fileType: string, token: string): Promise<ApiResult<UploadUrlResponse>> {
+  return apiPost<UploadUrlResponse>(`/seller/orders/${id}/dispatch-proof/upload-url`, token, { fileName, fileType });
+}
+
+export async function confirmDispatchProof(id: string, key: string, trackingInfo: ShipOrderPayload, token: string): Promise<ApiResult<void>> {
+  return apiPost<void>(`/seller/orders/${id}/dispatch-proof/confirm`, token, { key, ...trackingInfo });
 }

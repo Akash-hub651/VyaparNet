@@ -59,6 +59,11 @@ export interface SellerPermissions {
    * Authority: ARCH-REV-SD-13 RESOLVED
    */
   isSuspended: boolean;
+  /**
+   * True when user role is STAFF.
+   * Staff have restricted views (e.g. no invoice download, fully masked buyer info).
+   */
+  isStaff: boolean;
 }
 
 /* ── HELPER — safely extract business field ──────────────────── */
@@ -88,6 +93,7 @@ export function useSellerPermissions(): SellerPermissions {
       isKycPending: false,
       isKycUnverified: false,
       isSuspended: false,
+      isStaff: false,
     };
   }
 
@@ -104,5 +110,6 @@ export function useSellerPermissions(): SellerPermissions {
     isKycPending: kycStatus === 'PENDING',
     isKycUnverified: kycStatus === 'UNVERIFIED',
     isSuspended: bizStatus === 'SUSPENDED',
+    isStaff: typedUser?.role === 'STAFF',
   };
 }
