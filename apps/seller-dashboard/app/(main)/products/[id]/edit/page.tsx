@@ -38,8 +38,8 @@ export default function SellerProductEditPage(): React.JSX.Element {
     if (!accessToken) return;
     // Fetch seller's products and find the one by id
     void getSellerProducts({ limit: 100 }, accessToken).then((res) => {
-      if (res.data) {
-        const found = res.data.data.find((p) => p.id === id);
+      if (res.success) {
+        const found = res.data.data.find((p: ProductResponse) => p.id === id);
         if (found) {
           setProduct(found);
           setName(found.name);
@@ -54,8 +54,11 @@ export default function SellerProductEditPage(): React.JSX.Element {
         } else {
           setError('Product not found or you do not own it.');
         }
-      } else {
-        setError(res.error?.message ?? 'Failed to load product.');
+      }
+      if (!res.success) {
+        setError(res.error ?? 'Failed to load product.');
+        setIsLoading(false);
+        return;
       }
       setIsLoading(false);
     });
@@ -84,8 +87,9 @@ export default function SellerProductEditPage(): React.JSX.Element {
 
     setIsSaving(false);
 
-    if (res.error) {
-      setError(res.error.message);
+    if (!res.success) {
+      setError(res.error);
+      setIsSaving(false);
       return;
     }
 

@@ -1,58 +1,39 @@
 'use client';
+/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable react-hooks/exhaustive-deps */
 
 /**
- * Seller Product List — apps/seller-dashboard/app/(main)/products/page.tsx
+ * Screen 04: Products List — apps/seller-dashboard/app/(main)/products/page.tsx
  *
- * Authority: SPRINT2_IMPLEMENTATION_LOCKED_final_v2.0.md Section 9.4
- *
+ * Authority: seller_dashboard_screen_system.md
  * Features:
- * - Status tabs: All | Active | Pending | Rejected | Draft | Archived
- * - Status badge colors from design tokens
- * - Edit / Archive / Publish actions per row
- * - Empty state per tab with CTA
+ * - Status Tabs (All, Active, Pending, Draft, Rejected, Archived)
+ * - Error/Loading handling
+ * - Rejection Alert Strip (INVARIANT-UX-10)
+ * - Row actions and bulk actions
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Plus, AlertCircle, Search, Settings2 } from 'lucide-react';
 import { ProductStatus } from '@vyaparnet/types';
 import { useAuth } from '../../contexts/auth.context';
+import { useHeader } from '../../contexts/header.context';
+import { useSellerPermissions } from '../../../lib/hooks/useSellerPermissions';
+import { EmptyState } from '../../../components/ui/EmptyState';
+import { ErrorBanner } from '../../../components/ui/ErrorBanner';
+import { SkeletonCard } from '../../../components/ui/Skeleton';
+import { Button } from '../../../components/ui/Button';
+import { ProductListTable } from './ProductListTable';
+import { ProductBulkActions } from './ProductBulkActions';
+import { ProductFilterDrawer } from './ProductFilterDrawer';
 import {
   getSellerProducts,
-  archiveProduct,
-  publishProduct,
   type ProductResponse,
 } from '../../../lib/api/products.client';
 
 // ─────────────────────────────────────────────────────────────
-// Status badge config (design token colors)
-// ─────────────────────────────────────────────────────────────
-
-const STATUS_BADGE: Record<ProductStatus, { label: string; className: string }> = {
-  [ProductStatus.ACTIVE]: {
-    label: 'Active',
-    className: 'bg-[#D1FAE5] text-[#065F46]',
-  },
-  [ProductStatus.PENDING_APPROVAL]: {
-    label: 'Pending',
-    className: 'bg-[#FEF3C7] text-[#92400E]',
-  },
-  [ProductStatus.REJECTED]: {
-    label: 'Rejected',
-    className: 'bg-[#FEE2E2] text-[#991B1B]',
-  },
-  [ProductStatus.DRAFT]: {
-    label: 'Draft',
-    className: 'bg-[#F1F5F9] text-[#475569]',
-  },
-  [ProductStatus.ARCHIVED]: {
-    label: 'Archived',
-    className: 'bg-[#F1F5F9] text-[#94A3B8]',
-  },
-};
-
-// ─────────────────────────────────────────────────────────────
-// Tabs
+// Constants
 // ─────────────────────────────────────────────────────────────
 
 interface Tab {
@@ -64,281 +45,290 @@ interface Tab {
 const TABS: Tab[] = [
   { label: 'All', status: undefined, id: 'tab-all' },
   { label: 'Active', status: ProductStatus.ACTIVE, id: 'tab-active' },
-  { label: 'Pending', status: ProductStatus.PENDING_APPROVAL, id: 'tab-pending' },
-  { label: 'Rejected', status: ProductStatus.REJECTED, id: 'tab-rejected' },
+  { label: 'Pending Review', status: ProductStatus.PENDING_APPROVAL, id: 'tab-pending' },
   { label: 'Draft', status: ProductStatus.DRAFT, id: 'tab-draft' },
+  { label: 'Rejected', status: ProductStatus.REJECTED, id: 'tab-rejected' },
   { label: 'Archived', status: ProductStatus.ARCHIVED, id: 'tab-archived' },
 ];
 
-// ─────────────────────────────────────────────────────────────
-// Empty states per tab
-// ─────────────────────────────────────────────────────────────
-
-const EMPTY_STATE: Record<string, { emoji: string; title: string; cta?: string; ctaHref?: string }> = {
-  all: {
-    emoji: '📦',
-    title: 'अभी तक कोई उत्पाद नहीं',
-    cta: 'पहला उत्पाद जोड़ें',
-    ctaHref: '/products/new',
-  },
-  active: { emoji: '✅', title: 'कोई active उत्पाद नहीं' },
-  pending: { emoji: '⏳', title: 'Approval pending नहीं' },
-  rejected: { emoji: '❌', title: 'कोई rejected उत्पाद नहीं' },
-  draft: { emoji: '📝', title: 'कोई draft नहीं', cta: 'नया draft बनाएं', ctaHref: '/products/new' },
-  archived: { emoji: '🗄️', title: 'कोई archived उत्पाद नहीं' },
-};
-
-const inrFormatter = new Intl.NumberFormat('en-IN', {
-  style: 'currency',
-  currency: 'INR',
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 0,
-});
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-}
-
-// ─────────────────────────────────────────────────────────────
-// Page
-// ─────────────────────────────────────────────────────────────
-
-export default function SellerProductListPage(): React.JSX.Element {
+export default function ProductsPage(): React.JSX.Element {
   const { accessToken } = useAuth();
+  const { setTitle } = useHeader();
+  const permissions = useSellerPermissions();
   const router = useRouter();
+
+  // State
   const [activeTab, setActiveTab] = useState<Tab>(TABS[0]!);
   const [products, setProducts] = useState<ProductResponse[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [rejectedCount, setRejectedCount] = useState(0);
+  
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  
+  const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set());
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const loadProducts = useCallback(async () => {
-    if (!accessToken) return;
-    setIsLoading(true);
-    setError(null);
-    const res = await getSellerProducts(
-      { status: activeTab.status, limit: 50 },
-      accessToken,
-    );
-    if (res.error) {
-      setError(res.error.message);
-    } else {
-      setProducts(res.data?.data ?? []);
-    }
-    setIsLoading(false);
-  }, [accessToken, activeTab]);
+  // ─────────────────────────────────────────────────────────────
+  // Initialization & Fetching
+  // ─────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    void loadProducts();
-  }, [loadProducts]);
+    setTitle('Products');
+  }, [setTitle]);
 
-  const handleArchive = async (id: string): Promise<void> => {
+  const loadProducts = useCallback(async (isTabSwitch = false) => {
     if (!accessToken) return;
-    if (!confirm('क्या आप इस उत्पाद को archive करना चाहते हैं?')) return;
-    setActionLoading(id);
-    const res = await archiveProduct(id, accessToken);
-    if (res.error) {
-      alert(`Archive failed: ${res.error.message}`);
-    } else {
-      await loadProducts();
+    
+    if (isTabSwitch) {
+      setIsLoading(true);
     }
-    setActionLoading(null);
+    
+    // Using parallel fetch for standard load and to get rejected count separately if needed.
+    // However, rejected count usually comes from dashboard KPIs.
+    // For now, we will fetch the list and if we are on 'All', count rejected client-side
+    // or assume API provides it (we will do a quick separate fetch if rejectedCount is unknown).
+    
+    try {
+      const res = await getSellerProducts(
+        { 
+          status: activeTab.status, 
+          limit: 20,
+          query: searchQuery || undefined
+        },
+        accessToken
+      );
+      
+      if (!res.success) {
+        setError(res.error);
+        setProducts([]);
+        setTotalProducts(0);
+      } else {
+        setProducts(res.data.data);
+        setTotalProducts(res.data.total);
+        setError(null);
+        
+        // Count rejected if we are on ALL tab
+        if (!activeTab.status) {
+          const rejected = res.data.data.filter(p => p.status === ProductStatus.REJECTED).length;
+          setRejectedCount(rejected);
+        }
+      }
+    } catch (err) {
+      setError('Failed to fetch products');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [accessToken, activeTab, searchQuery]);
+
+  useEffect(() => {
+    void loadProducts(true);
+    // Reset selection when tab changes
+    setSelectedProductIds(new Set());
+  }, [loadProducts, activeTab]);
+
+  // Initial redirect if rejectedCount > 0
+  useEffect(() => {
+    if (rejectedCount > 0 && activeTab.id === 'tab-all') {
+      const rejectedTab = TABS.find(t => t.status === ProductStatus.REJECTED);
+      if (rejectedTab) setActiveTab(rejectedTab);
+    }
+  }, [rejectedCount]);
+
+  // ─────────────────────────────────────────────────────────────
+  // Action Handlers
+  // ─────────────────────────────────────────────────────────────
+
+  const handleSelectionChange = (id: string, checked: boolean) => {
+    const newSet = new Set(selectedProductIds);
+    if (checked) newSet.add(id);
+    else newSet.delete(id);
+    setSelectedProductIds(newSet);
   };
 
-  const handlePublish = async (id: string): Promise<void> => {
-    if (!accessToken) return;
-    setActionLoading(id);
-    const res = await publishProduct(id, accessToken);
-    if (res.error) {
-      alert(`Publish failed: ${res.error.message}`);
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedProductIds(new Set(products.map(p => p.id)));
     } else {
-      await loadProducts();
+      setSelectedProductIds(new Set());
     }
-    setActionLoading(null);
   };
 
-  const tabKey = activeTab.status?.toLowerCase() ?? 'all';
-  const emptyState = EMPTY_STATE[tabKey] ?? EMPTY_STATE['all']!;
+  // ─────────────────────────────────────────────────────────────
+  // Render Helpers
+  // ─────────────────────────────────────────────────────────────
+
+  const renderEmptyState = () => {
+    if (activeTab.status === ProductStatus.REJECTED && rejectedCount === 0) {
+      return (
+        <EmptyState
+          emoji="✅"
+          title="Koi rejected product nahi!"
+          body="Sab products approved hain ya review mein hain."
+        />
+      );
+    }
+    
+    if (searchQuery) {
+      return (
+        <EmptyState
+          preset="search"
+          title={`'${searchQuery}' se koi product nahi mila`}
+          body="Aapki search ke hisaab se result nahi mila."
+          secondaryLabel="Filters hatayein"
+          onSecondary={() => setSearchQuery('')}
+        />
+      );
+    }
+
+    return (
+      <EmptyState
+        preset="products"
+        title="Abhi koi product nahi"
+        body="Apna pehla product add karein aur marketplace mein list karein."
+        ctaLabel={!permissions.isStaff ? "+ Pehla Product Add Karein" : undefined}
+        onCta={!permissions.isStaff ? () => router.push('/products/new') : undefined}
+      />
+    );
+  };
 
   return (
-    <div>
-      {/* Page title */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-h1 font-bold text-[#1E293B]">Products</h1>
-        <Link
-          id="seller-add-product-btn"
-          href="/products/new"
-          className="inline-flex items-center gap-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold text-sm px-4 py-2.5 rounded-lg transition-colors"
-        >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M8 2V14M2 8H14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-          Add Product
-        </Link>
-      </div>
-
-      {/* Status tabs */}
-      <div className="flex gap-1 border-b border-[#E2E8F0] mb-5 overflow-x-auto" role="tablist">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            id={tab.id}
-            role="tab"
-            aria-selected={activeTab.id === tab.id}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors -mb-px ${
-              activeTab.id === tab.id
-                ? 'border-[#2563EB] text-[#2563EB]'
-                : 'border-transparent text-[#64748B] hover:text-[#1E293B]'
-            }`}
+    <div className="space-y-6">
+      {/* ROW A: PAGE HEADER */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-bold text-text-primary">Products</h1>
+          <span className="px-2.5 py-1 text-xs font-medium bg-surface-hover text-text-secondary rounded-full">
+            {totalProducts} products
+          </span>
+        </div>
+        {!permissions.isStaff && (
+          <Button
+            variant="primary"
+            icon={<Plus size={16} />}
+            onClick={() => router.push('/products/new')}
+            className="min-h-[44px]"
           >
-            {tab.label}
-          </button>
-        ))}
+            Product Add Karein
+          </Button>
+        )}
       </div>
 
-      {/* Error */}
-      {error && (
-        <div className="bg-[#FEE2E2] border border-[#FECACA] rounded-lg px-4 py-3 text-sm text-[#991B1B] mb-4" role="alert">
-          {error}
+      {/* ROW B: REJECTION ALERT STRIP */}
+      {rejectedCount > 0 && (
+        <div 
+          className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-error-50 border-l-4 border-error-500 p-4 rounded-r-md"
+          role="alert"
+        >
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-error-600" />
+            <span className="text-sm font-medium text-error-900">
+              ❌ {rejectedCount} products reject ho gaye — buyers inhe nahi dekh sakte.
+            </span>
+          </div>
+          <button 
+            onClick={() => setActiveTab(TABS.find(t => t.status === ProductStatus.REJECTED)!)}
+            className="text-sm font-semibold text-error-700 hover:text-error-800 focus-visible:outline-none min-h-[44px] sm:min-h-0"
+          >
+            Rejected Products Dekho →
+          </button>
         </div>
       )}
 
-      {/* Loading */}
-      {isLoading && (
-        <div className="flex items-center justify-center py-16 text-[#94A3B8]">
-          <svg className="animate-spin w-6 h-6 mr-2" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.25" />
-            <path d="M22 12a10 10 0 01-10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-          Loading…
-        </div>
-      )}
-
-      {/* Empty state */}
-      {!isLoading && !error && products.length === 0 && (
-        <div id={`empty-state-${tabKey}`} className="py-20 text-center">
-          <div className="text-5xl mb-4">{emptyState.emoji}</div>
-          <h2 className="text-base font-semibold text-[#1E293B] mb-2">{emptyState.title}</h2>
-          {emptyState.cta && emptyState.ctaHref && (
-            <Link
-              href={emptyState.ctaHref}
-              className="mt-3 inline-flex items-center gap-1.5 bg-[#2563EB] text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-[#1D4ED8] transition-colors"
+      {/* ROW C: TAB FILTER BAR */}
+      <div className="flex overflow-x-auto border-b border-border-default no-scrollbar" role="tablist">
+        {TABS.map((tab) => {
+          const isSelected = activeTab.id === tab.id;
+          const isRejectedTab = tab.status === ProductStatus.REJECTED;
+          
+          return (
+            <button
+              key={tab.id}
+              role="tab"
+              aria-selected={isSelected}
+              onClick={() => setActiveTab(tab)}
+              className={`whitespace-nowrap px-4 py-3 text-sm font-medium border-b-2 transition-colors min-h-[44px] ${
+                isSelected 
+                  ? 'border-brand-600 text-brand-600' 
+                  : 'border-transparent text-text-secondary hover:text-text-primary'
+              } ${isRejectedTab && rejectedCount > 0 ? 'text-error-600' : ''}`}
             >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M7 1V13M1 7H13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              {emptyState.cta}
-            </Link>
-          )}
+              <div className="flex items-center gap-2">
+                {tab.label}
+                {isRejectedTab && rejectedCount > 0 && (
+                  <span className="w-2 h-2 rounded-full bg-error-500" aria-label={`Rejected products: ${rejectedCount}`} />
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ROW D: SECONDARY BAR */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="relative w-full sm:w-96">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+          <input
+            type="text"
+            placeholder="Product name ya SKU..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 text-sm border border-border-default rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 min-h-[44px] bg-surface-default"
+          />
         </div>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Button
+            variant="ghost"
+            icon={<Settings2 size={16} />}
+            onClick={() => setIsFilterDrawerOpen(true)}
+            className="w-full sm:w-auto min-h-[44px]"
+          >
+            Filter
+          </Button>
+        </div>
+      </div>
+
+      {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
+
+      {/* ROW E: TABLE / CONTENT */}
+      {isLoading ? (
+        <div className="space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <SkeletonCard key={i} className="h-16 w-full" />
+          ))}
+        </div>
+      ) : products.length === 0 ? (
+        renderEmptyState()
+      ) : (
+        <ProductListTable
+          products={products}
+          selectedIds={selectedProductIds}
+          onSelectionChange={handleSelectionChange}
+          onSelectAll={handleSelectAll}
+          onRefresh={() => void loadProducts()}
+          isStaff={permissions.isStaff}
+        />
       )}
 
-      {/* Product table */}
-      {!isLoading && products.length > 0 && (
-        <div className="bg-white rounded-xl border border-[#E2E8F0] overflow-hidden">
-          <table className="w-full text-sm" aria-label="Products list">
-            <thead>
-              <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC]">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-[#64748B] uppercase tracking-wide w-12">#</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-[#64748B] uppercase tracking-wide">Product</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-[#64748B] uppercase tracking-wide hidden md:table-cell">Category</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-[#64748B] uppercase tracking-wide hidden sm:table-cell">Price</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-[#64748B] uppercase tracking-wide">Status</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-[#64748B] uppercase tracking-wide hidden lg:table-cell">Created</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-[#64748B] uppercase tracking-wide">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((product, i) => {
-                const badge = STATUS_BADGE[product.status] ?? STATUS_BADGE[ProductStatus.DRAFT]!;
-                const isActioning = actionLoading === product.id;
-
-                return (
-                  <tr
-                    key={product.id}
-                    id={`product-row-${product.id}`}
-                    className="border-b border-[#F1F5F9] hover:bg-[#F8FAFC] transition-colors"
-                  >
-                    {/* Row number */}
-                    <td className="px-4 py-3.5 text-[#94A3B8] text-xs">{i + 1}</td>
-
-                    {/* Product name + slug */}
-                    <td className="px-4 py-3.5">
-                      <div className="font-medium text-[#1E293B] line-clamp-1">{product.name}</div>
-                      <div className="text-xs text-[#94A3B8] mt-0.5 font-mono">{product.slug}</div>
-                    </td>
-
-                    {/* Category */}
-                    <td className="px-4 py-3.5 text-[#64748B] hidden md:table-cell">
-                      {product.categoryName ?? '—'}
-                    </td>
-
-                    {/* Price */}
-                    <td className="px-4 py-3.5 text-right font-semibold text-[#1E293B] hidden sm:table-cell">
-                      {inrFormatter.format(product.basePrice)}
-                    </td>
-
-                    {/* Status badge */}
-                    <td className="px-4 py-3.5">
-                      <span className={`inline-flex text-xs font-semibold px-2.5 py-1 rounded-full ${badge.className}`}>
-                        {badge.label}
-                      </span>
-                    </td>
-
-                    {/* Created date */}
-                    <td className="px-4 py-3.5 text-[#94A3B8] text-xs hidden lg:table-cell">
-                      {formatDate(product.createdAt)}
-                    </td>
-
-                    {/* Actions */}
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center justify-end gap-2">
-                        {/* Edit */}
-                        <button
-                          id={`action-edit-${product.id}`}
-                          onClick={() => router.push(`/products/${product.id}/edit`)}
-                          disabled={isActioning}
-                          className="text-xs text-[#2563EB] hover:text-[#1D4ED8] font-medium transition-colors disabled:opacity-40"
-                          aria-label={`Edit ${product.name}`}
-                        >
-                          Edit
-                        </button>
-
-                        {/* Publish (only for DRAFT) */}
-                        {product.status === ProductStatus.DRAFT && (
-                          <button
-                            id={`action-publish-${product.id}`}
-                            onClick={() => void handlePublish(product.id)}
-                            disabled={isActioning}
-                            className="text-xs text-[#10B981] hover:text-[#059669] font-medium transition-colors disabled:opacity-40"
-                            aria-label={`Publish ${product.name}`}
-                          >
-                            {isActioning ? '…' : 'Publish'}
-                          </button>
-                        )}
-
-                        {/* Archive (not for ARCHIVED) */}
-                        {product.status !== ProductStatus.ARCHIVED && (
-                          <button
-                            id={`action-archive-${product.id}`}
-                            onClick={() => void handleArchive(product.id)}
-                            disabled={isActioning}
-                            className="text-xs text-[#EF4444] hover:text-[#DC2626] font-medium transition-colors disabled:opacity-40"
-                            aria-label={`Archive ${product.name}`}
-                          >
-                            {isActioning ? '…' : 'Archive'}
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+      {/* BULK ACTIONS BAR */}
+      {selectedProductIds.size > 0 && (
+        <ProductBulkActions
+          selectedCount={selectedProductIds.size}
+          products={products.filter(p => selectedProductIds.has(p.id))}
+          onClearSelection={() => setSelectedProductIds(new Set())}
+          onSuccess={() => {
+            setSelectedProductIds(new Set());
+            void loadProducts();
+          }}
+        />
       )}
+
+      {/* FILTER DRAWER */}
+      <ProductFilterDrawer
+        isOpen={isFilterDrawerOpen}
+        onClose={() => setIsFilterDrawerOpen(false)}
+      />
     </div>
   );
 }
