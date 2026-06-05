@@ -111,8 +111,7 @@ export function StockUpdateModal({
         onSuccess(updatedItem);
         onClose();
       }
-    } catch (err) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch {
       setError('Network error. Update nahi ho paya.');
     } finally {
       setIsSubmitting(false);
@@ -174,86 +173,89 @@ export function StockUpdateModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Quantity */}
-            <div>
-              <label htmlFor="qty-input" className="block text-sm font-medium text-text-primary mb-1.5">Quantity <span className="text-error-500">*</span></label>
-              <div className="relative">
-                <span className="absolute left-4 top-3 font-mono text-text-secondary select-none">
-                  {updateType === 'add' ? '+' : updateType === 'remove' ? '-' : '='}
-                </span>
-                <input
-                  id="qty-input"
-                  type="text"
-                  inputMode="decimal"
-                  value={quantityStr}
-                  onChange={(e) => setQuantityStr(e.target.value.replace(/[^0-9]/g, ''))}
-                  placeholder="0"
-                  className="w-full bg-surface-card border border-neutral-300 rounded-lg pl-8 pr-16 py-3 text-base min-h-[44px] focus:outline-none focus:ring-2 focus:ring-brand-500"
-                />
-                <span className="absolute right-4 top-3 text-sm text-text-secondary select-none bg-surface-card">{product.unit}</span>
-              </div>
+          <div className="flex flex-col items-center justify-center mb-6">
+            <label htmlFor="qty-input" className="block text-sm font-medium text-text-primary mb-3">
+              Quantity {updateType === 'remove' && <span className="text-error-500">*</span>}
+            </label>
+            <div className="relative w-full max-w-[200px]">
+              <span className="absolute left-4 top-4 font-mono text-xl text-text-secondary select-none">
+                {updateType === 'add' ? '+' : updateType === 'remove' ? '-' : '='}
+              </span>
+              <input
+                id="qty-input"
+                type="text"
+                inputMode="decimal"
+                value={quantityStr}
+                onChange={(e) => setQuantityStr(e.target.value.replace(/[^0-9]/g, ''))}
+                placeholder="0"
+                className="w-full bg-surface-card border border-neutral-300 rounded-xl h-14 text-center text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
             </div>
+            <span className="mt-2 text-sm text-text-secondary">{product.unit}</span>
 
-            {/* Reason (Conditional) */}
-            <div>
-              <label htmlFor="reason-select" className="block text-sm font-medium text-text-primary mb-1.5">
-                Reason {updateType === 'remove' && <span className="text-error-500">*</span>}
-              </label>
-              <select
-                id="reason-select"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="w-full bg-surface-card border border-neutral-300 rounded-lg px-4 py-3 text-base min-h-[44px] focus:outline-none focus:ring-2 focus:ring-brand-500"
-              >
-                <option value="">Select reason</option>
-                <option value="Sale/Dispatch">Sale/Dispatch</option>
-                <option value="Damage/Loss">Damage/Loss</option>
-                <option value="Return">Return (Restock)</option>
-                <option value="Manual Correction">Manual Correction</option>
-                <option value="Adjustment">Adjustment</option>
-              </select>
+            {/* Live Preview (Centered below unit) */}
+            <div className={`mt-3 px-4 py-2 border rounded-full font-medium text-sm flex items-center gap-2 ${isInvalidStock ? 'bg-error-50 border-error-200 text-error-700' : newStock > currentStock ? 'bg-success-50 border-success-200 text-success-800' : newStock < currentStock ? 'bg-warning-50 border-warning-200 text-warning-800' : 'bg-neutral-50 border-neutral-200 text-neutral-700'}`} aria-live="polite">
+              <span>{currentStock}</span>
+              <span>→</span>
+              <span>{newStock} {product.unit}</span>
             </div>
           </div>
 
-          {/* Note */}
-          <div>
-            <label htmlFor="note-input" className="block text-sm font-medium text-text-primary mb-1.5">Note <span className="text-xs text-text-muted font-normal">(optional)</span></label>
-            <textarea
-              id="note-input"
-              value={note}
-              onChange={(e) => setNote(e.target.value.slice(0, 200))}
-              placeholder="Internal note (buyers ko nahi dikhega)"
-              rows={2}
-              className="w-full bg-surface-card border border-neutral-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
-            />
-            <div className="text-right mt-1">
-               <span className="text-xs text-text-muted">{note.length}/200</span>
+          <div className="grid grid-cols-1 gap-4">
+            {/* Reason (Conditional) */}
+            {updateType === 'remove' && (
+              <div>
+                <label htmlFor="reason-select" className="block text-sm font-medium text-text-primary mb-1.5">
+                  Reason <span className="text-error-500">*</span>
+                </label>
+                <select
+                  id="reason-select"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  className="w-full bg-surface-card border border-neutral-300 rounded-lg px-4 py-3 text-base min-h-[44px] focus:outline-none focus:ring-2 focus:ring-brand-500"
+                >
+                  <option value="">Select reason</option>
+                  <option value="Sale/Dispatch">Sale/Dispatch</option>
+                  <option value="Damage/Loss">Damage/Loss</option>
+                  <option value="Return">Return (Restock)</option>
+                  <option value="Manual Correction">Manual Correction</option>
+                  <option value="Adjustment">Adjustment</option>
+                </select>
+              </div>
+            )}
+
+            {/* Note */}
+            <div>
+              <label htmlFor="note-input" className="block text-sm font-medium text-text-primary mb-1.5">Note <span className="text-xs text-text-muted font-normal">(optional)</span></label>
+              <textarea
+                id="note-input"
+                value={note}
+                onChange={(e) => setNote(e.target.value.slice(0, 200))}
+                placeholder="Internal note (buyers ko nahi dikhega)"
+                rows={2}
+                className="w-full bg-surface-card border border-neutral-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+              />
+              <div className="text-right mt-1">
+                 <span className="text-xs text-text-muted">{note.length}/200</span>
+              </div>
             </div>
           </div>
         </fieldset>
 
-        {/* Live Preview */}
-        <div className={`mt-6 p-4 border rounded-lg font-medium text-sm flex items-center justify-between ${isInvalidStock ? 'bg-error-50 border-error-200 text-error-700' : newStock > currentStock ? 'bg-success-50 border-success-200 text-success-800' : newStock < currentStock ? 'bg-warning-50 border-warning-200 text-warning-800' : 'bg-neutral-50 border-neutral-200 text-neutral-700'}`} aria-live="polite">
-           <span>Current: {currentStock}</span>
-           <span>→</span>
-           <span>After update: {newStock} {product.unit}</span>
-        </div>
-
         {/* Actions */}
-        <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-neutral-100">
+        <div className="mt-8 flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-neutral-100">
            <button
              type="button"
              onClick={onClose}
              disabled={isSubmitting}
-             className="px-4 py-2.5 text-sm font-semibold text-text-secondary hover:bg-neutral-50 border border-transparent rounded-lg transition-colors min-h-[44px]"
+             className="px-4 py-3 sm:py-2.5 text-sm font-semibold text-text-secondary hover:bg-neutral-50 border border-transparent rounded-lg transition-colors min-h-[48px] sm:min-h-[44px] w-full sm:w-auto order-2 sm:order-1"
            >
              Baad Mein
            </button>
            <button
              type="submit"
              disabled={isSubmitting || isInvalidStock}
-             className={`px-6 py-2.5 text-sm font-semibold text-white rounded-lg transition-colors min-h-[44px] ${isInvalidStock || isSubmitting ? 'bg-brand-400 cursor-not-allowed' : 'bg-brand-600 hover:bg-brand-700'}`}
+             className={`px-6 py-3 sm:py-2.5 text-sm font-semibold text-white rounded-lg transition-colors min-h-[48px] sm:min-h-[44px] w-full sm:w-auto order-1 sm:order-2 ${isInvalidStock || isSubmitting ? 'bg-brand-400 cursor-not-allowed' : 'bg-brand-600 hover:bg-brand-700'}`}
            >
              {isSubmitting ? 'Saving...' : 'Stock Update Karein'}
            </button>

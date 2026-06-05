@@ -7,6 +7,7 @@ import { ErrorBanner } from '../../../components/ui/ErrorBanner';
 import { getSellerInventory, InventoryViewModel, adaptInventoryToViewModel } from '../../../lib/api/inventory.client';
 import { useAuth } from '../../contexts/auth.context';
 import { InventoryTable } from './components/InventoryTable';
+import { InventoryMobileList } from './components/InventoryMobileList';
 import { StockUpdateModal } from './components/StockUpdateModal';
 import { BulkStockUpdateModal } from './components/BulkStockUpdateModal';
 
@@ -47,8 +48,7 @@ export default function SellerInventoryPage() {
       } else if (res.data) {
         setItems(res.data.data.map(adaptInventoryToViewModel));
       }
-    } catch (err) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch {
       setError('Network error. Inventory load nahi ho payi.');
     } finally {
       setLoading(false);
@@ -57,12 +57,12 @@ export default function SellerInventoryPage() {
 
   useEffect(() => {
     if (kycStatus === 'VERIFIED') {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+      // eslint-disable-next-line
       void loadData();
     } else {
       setLoading(false); // If not verified, we might show a block or just empty depending on rules
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line
   }, [accessToken, kycStatus]);
 
   // Derived state (Client-side filtering for simplicity since API list might just return everything if limit is high)
@@ -145,8 +145,8 @@ export default function SellerInventoryPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-bold text-text-primary">Inventory</h1>
-          <span className="px-2.5 py-0.5 rounded-full bg-neutral-100 text-neutral-600 text-xs font-medium">
-            {totalItems} products
+          <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${lowStockCount > 0 ? 'bg-warning-100 text-warning-700' : 'bg-neutral-100 text-neutral-600'}`}>
+            {lowStockCount > 0 ? `${lowStockCount} low stock` : `${totalItems} products`}
           </span>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -162,13 +162,14 @@ export default function SellerInventoryPage() {
             disabled={isSuspended || selectedIds.size === 0}
             className="flex-1 sm:flex-none px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-semibold hover:bg-brand-700 transition-colors disabled:opacity-50 disabled:bg-brand-400"
           >
-            + Stock Update {selectedIds.size > 0 ? `(${selectedIds.size})` : ''}
+            <span className="hidden sm:inline">+ Stock Update {selectedIds.size > 0 ? `(${selectedIds.size})` : ''}</span>
+            <span className="sm:hidden">+ Update</span>
           </button>
         </div>
       </div>
 
       {/* ROW B: KPI STRIP */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-surface-card border border-neutral-200 rounded-xl p-5 shadow-1" role="region" aria-label="Total SKUs">
           <p className="text-sm font-medium text-text-secondary mb-1">Total SKUs</p>
           <div className="flex items-baseline gap-2">
@@ -209,7 +210,7 @@ export default function SellerInventoryPage() {
               className="block w-full pl-10 pr-3 py-2 border border-neutral-300 rounded-lg text-sm bg-surface-card focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
-          <div className="flex bg-neutral-100 p-1 rounded-lg">
+          <div className="flex bg-neutral-100 p-1 rounded-lg overflow-x-auto no-scrollbar whitespace-nowrap w-full sm:w-auto">
             {(['ALL', 'LOW_STOCK', 'OUT_OF_STOCK'] as FilterStatus[]).map(status => (
               <button
                 key={status}
@@ -235,16 +236,25 @@ export default function SellerInventoryPage() {
         </div>
       </div>
 
-      {/* ROW D: INVENTORY TABLE */}
-      <InventoryTable
-        items={filteredItems}
-        selectedIds={selectedIds}
-        onToggleSelect={handleToggleSelect}
-        onToggleAll={handleToggleAll}
-        onUpdateStock={setUpdateModalProduct}
-        isLoading={loading}
-        hasAnyItems={items.length > 0}
-      />
+      {/* ROW D: INVENTORY TABLE / LIST */}
+      <div className="hidden md:block">
+        <InventoryTable
+          items={filteredItems}
+          selectedIds={selectedIds}
+          onToggleSelect={handleToggleSelect}
+          onToggleAll={handleToggleAll}
+          onUpdateStock={setUpdateModalProduct}
+          isLoading={loading}
+          hasAnyItems={items.length > 0}
+        />
+      </div>
+      <div className="md:hidden">
+        <InventoryMobileList
+          items={filteredItems}
+          isLoading={loading}
+          onUpdateStock={setUpdateModalProduct}
+        />
+      </div>
 
       {/* MODALS */}
       <StockUpdateModal

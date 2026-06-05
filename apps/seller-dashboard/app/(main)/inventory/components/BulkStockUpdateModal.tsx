@@ -31,7 +31,7 @@ export function BulkStockUpdateModal({
 
   useEffect(() => {
     if (isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+      // eslint-disable-next-line
       setAdjustmentMode('same');
       setGlobalAdjustment('');
       setIndividualAdjustments({});
@@ -113,8 +113,8 @@ export function BulkStockUpdateModal({
         } else {
           failedCount++;
         }
-      } catch (err) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch {
+         
         failedCount++;
       }
       setProgress(prev => ({ ...prev, current: prev.current + 1, failed: failedCount }));

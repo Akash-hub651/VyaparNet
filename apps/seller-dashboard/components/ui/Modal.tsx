@@ -238,21 +238,29 @@ export function FormModal({
   return (
     <>
       <Overlay onClick={onClose} />
-      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center sm:p-4 pointer-events-none">
         <div
           ref={containerRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby={titleId}
           className={[
-            'bg-surface-card rounded-xl shadow-3 w-full',
-            'flex flex-col animate-modal-in',
-            'max-h-[calc(100vh-32px)]',
+            'bg-surface-card shadow-3 w-full pointer-events-auto',
+            'flex flex-col',
+            // Mobile (bottom sheet)
+            'rounded-t-2xl max-h-[85vh] animate-slide-up pb-[env(safe-area-inset-bottom)]',
+            // Desktop (centered modal)
+            'md:rounded-xl md:max-h-[calc(100vh-32px)] md:animate-modal-in md:pb-0',
             MODAL_SIZE_MAP[size],
           ].join(' ')}
         >
+          {/* Mobile Handle Bar */}
+          <div className="md:hidden flex justify-center pt-3 pb-1 flex-shrink-0" aria-hidden="true">
+            <div className="w-12 h-1.5 bg-neutral-300 rounded-full" />
+          </div>
+
           {/* Header — sticky */}
-          <div className="flex items-center gap-3 px-6 py-4 border-b border-border-default flex-shrink-0">
+          <div className="flex items-center gap-3 px-6 pb-4 md:py-4 border-b border-border-default flex-shrink-0">
             {showBack && (
               <button
                 onClick={onBack}
