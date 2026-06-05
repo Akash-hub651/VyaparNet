@@ -32,9 +32,9 @@ export default function TeamManagementPlaceholderPage() {
         </svg>
       </div>
       
-      <h2 className="text-xl font-bold text-text-primary mb-3">
+      <h1 className="text-xl font-bold text-text-primary mb-3">
         Team Management — Sprint 10 mein aayega
-      </h2>
+      </h1>
       
       <p className="text-sm text-text-secondary max-w-md">
         Apni team ko access dein — orders process karne ke liye Staff, aur
