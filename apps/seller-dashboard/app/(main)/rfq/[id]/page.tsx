@@ -159,11 +159,11 @@ export default function RfqDetailPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="flex flex-col lg:grid lg:grid-cols-12 lg:gap-6 items-start gap-y-6 relative">
         {/* LEFT COLUMN */}
-        <div className="lg:col-span-8 space-y-6">
+        <div className="contents lg:block lg:col-span-8 lg:space-y-6">
           {/* L1: RFQ Header Card */}
-          <div className="bg-surface-card rounded-xl shadow-1 p-6 border border-neutral-200">
+          <div className="order-1 lg:order-none w-full bg-surface-card rounded-xl shadow-1 p-5 lg:p-6 border border-neutral-200">
             <div className="flex items-start justify-between mb-4">
               <h1 className="text-2xl font-bold text-text-primary">
                 {rfq.rfqId}
@@ -191,7 +191,7 @@ export default function RfqDetailPage() {
           </div>
 
           {/* L2: Buyer Requirements */}
-          <div className="bg-surface-card rounded-xl shadow-1 p-6 border border-neutral-200">
+          <div className="order-3 lg:order-none w-full bg-surface-card rounded-xl shadow-1 p-5 lg:p-6 border border-neutral-200">
             <h2 className="text-lg font-semibold text-text-primary mb-4 border-b border-neutral-100 pb-2">
               Kya chahiye buyer ko?
             </h2>
@@ -230,7 +230,7 @@ export default function RfqDetailPage() {
 
           {/* L3: Buyer Context (if available) */}
           {rfq.buyerContext?.type && (
-            <div className="bg-neutral-50 rounded-lg p-4 border border-neutral-200 flex items-center justify-between">
+            <div className="order-4 lg:order-none w-full bg-neutral-50 rounded-lg p-4 border border-neutral-200 flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-semibold text-text-primary">
                   Buyer Context
@@ -250,7 +250,7 @@ export default function RfqDetailPage() {
 
           {/* L4: Negotiation Thread (if quoted) */}
           {rfq.status === "QUOTED" && !showCounterForm && (
-            <div className="bg-surface-card rounded-xl shadow-1 p-6 border border-neutral-200">
+            <div className="order-5 lg:order-none w-full bg-surface-card rounded-xl shadow-1 p-5 lg:p-6 border border-neutral-200">
               <NegotiationThread
                 rfq={rfq}
                 token={accessToken!}
@@ -261,19 +261,15 @@ export default function RfqDetailPage() {
           )}
         </div>
 
-        {/* RIGHT COLUMN (Sticky) */}
-        <div className="lg:col-span-4 sticky top-24 space-y-6">
+        {/* RIGHT COLUMN (Sticky on desktop) */}
+        <div className="contents lg:block lg:col-span-4 sticky top-24 lg:space-y-6">
           {/* R1: Expiry Timer */}
           <div
-            className={`rounded-xl shadow-1 p-6 border ${isExpired ? "border-error-200 bg-error-50" : `border-neutral-200 ${timerBg}`}`}
+            className={`order-2 lg:order-none w-full rounded-xl shadow-1 p-4 lg:p-6 border flex flex-col items-center lg:items-start ${isExpired ? "border-error-200 bg-error-50" : `border-neutral-200 ${timerBg}`}`}
           >
-            <h3 className="text-sm font-medium text-text-secondary mb-2">
-              Expires In:
-            </h3>
-
             {isExpired ? (
               <div
-                className="text-error-700 font-bold text-lg"
+                className="text-error-700 font-bold text-lg text-center lg:text-left"
                 role="alert"
                 aria-live="assertive"
                 aria-label="Ye RFQ expire ho gaya hai"
@@ -281,18 +277,23 @@ export default function RfqDetailPage() {
                 Ye RFQ expire ho gaya hai
               </div>
             ) : (
-              <div className="space-y-4">
-                <div
-                  className={`text-3xl font-bold tabular-nums ${timerText}`}
-                  role="timer"
-                  aria-live="polite"
-                  aria-label={`RFQ expire time bacha hai: ${remainingHours} ghante ${remainingMins} minute`}
-                >
-                  {remainingHours}h {remainingMins}m
+              <div className="space-y-2 lg:space-y-4 w-full">
+                <div className="flex flex-row items-center justify-between lg:flex-col lg:items-start lg:justify-start">
+                  <h3 className="text-sm font-medium text-text-secondary lg:mb-2">
+                    Expires In:
+                  </h3>
+                  <div
+                    className={`text-2xl lg:text-3xl font-bold tabular-nums ${timerText}`}
+                    role="timer"
+                    aria-live="polite"
+                    aria-label={`RFQ expire time bacha hai: ${remainingHours} ghante ${remainingMins} minute`}
+                  >
+                    {remainingHours}h {remainingMins}m
+                  </div>
                 </div>
 
                 <div
-                  className="w-full bg-neutral-200 rounded-full h-2"
+                  className="w-full bg-neutral-200 rounded-full h-1.5 lg:h-2 mt-1 lg:mt-0"
                   role="progressbar"
                   aria-valuemin={0}
                   aria-valuemax={totalDurationSecs}
@@ -300,7 +301,7 @@ export default function RfqDetailPage() {
                   aria-label="RFQ expiry progress bar"
                 >
                   <div
-                    className={`h-2 rounded-full ${timerFill} transition-all duration-1000 ease-linear`}
+                    className={`h-1.5 lg:h-2 rounded-full ${timerFill} transition-all duration-1000 ease-linear`}
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
@@ -309,47 +310,49 @@ export default function RfqDetailPage() {
           </div>
 
           {/* R2: Quote Form */}
-          {!isExpired &&
-          permissions.canSubmitRfqQuote &&
-          !permissions.isSuspended &&
-          (rfq.status === "NOT_QUOTED" || showCounterForm) ? (
-            <QuotationForm
-              rfq={rfq}
-              token={accessToken!}
-              onSuccess={handleQuoteSuccess}
-            />
-          ) : null}
+          <div className="order-6 lg:order-none w-full flex flex-col gap-6">
+            {!isExpired &&
+            permissions.canSubmitRfqQuote &&
+            !permissions.isSuspended &&
+            (rfq.status === "NOT_QUOTED" || showCounterForm) ? (
+              <QuotationForm
+                rfq={rfq}
+                token={accessToken!}
+                onSuccess={handleQuoteSuccess}
+              />
+            ) : null}
 
-          {/* Fallback messages if form hidden */}
-          {!permissions.canSubmitRfqQuote &&
-            rfq.status === "NOT_QUOTED" &&
-            !isExpired && (
+            {/* Fallback messages if form hidden */}
+            {!permissions.canSubmitRfqQuote &&
+              rfq.status === "NOT_QUOTED" &&
+              !isExpired && (
+                <div className="bg-surface-card rounded-xl shadow-1 p-6 border border-neutral-200 text-center">
+                  <p className="text-sm text-text-secondary">
+                    Quote submit karne ke liye KYC complete karein.
+                  </p>
+                  <Link
+                    href="/settings#kyc"
+                    className="mt-3 inline-block px-4 py-2 bg-brand-50 text-brand-700 rounded text-sm font-medium hover:bg-brand-100 transition-colors"
+                  >
+                    Complete KYC →
+                  </Link>
+                </div>
+              )}
+
+            {isExpired && rfq.status === "NOT_QUOTED" && (
               <div className="bg-surface-card rounded-xl shadow-1 p-6 border border-neutral-200 text-center">
                 <p className="text-sm text-text-secondary">
-                  Quote submit karne ke liye KYC complete karein.
+                  Agle RFQ ka intezaar karein
                 </p>
                 <Link
-                  href="/settings#kyc"
-                  className="mt-3 inline-block px-4 py-2 bg-brand-50 text-brand-700 rounded text-sm font-medium hover:bg-brand-100 transition-colors"
+                  href="/rfq"
+                  className="mt-3 inline-block px-4 py-2 bg-neutral-100 text-neutral-700 rounded text-sm font-medium hover:bg-neutral-200 transition-colors"
                 >
-                  Complete KYC →
+                  ← Wapas List Pe
                 </Link>
               </div>
             )}
-
-          {isExpired && rfq.status === "NOT_QUOTED" && (
-            <div className="bg-surface-card rounded-xl shadow-1 p-6 border border-neutral-200 text-center">
-              <p className="text-sm text-text-secondary">
-                Agle RFQ ka intezaar karein
-              </p>
-              <Link
-                href="/rfq"
-                className="mt-3 inline-block px-4 py-2 bg-neutral-100 text-neutral-700 rounded text-sm font-medium hover:bg-neutral-200 transition-colors"
-              >
-                ← Wapas List Pe
-              </Link>
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
