@@ -80,7 +80,7 @@ export default function SettingsPage() {
 
       {/* ROW B: TABS */}
       <div className="border-b border-border-default mb-8 overflow-x-auto no-scrollbar">
-        <div className="flex gap-8 min-w-max px-1">
+        <div className="flex gap-8 min-w-max px-1" role="tablist">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
             return (

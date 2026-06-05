@@ -83,14 +83,14 @@ export function NotificationsTab() {
       return;
     }
 
-    // Debounce saves by 500ms
+    // Debounce saves by 300ms
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
 
     debounceTimerRef.current = setTimeout(() => {
       savePreferences(preferences);
-    }, 500);
+    }, 300);
 
     return () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);

@@ -285,35 +285,37 @@ export function BankTab() {
                 }`}
                 placeholder="e.g. SBIN0001234"
               />
-              {isLoadingIfsc && (
-                <div className="absolute right-3 top-2.5">
-                  <div className="w-5 h-5 border-2 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
-                </div>
-              )}
             </div>
             {errors.ifscCode && <p className="text-xs text-error-600 mt-1" role="alert">{errors.ifscCode}</p>}
           </div>
 
           {/* Bank & Branch (Auto-filled or Manual) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5" aria-live="polite">
-            <div>
+            <div className="relative">
               <label htmlFor="bankName" className="block text-sm font-medium text-text-primary mb-1">
                 Bank Name
               </label>
-              <input
-                id="bankName"
-                name="bankName"
-                type="text"
-                readOnly={!showManualBankEntry}
-                value={formData.bankName}
-                onChange={handleChange}
-                placeholder={isLoadingIfsc ? "Fetching..." : ""}
-                className={`w-full h-10 px-3 py-2 text-base md:text-sm border rounded-lg transition-colors ${
-                  !showManualBankEntry 
-                    ? "bg-neutral-50 text-text-secondary border-border-default focus:outline-none cursor-not-allowed" 
-                    : errors.bankName ? "bg-surface-base border-error-500 focus:outline-none focus:ring-2 focus:ring-brand-500" : "bg-surface-base border-border-default focus:outline-none focus:ring-2 focus:ring-brand-500"
-                }`}
-              />
+              <div className="relative">
+                <input
+                  id="bankName"
+                  name="bankName"
+                  type="text"
+                  readOnly={!showManualBankEntry}
+                  value={formData.bankName}
+                  onChange={handleChange}
+                  placeholder={isLoadingIfsc ? "Fetching..." : ""}
+                  className={`w-full h-10 px-3 py-2 text-base md:text-sm border rounded-lg transition-colors ${
+                    !showManualBankEntry 
+                      ? "bg-neutral-50 text-text-secondary border-border-default focus:outline-none cursor-not-allowed" 
+                      : errors.bankName ? "bg-surface-base border-error-500 focus:outline-none focus:ring-2 focus:ring-brand-500" : "bg-surface-base border-border-default focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  }`}
+                />
+                {isLoadingIfsc && (
+                  <div className="absolute right-3 top-2.5">
+                    <div className="w-5 h-5 border-2 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
+                  </div>
+                )}
+              </div>
               {showManualBankEntry && errors.bankName && <p className="text-xs text-error-600 mt-1" role="alert">{errors.bankName}</p>}
             </div>
             
