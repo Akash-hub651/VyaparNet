@@ -138,6 +138,16 @@ export async function getSellerProducts(
 }
 
 /**
+ * GET /api/v1/products/seller/:id — get a specific product for edit
+ */
+export async function getSellerProduct(
+  id: string,
+  token: string,
+): Promise<ApiResult<ProductResponse>> {
+  return apiGet<ProductResponse>(`api/v1/products/seller/${id}`, token);
+}
+
+/**
  * POST /api/v1/products — create product (DRAFT status)
  */
 export async function createProduct(

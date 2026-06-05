@@ -24,7 +24,7 @@ export interface DraftData {
   gstPercent: string;
   initialStock: string;
   lowStockAlert: string;
-  mediaIds: string[];
+  media: UploadedMedia[];
 }
 
 export const EMPTY_DRAFT: DraftData = {
@@ -42,5 +42,5 @@ export const EMPTY_DRAFT: DraftData = {
   gstPercent: "",
   initialStock: "",
   lowStockAlert: "",
-  mediaIds: [],
+  media: [],
 };

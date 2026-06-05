@@ -5,14 +5,15 @@ import { DraftData } from "./types";
 
 interface Step2Props {
   draft: DraftData;
-  errors: Record<string, string>;
   updateDraft: (key: keyof DraftData, value: string) => void;
+  isEditMode?: boolean;
 }
 
 export function Step2Pricing({
   draft,
   errors,
   updateDraft,
+  isEditMode = false,
 }: Step2Props): React.JSX.Element {
   // Calculate live preview
   const basePrice = Number(draft.basePrice) || 0;
@@ -211,53 +212,68 @@ export function Step2Pricing({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-neutral-100">
-          {/* Initial Stock */}
+          {/* Initial Stock / Current Stock */}
           <div>
             <label
               htmlFor="field-initial-stock"
               className="block text-sm font-medium text-text-primary mb-1.5"
             >
-              Starting stock{" "}
-              <span className="text-error-500" aria-hidden="true">
-                *
-              </span>
+              {isEditMode ? "Current stock" : "Starting stock"}
+              {!isEditMode && (
+                <span className="text-error-500" aria-hidden="true">
+                  *
+                </span>
+              )}
             </label>
-            <div className="relative">
-              <input
-                id="field-initial-stock"
-                type="text"
-                inputMode="decimal"
-                value={draft.initialStock}
-                onChange={(e) =>
-                  updateDraft(
-                    "initialStock",
-                    e.target.value.replace(/[^0-9]/g, ""),
-                  )
-                }
-                aria-required="true"
-                aria-invalid={!!errors["initialStock"]}
-                aria-describedby={
-                  errors["initialStock"]
-                    ? "error-initial-stock"
-                    : "help-initial-stock"
-                }
-                className={`w-full bg-surface-card border rounded-lg px-4 py-3 text-base min-h-[44px] focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors ${
-                  errors["initialStock"]
-                    ? "border-error-500"
-                    : "border-neutral-300"
-                }`}
-              />
-              <span className="absolute right-4 top-3 text-text-secondary bg-surface-card">
-                {draft.unit || "unit"}
-              </span>
-            </div>
-            <p
-              id="help-initial-stock"
-              className="text-xs text-text-secondary mt-1.5"
-            >
-              Aap baad mein Inventory section se update kar sakte hain
-            </p>
-            {errors["initialStock"] && (
+            {isEditMode ? (
+              <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3 text-sm min-h-[44px] flex items-center justify-between">
+                <span className="text-text-primary">
+                  {draft.initialStock || 0} {draft.unit || "unit"}
+                </span>
+                <a href="/inventory" className="text-xs font-medium text-brand-600 hover:text-brand-700">
+                  → Inventory se update karein
+                </a>
+              </div>
+            ) : (
+              <div className="relative">
+                <input
+                  id="field-initial-stock"
+                  type="text"
+                  inputMode="decimal"
+                  value={draft.initialStock}
+                  onChange={(e) =>
+                    updateDraft(
+                      "initialStock",
+                      e.target.value.replace(/[^0-9]/g, ""),
+                    )
+                  }
+                  aria-required="true"
+                  aria-invalid={!!errors["initialStock"]}
+                  aria-describedby={
+                    errors["initialStock"]
+                      ? "error-initial-stock"
+                      : "help-initial-stock"
+                  }
+                  className={`w-full bg-surface-card border rounded-lg px-4 py-3 text-base min-h-[44px] focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors ${
+                    errors["initialStock"]
+                      ? "border-error-500"
+                      : "border-neutral-300"
+                  }`}
+                />
+                <span className="absolute right-4 top-3 text-text-secondary bg-surface-card">
+                  {draft.unit || "unit"}
+                </span>
+              </div>
+            )}
+            {!isEditMode && (
+              <p
+                id="help-initial-stock"
+                className="text-xs text-text-secondary mt-1.5"
+              >
+                Aap baad mein Inventory section se update kar sakte hain
+              </p>
+            )}
+            {errors["initialStock"] && !isEditMode && (
               <p
                 id="error-initial-stock"
                 className="text-xs text-error-600 mt-1.5"

@@ -17,10 +17,10 @@ import {
   publishProduct,
 } from "../../../../lib/api/products.client";
 
-import { DraftData, EMPTY_DRAFT, UploadedMedia } from "./types";
-import { Step1BasicInfo } from "./Step1BasicInfo";
-import { Step2Pricing } from "./Step2Pricing";
-import { Step3Images } from "./Step3Images";
+import { DraftData, EMPTY_DRAFT } from '../components/types';
+import { Step1BasicInfo } from '../components/Step1BasicInfo';
+import { Step2Pricing } from '../components/Step2Pricing';
+import { Step3Images } from '../components/Step3Images';
 import { formatRelativeTime } from "../../../../lib/formatters";
 
 const DRAFT_PREFIX = "seller-product-draft-";
@@ -45,7 +45,7 @@ export default function SellerProductNewPage(): React.JSX.Element | null {
     useState<SegmentAttributeSchemaDef | null>(null);
   const [schemaLoading, setSchemaLoading] = useState(false);
 
-  const [uploadedMedia, setUploadedMedia] = useState<UploadedMedia[]>([]);
+
   const [publishOption, setPublishOption] = useState<"draft" | "review">(
     "review",
   );
@@ -258,7 +258,7 @@ export default function SellerProductNewPage(): React.JSX.Element | null {
   };
 
   const validateStep3 = (): boolean => {
-    if (publishOption === "review" && uploadedMedia.length === 0) {
+    if (publishOption === "review" && (draft.media?.length || 0) === 0) {
       addToast({
         message: "Review ke liye kam se kam 1 photo zaroori hai",
         variant: "error",
@@ -309,7 +309,7 @@ export default function SellerProductNewPage(): React.JSX.Element | null {
         lowStockAlert: draft.lowStockAlert
           ? Number(draft.lowStockAlert)
           : undefined,
-        mediaIds: draft.mediaIds,
+        mediaIds: draft.media?.map(m => m.mediaId) || [],
         segmentAttributes: Object.fromEntries(
           Object.entries(draft.segmentAttributes).filter(([, v]) => v !== ""),
         ),
@@ -490,14 +490,65 @@ export default function SellerProductNewPage(): React.JSX.Element | null {
         )}
 
         {step === 3 && (
-          <Step3Images
-            draft={draft}
-            uploadedMedia={uploadedMedia}
-            setUploadedMedia={setUploadedMedia}
-            updateDraft={updateDraft}
-            publishOption={publishOption}
-            setPublishOption={setPublishOption}
-          />
+          <div className="space-y-8">
+            <Step3Images
+              draft={draft}
+              updateDraft={updateDraft}
+            />
+            
+            <hr className="border-neutral-200" />
+
+            {/* Publish Options */}
+            <fieldset>
+              <legend className="text-sm font-medium text-text-primary mb-4">
+                Product publish karein kaise?
+              </legend>
+              <div className="space-y-3">
+                <label
+                  className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${publishOption === "review" ? "border-brand-500 bg-brand-50/50" : "border-neutral-200 hover:bg-neutral-50"}`}
+                >
+                  <input
+                    type="radio"
+                    name="publish_option"
+                    value="review"
+                    checked={publishOption === "review"}
+                    onChange={() => setPublishOption("review")}
+                    className="mt-1 w-4 h-4 text-brand-600 border-neutral-300 focus:ring-brand-500"
+                  />
+                  <div>
+                    <span className="block text-sm font-medium text-text-primary">
+                      Review Ke Liye Submit
+                    </span>
+                    <span className="block text-xs text-text-secondary mt-0.5">
+                      Admin 24-48 hrs mein check karega. Tab tak product pending
+                      rahega.
+                    </span>
+                  </div>
+                </label>
+
+                <label
+                  className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${publishOption === "draft" ? "border-brand-500 bg-brand-50/50" : "border-neutral-200 hover:bg-neutral-50"}`}
+                >
+                  <input
+                    type="radio"
+                    name="publish_option"
+                    value="draft"
+                    checked={publishOption === "draft"}
+                    onChange={() => setPublishOption("draft")}
+                    className="mt-1 w-4 h-4 text-brand-600 border-neutral-300 focus:ring-brand-500"
+                  />
+                  <div>
+                    <span className="block text-sm font-medium text-text-primary">
+                      Draft Mein Save Karein
+                    </span>
+                    <span className="block text-xs text-text-secondary mt-0.5">
+                      Baad mein manually submit kar sakte hain.
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </fieldset>
+          </div>
         )}
 
         {/* Row D: Navigation Footer */}

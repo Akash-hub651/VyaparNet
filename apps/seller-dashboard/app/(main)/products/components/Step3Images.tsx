@@ -2,26 +2,18 @@
 
 import React, { useRef, useState } from "react";
 import Image from "next/image";
-import { DraftData, UploadedMedia } from "./types";
+import { DraftData } from "./types";
 import { uploadProductMedia } from "../../../../lib/api/media.client";
 import { useAuth } from "../../../../app/contexts/auth.context";
 
 interface Step3Props {
   draft: DraftData;
-  uploadedMedia: UploadedMedia[];
-  setUploadedMedia: React.Dispatch<React.SetStateAction<UploadedMedia[]>>;
-  updateDraft: (key: keyof DraftData, value: string | string[]) => void;
-  publishOption: "draft" | "review";
-  setPublishOption: (val: "draft" | "review") => void;
+  updateDraft: (key: keyof DraftData, value: any) => void;
 }
 
 export function Step3Images({
   draft,
-  uploadedMedia,
-  setUploadedMedia,
   updateDraft,
-  publishOption,
-  setPublishOption,
 }: Step3Props): React.JSX.Element {
   const { accessToken } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -29,6 +21,7 @@ export function Step3Images({
     {},
   );
   const [uploadErrors, setUploadErrors] = useState<Record<string, string>>({});
+  const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null);
 
   const handleFileSelect = async (files: FileList) => {
     if (!accessToken) return;
@@ -56,8 +49,9 @@ export function Step3Images({
         });
 
         // Success
-        setUploadedMedia((prev) => [
-          ...prev,
+        
+        updateDraft('media', [
+          ...(draft.media || []),
           {
             mediaId: result.id,
             url: result.url,
@@ -65,7 +59,6 @@ export function Step3Images({
             name: file.name,
           },
         ]);
-        updateDraft("mediaIds", [...draft.mediaIds, result.id]);
 
         setUploadProgress((p) => {
           const copy = { ...p };
@@ -92,12 +85,6 @@ export function Step3Images({
     if (e.dataTransfer.files.length > 0) {
       void handleFileSelect(e.dataTransfer.files);
     }
-  };
-
-  const removeMedia = (mediaId: string) => {
-    setUploadedMedia((prev) => prev.filter((m) => m.mediaId !== mediaId));
-    const updatedIds = draft.mediaIds.filter((id) => id !== mediaId);
-    updateDraft("mediaIds", updatedIds);
   };
 
   return (
@@ -160,7 +147,7 @@ export function Step3Images({
             className="hidden"
             onChange={(e) => {
               if (e.target.files) void handleFileSelect(e.target.files);
-              e.target.value = ""; // Reset to allow selecting same file again if needed
+              e.target.value = "";
             }}
           />
         </div>
@@ -207,9 +194,9 @@ export function Step3Images({
         </div>
 
         {/* Uploaded Grid */}
-        {uploadedMedia.length > 0 && (
+        {draft.media?.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
-            {uploadedMedia.map((media, index) => (
+            {draft.media.map((media, index) => (
               <div
                 key={media.mediaId}
                 className="relative group aspect-square rounded-md border border-neutral-200 overflow-hidden bg-neutral-50"
@@ -221,86 +208,60 @@ export function Step3Images({
                   className="object-cover"
                 />
                 {index === 0 && (
-                  <div className="absolute top-1 left-1 bg-brand-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide">
+                  <div className="absolute top-1 left-1 bg-brand-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide z-10">
                     Main Photo
                   </div>
                 )}
-                <button
-                  onClick={() => removeMedia(media.mediaId)}
-                  className="absolute top-1 right-1 w-6 h-6 bg-error-500 text-white rounded-full flex items-center justify-center opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-error-500"
-                  aria-label={`Remove image ${media.name}`}
-                >
-                  <svg
-                    className="w-3.5 h-3.5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                
+                {pendingDeleteIndex === index ? (
+                  <div className="absolute inset-0 bg-error-500/80 flex flex-col items-center justify-center z-20">
+                     <span className="text-white text-xs font-semibold mb-2">Hataoge?</span>
+                     <div className="flex gap-2">
+                       <button
+                         type="button"
+                         onClick={() => setPendingDeleteIndex(null)}
+                         className="px-2 py-1 bg-white text-error-700 text-[10px] font-bold rounded"
+                       >
+                         Nahi
+                       </button>
+                       <button
+                         type="button"
+                         onClick={() => {
+                           updateDraft('media', draft.media.filter((_, i) => i !== index) as any);
+                           setPendingDeleteIndex(null);
+                         }}
+                         className="px-2 py-1 bg-error-700 text-white text-[10px] font-bold rounded border border-error-600"
+                       >
+                         Haan, Hatao
+                       </button>
+                     </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setPendingDeleteIndex(index)}
+                    className="absolute top-1 right-1 w-6 h-6 bg-error-500 text-white rounded-full flex items-center justify-center opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-error-500 z-10"
+                    aria-label={`Remove image ${media.name}`}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
+                    <svg
+                      className="w-3.5 h-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                )}
               </div>
             ))}
           </div>
         )}
-      </fieldset>
-
-      <hr className="border-neutral-200" />
-
-      {/* Publish Options */}
-      <fieldset>
-        <legend className="text-sm font-medium text-text-primary mb-4">
-          Product publish karein kaise?
-        </legend>
-        <div className="space-y-3">
-          <label
-            className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${publishOption === "review" ? "border-brand-500 bg-brand-50/50" : "border-neutral-200 hover:bg-neutral-50"}`}
-          >
-            <input
-              type="radio"
-              name="publish_option"
-              value="review"
-              checked={publishOption === "review"}
-              onChange={() => setPublishOption("review")}
-              className="mt-1 w-4 h-4 text-brand-600 border-neutral-300 focus:ring-brand-500"
-            />
-            <div>
-              <span className="block text-sm font-medium text-text-primary">
-                Review Ke Liye Submit
-              </span>
-              <span className="block text-xs text-text-secondary mt-0.5">
-                Admin 24-48 hrs mein check karega. Tab tak product pending
-                rahega.
-              </span>
-            </div>
-          </label>
-
-          <label
-            className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${publishOption === "draft" ? "border-brand-500 bg-brand-50/50" : "border-neutral-200 hover:bg-neutral-50"}`}
-          >
-            <input
-              type="radio"
-              name="publish_option"
-              value="draft"
-              checked={publishOption === "draft"}
-              onChange={() => setPublishOption("draft")}
-              className="mt-1 w-4 h-4 text-brand-600 border-neutral-300 focus:ring-brand-500"
-            />
-            <div>
-              <span className="block text-sm font-medium text-text-primary">
-                Draft Mein Save Karein
-              </span>
-              <span className="block text-xs text-text-secondary mt-0.5">
-                Baad mein manually submit kar sakte hain.
-              </span>
-            </div>
-          </label>
-        </div>
       </fieldset>
     </div>
   );
