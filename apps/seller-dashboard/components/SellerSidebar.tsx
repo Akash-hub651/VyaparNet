@@ -118,6 +118,17 @@ const icons = {
       <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" />
     </svg>
   ),
+  LifeBuoy: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <circle cx="12" cy="12" r="4" />
+      <line x1="4.93" y1="4.93" x2="9.17" y2="9.17" />
+      <line x1="14.83" y1="14.83" x2="19.07" y2="19.07" />
+      <line x1="14.83" y1="9.17" x2="19.07" y2="4.93" />
+      <line x1="14.83" y1="9.17" x2="18.36" y2="5.64" />
+      <line x1="4.93" y1="19.07" x2="9.17" y2="14.83" />
+    </svg>
+  ),
   ChevronLeft: (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="15 18 9 12 15 6" />
@@ -189,6 +200,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: 'nav-settings', href: '/settings', label: 'Settings', icon: icons.Settings, badgeKey: 'kycPendingBadge', badgeType: 'warning' },
       { id: 'nav-team', href: '/team', label: 'Team', icon: icons.Users },
+      { id: 'nav-support', href: '/support', label: 'Help & Support', icon: icons.LifeBuoy },
     ],
   },
 ];
