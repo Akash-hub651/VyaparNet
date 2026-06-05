@@ -71,6 +71,26 @@ export default function SettingsPage() {
     window.history.replaceState(null, "", "#" + tabId);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    let nextIndex = index;
+    if (e.key === "ArrowRight") {
+      nextIndex = (index + 1) % TABS.length;
+    } else if (e.key === "ArrowLeft") {
+      nextIndex = (index - 1 + TABS.length) % TABS.length;
+    }
+
+    if (nextIndex !== index) {
+      const nextTab = TABS[nextIndex];
+      handleTabClick(nextTab.id);
+      
+      // Move focus to the new tab
+      setTimeout(() => {
+        const btn = document.getElementById(`tab-${nextTab.id}`);
+        if (btn) btn.focus();
+      }, 0);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto pb-12">
       {/* ROW A: PAGE HEADER */}
@@ -81,18 +101,22 @@ export default function SettingsPage() {
       {/* ROW B: TABS */}
       <div className="border-b border-border-default mb-8 overflow-x-auto no-scrollbar">
         <div className="flex gap-8 min-w-max px-1" role="tablist">
-          {TABS.map((tab) => {
+          {TABS.map((tab, index) => {
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
+                id={`tab-${tab.id}`}
                 onClick={() => handleTabClick(tab.id)}
+                onKeyDown={(e) => handleKeyDown(e, index)}
                 className={`pb-3 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded-t-sm whitespace-nowrap ${
                   isActive
                     ? "border-b-2 border-brand-600 text-brand-600"
                     : "border-b-2 border-transparent text-text-secondary hover:text-text-primary"
                 }`}
                 aria-selected={isActive}
+                aria-controls={`tabpanel-${tab.id}`}
+                tabIndex={isActive ? 0 : -1}
                 role="tab"
               >
                 {tab.label}
@@ -103,7 +127,7 @@ export default function SettingsPage() {
       </div>
 
       {/* ROW C: CONTENT AREA */}
-      <div className="max-w-2xl" role="tabpanel" tabIndex={0}>
+      <div className="max-w-2xl" role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`} tabIndex={0}>
         {activeTab === "profile" && <ProfileTab />}
         {activeTab === "kyc" && (
           <KYCTab />
