@@ -39,7 +39,7 @@ const SUBJECT_OPTIONS = [
 
 export function ContactForm() {
   const { addToast } = useToast();
-  const { accessToken } = useAuth();
+  const { accessToken, user } = useAuth();
   
   const [subjectType, setSubjectType] = useState(SUBJECT_OPTIONS[0]);
   const [referenceId, setReferenceId] = useState("");
@@ -57,10 +57,14 @@ export function ContactForm() {
 
   const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessage(e.target.value);
-    if (e.target.value.length > 0 && e.target.value.length < 20) {
+    if (messageError) {
+      if (e.target.value.length >= 20) setMessageError("");
+    }
+  };
+
+  const handleMessageBlur = () => {
+    if (message.length > 0 && message.length < 20) {
       setMessageError("Ye field zaroori hai — thoda detail dein");
-    } else {
-      setMessageError("");
     }
   };
 
@@ -134,7 +138,7 @@ export function ContactForm() {
         <h3 className="text-lg font-semibold text-text-primary mb-2">Message mila! 🙏</h3>
         <p className="text-sm text-text-secondary leading-relaxed mb-6">
           Ticket #{ticketId || "TICKET-12345"} raise ho gayi.<br />
-          24 ghante mein aapke registered email pe jawab milega.
+          24 ghante mein {user?.email || "aapke registered email"} pe jawab milega.
         </p>
         <div className="flex items-center gap-2 text-sm">
           <span className="text-text-muted">Wapas:</span>
@@ -223,6 +227,7 @@ export function ContactForm() {
             maxLength={1000}
             value={message}
             onChange={handleMessageChange}
+            onBlur={handleMessageBlur}
             placeholder="Jitna zyada detail denge, utni jaldi solve hogi"
             className="w-full p-3 bg-surface-app border border-border-default rounded-lg text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 resize-y"
             aria-invalid={!!messageError}
