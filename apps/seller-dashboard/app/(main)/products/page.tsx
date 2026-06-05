@@ -1,7 +1,4 @@
 'use client';
-/* eslint-disable react-hooks/set-state-in-effect */
-/* eslint-disable react-hooks/exhaustive-deps */
-
 /**
  * Screen 04: Products List — apps/seller-dashboard/app/(main)/products/page.tsx
  *
@@ -115,7 +112,7 @@ export default function ProductsPage(): React.JSX.Element {
           setRejectedCount(rejected);
         }
       }
-    } catch (err) {
+    } catch {
       setError('Failed to fetch products');
     } finally {
       setIsLoading(false);
@@ -163,9 +160,7 @@ export default function ProductsPage(): React.JSX.Element {
     if (activeTab.status === ProductStatus.REJECTED && rejectedCount === 0) {
       return (
         <EmptyState
-          emoji="✅"
-          title="Koi rejected product nahi!"
-          body="Sab products approved hain ya review mein hain."
+          preset="products_rejected_clear"
         />
       );
     }
@@ -173,10 +168,8 @@ export default function ProductsPage(): React.JSX.Element {
     if (searchQuery) {
       return (
         <EmptyState
-          preset="search"
+          preset="products_no_match"
           title={`'${searchQuery}' se koi product nahi mila`}
-          body="Aapki search ke hisaab se result nahi mila."
-          secondaryLabel="Filters hatayein"
           onSecondary={() => setSearchQuery('')}
         />
       );
@@ -184,9 +177,7 @@ export default function ProductsPage(): React.JSX.Element {
 
     return (
       <EmptyState
-        preset="products"
-        title="Abhi koi product nahi"
-        body="Apna pehla product add karein aur marketplace mein list karein."
+        preset="products_zero"
         ctaLabel={!permissions.isStaff ? "+ Pehla Product Add Karein" : undefined}
         onCta={!permissions.isStaff ? () => router.push('/products/new') : undefined}
       />

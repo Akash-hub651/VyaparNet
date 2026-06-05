@@ -8,7 +8,7 @@
  *                 (when one logically exists)
  *
  * Rules:
- * - Structure: [Emoji/Icon] → [Title text-base semibold] → [Body text-sm secondary] → [CTA?]
+ * - Structure: [Icon 48px/neutral-400] → [Title text-base semibold] → [Body text-sm secondary] → [CTA?]
  * - Icon color: neutral-400 (always muted — never error/warning for empty)
  * - Background: same as table (no box/card around empty state within table)
  * - For full-page empty states: centered within content area
@@ -16,24 +16,139 @@
 
 import React from 'react';
 import { Button } from './Button';
+import { 
+  LayoutDashboard, 
+  ShoppingCart, 
+  CheckCircle2, 
+  Search, 
+  Package, 
+  Layers, 
+  FileText, 
+  Bell, 
+  BarChart2, 
+  RotateCcw, 
+  Shield, 
+  Wallet, 
+  SearchX,
+  type LucideIcon
+} from 'lucide-react';
 
 /* ── EMPTY STATE REGISTRY ────────────────────────────────────── */
-/* Authority: screen_system §22 — registered empty states        */
-export const EMPTY_STATES = {
-  orders:         { emoji: '📋', title: 'Koi order nahi mila',          body: 'Abhi koi order nahi hai. Jab buyers order karenge, woh yahan dikhenge.' },
-  orders_filtered:{ emoji: '🔍', title: 'Koi order nahi mila',          body: 'Is filter ke liye koi order nahi. Doosra filter try karein.' },
-  products:       { emoji: '📦', title: 'Koi product nahi',             body: 'Pehla product add karein aur selling shuru karein.' },
-  inventory:      { emoji: '🗄️',  title: 'Inventory khaali hai',          body: 'Koi product inventory mein nahi. Pehle catalog mein product add karein.' },
-  rfq:            { emoji: '📝', title: 'Koi RFQ nahi mila',            body: 'Aapke segment mein koi open RFQ nahi — check back soon.' },
-  rfq_filtered:   { emoji: '🔍', title: 'Koi RFQ nahi mila',            body: 'Is filter ke liye koi RFQ nahi. Doosra tab try karein.' },
-  notifications:  { emoji: '🔔', title: 'Koi notification nahi',        body: 'Aap sabse update hain! Nayi activity aane par yahan dikhegi.' },
-  returns:        { emoji: '↩️',  title: 'Koi return request nahi',      body: 'Koi return nahi — yeh ek achhi baat hai! Return aane par yahan dikhenge.' },
-  disputes:       { emoji: '🛡️', title: 'Koi dispute nahi',             body: 'Koi active dispute nahi. Dispute aane par yahan dikhega.' },
-  payouts:        { emoji: '💳', title: 'Koi payout nahi abhi tak',     body: 'Pehla order complete hone ke baad payout yahan dikhega.' },
-  analytics:      { emoji: '📊', title: 'Data abhi available nahi',     body: 'Analytics Sprint 9 mein aayega. Abhi ke liye orders aur inventory dekhein.' },
-  search:         { emoji: '🔍', title: 'Koi result nahi mila',         body: 'Is search ke liye kuch nahi mila. Doosra term try karein.' },
-  help:           { emoji: '💬', title: 'Koi ticket nahi',              body: 'Koi support ticket submit nahi kiya. Naya ticket yahan create karen.' },
-} as const;
+/* Authority: screen_system §22.1 — Complete Empty State Register */
+
+export interface EmptyStateDefinition {
+  icon: LucideIcon;
+  title: string;
+  body: string;
+  defaultCtaLabel?: string;
+}
+
+export const EMPTY_STATES: Record<string, EmptyStateDefinition> = {
+  dashboard_new: {
+    icon: LayoutDashboard,
+    title: 'VyaparNet pe swagat!',
+    body: 'Pehle ek product add karein',
+    defaultCtaLabel: '+ Product Add Karein',
+  },
+  orders_zero: {
+    icon: ShoppingCart,
+    title: 'Koi order nahi aaya',
+    body: 'Jab buyers order karenge, yahan dikhenge',
+  },
+  orders_pending_clear: {
+    icon: CheckCircle2,
+    title: 'Sab pending orders clear! 🎉',
+    body: 'Abhi koi pending order nahi',
+  },
+  orders_no_match: {
+    icon: Search,
+    title: 'Koi order nahi mila',
+    body: 'Applied filters se koi order match nahi kiya',
+    defaultCtaLabel: 'Filters hatayein',
+  },
+  products_zero: {
+    icon: Package,
+    title: 'Abhi koi product nahi',
+    body: 'Apna pehla product add karein',
+    defaultCtaLabel: '+ Product Add Karein',
+  },
+  products_rejected_clear: {
+    icon: CheckCircle2,
+    title: 'Koi rejected product nahi! 🎉',
+    body: 'Sab approved ya review mein hain',
+  },
+  products_draft_clear: {
+    icon: Package,
+    title: 'Koi draft nahi',
+    body: 'Products create karne pe yahan save honge',
+    defaultCtaLabel: '+ Product Add Karein',
+  },
+  products_no_match: {
+    icon: Search,
+    title: 'Koi product nahi mila', // Title overriden in UI if 'X' is provided
+    body: 'Filter ya search change karein',
+    defaultCtaLabel: 'Filters hatayein',
+  },
+  inventory_zero: {
+    icon: Layers,
+    title: 'Koi inventory nahi',
+    body: 'Pehle products add karein',
+    defaultCtaLabel: 'Products Jaiye →',
+  },
+  rfq_all_quoted: {
+    icon: CheckCircle2,
+    title: 'Sab RFQs pe quote bhej diya! 💪',
+    body: 'Naye RFQs aayenge to yahan dikhenge',
+  },
+  rfq_none_quoted: {
+    icon: FileText,
+    title: 'Abhi koi quoted RFQ nahi',
+    body: 'Jab aap kisi RFQ pe quote bhejenge, woh yahan dikhega.',
+  },
+  rfq_zero: {
+    icon: FileText,
+    title: 'Koi RFQ nahi aaya',
+    body: 'Aapke segment mein buyers ke RFQs yahan dikhenge',
+  },
+  notifications_zero: {
+    icon: Bell,
+    title: 'Koi notification nahi',
+    body: 'Orders, products, aur account updates yahan aayenge',
+  },
+  notifications_all_read: {
+    icon: CheckCircle2,
+    title: 'Sab padh liye!',
+    body: '',
+  },
+  analytics_no_data: {
+    icon: BarChart2,
+    title: 'Data abhi nahi hai',
+    body: 'Orders aane ke baad analytics dikhne lagega',
+  },
+  returns_placeholder: {
+    icon: RotateCcw,
+    title: 'Returns center jald aayega',
+    body: 'Buyers ke returns yahan dikhenge',
+    defaultCtaLabel: 'Orders Dekho →',
+  },
+  disputes_placeholder: {
+    icon: Shield,
+    title: 'Disputes center jald aayega',
+    body: 'Active disputes yahan dikhenge',
+    defaultCtaLabel: 'Orders Dekho →',
+  },
+  payouts_placeholder: {
+    icon: Wallet,
+    title: 'Payout history jald aayega',
+    body: 'Completed orders ke payouts yahan dikhenge',
+  },
+  search_no_results: {
+    icon: SearchX,
+    title: 'Koi result nahi mila', // Dynamically overridden with query
+    body: '',
+    defaultCtaLabel: 'Orders mein dhundho →',
+  },
+};
 
 export type EmptyStateKey = keyof typeof EMPTY_STATES;
 
@@ -41,13 +156,13 @@ export type EmptyStateKey = keyof typeof EMPTY_STATES;
 export interface EmptyStateProps {
   /** Pre-defined empty state key from registry — OR use custom props */
   preset?: EmptyStateKey;
-  /** Custom emoji (use if not using preset) */
-  emoji?: string;
-  /** Custom title (use if not using preset) */
+  /** Custom icon component (use if not using preset) */
+  icon?: LucideIcon;
+  /** Custom title (overrides preset title) */
   title?: string;
-  /** Custom body text (use if not using preset) */
+  /** Custom body text (overrides preset body) */
   body?: string;
-  /** CTA button label */
+  /** CTA button label (overrides preset defaultCtaLabel) */
   ctaLabel?: string;
   /** CTA click handler */
   onCta?: () => void;
@@ -62,7 +177,7 @@ export interface EmptyStateProps {
 
 export function EmptyState({
   preset,
-  emoji,
+  icon,
   title,
   body,
   ctaLabel,
@@ -73,9 +188,10 @@ export function EmptyState({
   className = '',
 }: EmptyStateProps): React.JSX.Element {
   const data = preset ? EMPTY_STATES[preset] : null;
-  const displayEmoji = emoji ?? data?.emoji ?? '📋';
+  const DisplayIcon = icon ?? data?.icon ?? FileText;
   const displayTitle = title ?? data?.title ?? 'Koi data nahi';
-  const displayBody  = body  ?? data?.body  ?? '';
+  const displayBody  = body ?? data?.body ?? '';
+  const displayCtaLabel = ctaLabel ?? data?.defaultCtaLabel;
 
   return (
     <div
@@ -87,13 +203,9 @@ export function EmptyState({
         className,
       ].join(' ')}
     >
-      {/* Emoji/Icon */}
-      <span
-        aria-hidden="true"
-        className="text-4xl mb-4 select-none"
-        role="img"
-      >
-        {displayEmoji}
+      {/* Icon */}
+      <span aria-hidden="true" className="text-neutral-400 mb-4 select-none flex items-center justify-center">
+        <DisplayIcon width={48} height={48} strokeWidth={1.5} />
       </span>
 
       {/* Title */}
@@ -109,11 +221,11 @@ export function EmptyState({
       )}
 
       {/* CTA buttons */}
-      {(ctaLabel || secondaryLabel) && (
+      {(displayCtaLabel || secondaryLabel) && (
         <div className="flex flex-col sm:flex-row gap-3">
-          {ctaLabel && onCta && (
+          {displayCtaLabel && onCta && (
             <Button variant="primary" onClick={onCta}>
-              {ctaLabel}
+              {displayCtaLabel}
             </Button>
           )}
           {secondaryLabel && onSecondary && (
