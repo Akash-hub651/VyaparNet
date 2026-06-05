@@ -116,7 +116,7 @@ export default function RevenueChart({
     >
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
-          data={data}
+          data={data || undefined}
           margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
         >
           <defs>
