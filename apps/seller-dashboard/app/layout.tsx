@@ -1,8 +1,15 @@
 import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
 import { AuthProvider } from './contexts/auth.context';
 import { ToastProvider } from '../components/ui/Toast';
 import { HeaderProvider } from './contexts/header.context';
 import './globals.css';
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+});
 
 /**
  * Root Layout — apps/seller-dashboard/app/layout.tsx
@@ -46,16 +53,10 @@ export default function RootLayout({
               In dev, Google Fonts CDN is acceptable.
       */}
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
       </head>
       <body
-        className="bg-surface-app text-text-primary font-sans"
-        style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' }}
+        className={`bg-surface-app text-text-primary font-sans ${inter.variable}`}
+        style={{ fontFamily: 'var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif' }}
       >
         <AuthProvider>
           <HeaderProvider>

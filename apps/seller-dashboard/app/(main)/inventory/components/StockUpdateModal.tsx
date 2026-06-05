@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import {
   InventoryViewModel,
@@ -35,16 +35,17 @@ export function StockUpdateModal({
   const { accessToken } = useAuth();
   const { addToast } = useToast();
 
+  const [prevProductId, setPrevProductId] = useState<string | null>(null);
+
   // Reset form when modal opens with a new product
-  useEffect(() => {
-    if (isOpen && product) {
-      setUpdateType("add");
-      setQuantityStr("");
-      setReason("");
-      setNote("");
-      setError("");
-    }
-  }, [isOpen, product]);
+  if (isOpen && product && product.productId !== prevProductId) {
+    setPrevProductId(product.productId);
+    setUpdateType("add");
+    setQuantityStr("");
+    setReason("");
+    setNote("");
+    setError("");
+  }
 
   if (!isOpen || !product) return null;
 

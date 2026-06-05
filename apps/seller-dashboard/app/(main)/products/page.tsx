@@ -134,18 +134,14 @@ export default function ProductsPage(): React.JSX.Element {
   }, [accessToken, activeTab, searchQuery]);
 
   useEffect(() => {
-    void loadProducts(true);
-    // Reset selection when tab changes
-    setSelectedProductIds(new Set());
+    void Promise.resolve().then(() => {
+      loadProducts(true);
+      // Reset selection when tab changes
+      setSelectedProductIds(new Set());
+    });
   }, [loadProducts, activeTab]);
 
-  // Initial redirect if rejectedCount > 0
-  useEffect(() => {
-    if (rejectedCount > 0 && activeTab.id === 'tab-all') {
-      const rejectedTab = TABS.find(t => t.status === ProductStatus.REJECTED);
-      if (rejectedTab) setActiveTab(rejectedTab);
-    }
-  }, [rejectedCount]);
+
 
   // ─────────────────────────────────────────────────────────────
   // Action Handlers

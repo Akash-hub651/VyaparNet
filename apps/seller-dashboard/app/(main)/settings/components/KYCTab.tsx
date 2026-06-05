@@ -36,9 +36,9 @@ export function KYCTab() {
   const isKycPendingOrVerified =
     currentKycStatus === "PENDING" || currentKycStatus === "VERIFIED";
 
-  const fetchDocuments = async () => {
+  const fetchDocuments = React.useCallback(async (showLoading = true) => {
     if (!accessToken) return;
-    setIsLoading(true);
+    if (showLoading) setIsLoading(true);
     setIsError(false);
 
     try {
@@ -55,12 +55,13 @@ export function KYCTab() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [accessToken]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchDocuments();
-  }, [accessToken]);
+    void Promise.resolve().then(() => {
+      fetchDocuments(false); // initial loading state is already true
+    });
+  }, [fetchDocuments]);
 
   const handleUploadSuccess = (
     docId: string,
@@ -202,7 +203,7 @@ export function KYCTab() {
               aate hain, par kripya list load hone tak wait karein.
             </p>
             <button
-              onClick={fetchDocuments}
+              onClick={() => void fetchDocuments()}
               className="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-text-primary text-sm font-medium rounded-lg transition-colors"
             >
               Retry Loading Documents

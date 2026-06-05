@@ -86,8 +86,10 @@ export default function SellerProductNewPage(): React.JSX.Element | null {
         // sessionStorage is already session-scoped; still validate timestamp for freshness
         const age = Date.now() - (parsed.timestamp || 0);
         if (age < 24 * 60 * 60 * 1000) { // 24h max within same session
-          setDraftTimestamp(parsed.timestamp);
-          setShowRestorePrompt(true);
+          void Promise.resolve().then(() => {
+            setDraftTimestamp(parsed.timestamp);
+            setShowRestorePrompt(true);
+          });
         } else {
           sessionStorage.removeItem(DRAFT_KEY);
         }
@@ -192,7 +194,7 @@ export default function SellerProductNewPage(): React.JSX.Element | null {
   );
 
   // ── State Updaters ──────────────────────────────────────────
-  const updateDraft = (key: keyof DraftData, value: string | string[]) => {
+  const updateDraft = <K extends keyof DraftData>(key: K, value: DraftData[K]) => {
     setDraft((d) => ({ ...d, [key]: value }));
     setErrors((e) => {
       const copy = { ...e };

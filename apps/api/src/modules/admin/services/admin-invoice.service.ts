@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { S3Service } from '../../s3/s3.service';

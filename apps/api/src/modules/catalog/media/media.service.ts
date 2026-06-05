@@ -5,8 +5,8 @@ import {
   STORAGE_SERVICE_TOKEN,
   StorageService,
 } from './storage/storage.service.interface';
-import { Queue } from 'bullmq';
-import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bull';
+import { InjectQueue } from '@nestjs/bull';
 import { Media, MediaClass, MediaType } from '@vyaparnet/database';
 import { randomUUID } from 'crypto';
 import { ConfigService } from '@nestjs/config';

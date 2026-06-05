@@ -35,11 +35,14 @@ import { PAYMENT_PROVIDER_TOKEN } from '@vyaparnet/types';
  *   Retry policy: 3 attempts, exponential backoff 2s/4s/8s (§14.4)
  *   On failure (DLQ): alert ops — unprocessed webhook = unconfirmed order
  */
+import { AuthModule } from '../identity/auth/auth.module';
+
 @Module({
   imports: [
     ConfigModule,
     PrismaModule,
     RedisModule,
+    AuthModule,
     BullModule.registerQueue({
       name: 'payments',
       defaultJobOptions: {

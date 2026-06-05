@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { BullModule } from '@nestjs/bullmq';
+import { BullModule } from '@nestjs/bull';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PrismaModule } from '../../core/prisma/prisma.module';
 import { RedisModule } from '../../core/redis/redis.module';
@@ -25,12 +25,15 @@ import { DisputesController } from './disputes/disputes.controller';
 import { BuyerLedgerRepository } from './refunds/buyer-ledger.repository';
 import { RefundService } from './refunds/refund.service';
 
+import { AuthModule } from '../identity/auth/auth.module';
+
 @Module({
   imports: [
     ConfigModule,
     PrismaModule,
     RedisModule,
     NotificationModule,
+    AuthModule,
     // Sprint 8: Queues are registered per-domain module
     BullModule.registerQueue({ name: 'return-sla' }),
     BullModule.registerQueue({ name: 'dispute-sla' }),

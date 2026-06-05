@@ -5,7 +5,7 @@ import { DraftData } from "./types";
 
 interface Step2Props {
   draft: DraftData;
-  updateDraft: (key: keyof DraftData, value: any) => void;
+  updateDraft: <K extends keyof DraftData>(key: K, value: DraftData[K]) => void;
   isEditMode?: boolean;
   errors: Record<string, string>;
 }

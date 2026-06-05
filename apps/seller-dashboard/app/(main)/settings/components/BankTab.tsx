@@ -41,15 +41,22 @@ export function BankTab() {
   const [showManualBankEntry, setShowManualBankEntry] = useState(false);
   const [confirmAccount, setConfirmAccount] = useState("");
 
+  const hasPrefilled = React.useRef(false);
+
   useEffect(() => {
     // Pre-fill owner name as default account holder name for convenience
-    if (user) {
-      setFormData((prev) => ({
-        ...prev,
-        accountHolderName: (safeUser?.fullName ||
-          `${safeUser?.firstName || ""} ${safeUser?.lastName || ""}`.trim() ||
-          "") as string,
-      }));
+    if (user && !hasPrefilled.current) {
+      const defaultName = (safeUser?.fullName ||
+        `${safeUser?.firstName || ""} ${safeUser?.lastName || ""}`.trim() ||
+        "") as string;
+      
+      if (defaultName) {
+        setFormData((prev) => ({
+          ...prev,
+          accountHolderName: defaultName,
+        }));
+      }
+      hasPrefilled.current = true;
     }
   }, [user, safeUser]);
 

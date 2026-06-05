@@ -9,7 +9,6 @@ import {
   Prisma,
   ReturnStatus,
   BuyerLedgerType,
-  Segment,
   PaymentStatus,
 } from '@vyaparnet/database';
 import { formatYearMonth } from '../../order/order-state-machine';

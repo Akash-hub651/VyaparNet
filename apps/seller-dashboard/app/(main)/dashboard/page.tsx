@@ -94,22 +94,21 @@ export default function DashboardPage(): React.JSX.Element {
   }, [accessToken, perms.businessMissing]);
 
   useEffect(() => {
-    fetchData();
+    void Promise.resolve().then(() => fetchData());
 
     // Auto-refresh every 5 minutes (300000ms)
     const interval = setInterval(() => {
-      fetchData();
+      void fetchData();
     }, 300000);
 
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  // Handle business missing state
   if (perms.businessMissing) {
     return (
       <div className="p-6">
-        <div className="bg-error-50 border border-error-200 text-error-700 p-4 rounded-lg">
-          Aapka business profile nahi mila. Kripya login dobara karein.
+        <div className="bg-warning-50 border border-warning-200 text-warning-700 p-4 rounded-lg">
+          Aapka business profile complete nahi hai. Kripya niche <b>More &rarr; Settings</b> mein jaake apna profile banayein.
         </div>
       </div>
     );

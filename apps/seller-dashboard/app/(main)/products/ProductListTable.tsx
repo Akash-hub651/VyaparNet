@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   Edit2,
@@ -167,11 +168,15 @@ export function ProductListTable({
                     <td className="px-4 py-4 min-w-[250px]">
                       <div className="flex items-start gap-3">
                         {firstImage ? (
-                          <img
-                            src={firstImage}
-                            alt={product.name}
-                            className="w-10 h-10 rounded-md object-cover shrink-0 bg-surface-card"
-                          />
+                          <div className="relative w-10 h-10 rounded-md shrink-0 bg-surface-card overflow-hidden">
+                            <Image
+                              src={firstImage}
+                              alt={product.name}
+                              fill
+                              unoptimized
+                              className="object-cover"
+                            />
+                          </div>
                         ) : (
                           <div className="w-10 h-10 rounded-md bg-brand-600 text-white flex items-center justify-center font-semibold text-xs shrink-0">
                             {initials}

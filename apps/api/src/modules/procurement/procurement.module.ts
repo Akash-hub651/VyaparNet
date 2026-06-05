@@ -14,12 +14,15 @@ import { NotificationModule } from '../notification/notification.module';
 import { ObservabilityModule } from '../observability/observability.module';
 import { AuditModule } from '../security/audit/audit.module';
 
+import { AuthModule } from '../identity/auth/auth.module';
+
 @Module({
   imports: [
     OrderModule,
     NotificationModule,
     ObservabilityModule,
     AuditModule,
+    AuthModule,
     BullModule.registerQueue({
       name: 'quote-expiry',
     }),

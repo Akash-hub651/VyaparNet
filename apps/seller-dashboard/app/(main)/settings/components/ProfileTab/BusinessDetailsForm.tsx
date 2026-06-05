@@ -121,17 +121,18 @@ export function BusinessDetailsForm() {
     if (safeUser && (safeUser.business || safeUser.businesses)) {
       const b = safeUser.business || safeUser.businesses?.[0];
 
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFormData({
-        businessName: b.businessName || "",
-        businessType: b.businessType || "",
-        gstNumber: b.gstNumber || "",
-        panNumber: b.panNumber || "",
-        address: b.address || "",
-        city: b.city || "",
-        state: b.state || "",
-        pincode: b.pincode || "",
-      });
+      if (b) {
+        setFormData({
+          businessName: b.businessName || "",
+          businessType: b.businessType || "",
+          gstNumber: b.gstNumber || "",
+          panNumber: b.panNumber || "",
+          address: b.address || "",
+          city: b.city || "",
+          state: b.state || "",
+          pincode: b.pincode || "",
+        });
+      }
     }
 
     loadConfig();

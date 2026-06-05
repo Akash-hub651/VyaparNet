@@ -33,7 +33,7 @@ export function OrdersMobileList({
 }: OrdersMobileListProps) {
   const perms = useSellerPermissions();
   const router = useRouter();
-  const nowMs = Date.now(); // captured once per render for aging calculations
+  const [nowMs] = React.useState(() => Date.now()); // captured once per render for aging calculations
 
   if (isLoading) {
     return (

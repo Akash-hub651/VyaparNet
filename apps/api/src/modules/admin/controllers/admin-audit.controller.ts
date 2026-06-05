@@ -13,7 +13,6 @@ import { AdminContextGuard } from '../guards/admin-context.guard';
 import { AdminAuditService } from '../services/admin-audit.service';
 import {
   AuditLogListQuerySchema,
-  type AdminAuditLogListQuery,
   type AuditLogListResponse,
   type AuditLogDto,
 } from '@vyaparnet/types';

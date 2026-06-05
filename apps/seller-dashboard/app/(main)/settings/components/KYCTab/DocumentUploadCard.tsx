@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import Image from "next/image";
 import { KycDocumentConfig } from "../../../../../lib/api/settings.client";
 import { useToast } from "../../../../../components/ui/Toast";
 
@@ -235,14 +236,16 @@ export function DocumentUploadCard({
             className="w-full border border-border-default rounded-lg p-3 bg-surface-base flex items-center gap-3 relative overflow-hidden"
             aria-live="polite"
           >
-            <div className="w-12 h-12 rounded border border-border-default bg-neutral-100 shrink-0 flex items-center justify-center overflow-hidden">
+            <div className="relative w-12 h-12 rounded border border-border-default bg-neutral-100 shrink-0 flex items-center justify-center overflow-hidden">
               {doc.currentFile.filename.toLowerCase().endsWith(".pdf") ? (
                 <span className="text-error-500 font-bold text-xs">PDF</span>
               ) : (
-                <img
+                <Image
                   src={doc.currentFile.url}
                   alt="thumbnail"
-                  className="w-full h-full object-cover"
+                  fill
+                  unoptimized
+                  className="object-cover"
                 />
               )}
             </div>

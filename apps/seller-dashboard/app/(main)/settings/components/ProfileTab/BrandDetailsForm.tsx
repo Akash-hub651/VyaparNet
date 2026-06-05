@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import { useAuth } from "../../../../contexts/auth.context";
 import { updateBusinessProfile } from "../../../../../lib/api/settings.client";
 import { useToast } from "../../../../../components/ui/Toast";
@@ -24,22 +25,24 @@ export function BrandDetailsForm() {
     const safeUser = user as any;
     if (safeUser && (safeUser.business || safeUser.businesses)) {
       const business = safeUser.business || safeUser.businesses?.[0];
-      const initialBrandName = business.brandName || "";
-      const initialTagline = business.brandTagline || "";
+      
+      if (business) {
+        const initialBrandName = business.brandName || "";
+        const initialTagline = business.brandTagline || "";
 
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFormData({
-        brandName: initialBrandName,
-        brandTagline: initialTagline,
-      });
+        setFormData({
+          brandName: initialBrandName,
+          brandTagline: initialTagline,
+        });
 
-      if (business.logoUrl) {
-        setLogoPreview(business.logoUrl);
-      }
+        if (business.logoUrl) {
+          setLogoPreview(business.logoUrl);
+        }
 
-      // Auto-expand if data exists
-      if (initialBrandName || initialTagline || business.logoUrl) {
-        setIsExpanded(true);
+        // Auto-expand if data exists
+        if (initialBrandName || initialTagline || business.logoUrl) {
+          setIsExpanded(true);
+        }
       }
     }
   }, [user]);
@@ -213,11 +216,12 @@ export function BrandDetailsForm() {
               <div className="relative w-20 h-20 rounded-full bg-neutral-50 border-2 border-dashed border-border-default flex items-center justify-center overflow-hidden shrink-0 group">
                 {logoPreview ? (
                   <>
-                    {}
-                    <img
+                    <Image
                       src={logoPreview}
                       alt="Brand Logo Preview"
-                      className="w-full h-full object-cover"
+                      fill
+                      unoptimized
+                      className="object-cover"
                     />
                     <button
                       onClick={removeLogo}

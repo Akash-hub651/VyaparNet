@@ -172,9 +172,10 @@ export default function SellerOrdersPage() {
 
   // Initial Load & Filter Changes
   useEffect(() => {
-    fetchOrders(false);
-
-    setSelectedOrderIds(new Set()); // Clear selection on filter change
+    void Promise.resolve().then(() => {
+      void fetchOrders(false);
+      setSelectedOrderIds(new Set()); // Clear selection on filter change
+    });
   }, [statusFilter, debouncedSearch, sortParam, sortDir, fetchOrders]);
 
   // Auto-refresh logic (M-02 FIX)
@@ -284,7 +285,9 @@ export default function SellerOrdersPage() {
   if (perms.businessMissing) {
     return (
       <div className="p-6">
-        <ErrorBanner message="Aapka business profile nahi mila. System error." />
+        <div className="bg-warning-50 border border-warning-200 text-warning-700 p-4 rounded-lg">
+          Aapka business profile complete nahi hai. Kripya niche <b>More &rarr; Settings</b> mein jaake apna profile banayein.
+        </div>
       </div>
     );
   }

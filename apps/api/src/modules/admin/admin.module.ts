@@ -70,8 +70,8 @@ import { AdminReturnService } from './services/admin-return.service';
 
 // Phase 13: Dispute Management
 import { AdminDisputesController } from './controllers/admin-disputes.controller';
+import { AdminDisputeRepository } from './repositories/admin-dispute.repository';
 import { AdminDisputeService } from './services/admin-dispute.service';
-
 import { TrustSafetyModule } from '../trust-safety/trust-safety.module';
 
 /**
@@ -186,7 +186,7 @@ import { AdminLedgerController } from './controllers/admin-ledger.controller';
     AdminReturnService,
 
     // Phase 13: Dispute Management
-    AdminPayoutService,
+    AdminDisputeRepository,
     AdminDisputeService,
     AdminRefundService,
     AdminLedgerService,

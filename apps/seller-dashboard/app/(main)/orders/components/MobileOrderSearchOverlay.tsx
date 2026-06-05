@@ -74,6 +74,17 @@ export function MobileOrderSearchOverlay({
     fetchResults();
   }, [debouncedSearch, accessToken]);
 
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (!isOpen) {
+      setSearchQuery("");
+      setDebouncedSearch("");
+      setResults([]);
+      setHasSearched(false);
+    }
+  }
+
   // Focus input on mount
   useEffect(() => {
     if (isOpen) {
@@ -81,11 +92,6 @@ export function MobileOrderSearchOverlay({
       setTimeout(() => {
         inputRef.current?.focus();
       }, 100);
-    } else {
-      setSearchQuery("");
-      setDebouncedSearch("");
-      setResults([]);
-      setHasSearched(false);
     }
   }, [isOpen]);
 

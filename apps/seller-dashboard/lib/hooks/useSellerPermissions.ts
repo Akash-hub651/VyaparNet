@@ -28,8 +28,8 @@ export type BusinessStatus = 'ACTIVE' | 'SUSPENDED' | 'INACTIVE' | string;
 
 export interface SellerPermissions {
   /**
-   * True when user.business is null/undefined.
-   * Caller MUST show banner: "Aapka business profile nahi mila."
+   * True when user.business is null/undefined AND user.businesses is empty.
+   * Caller MUST show banner: "Aapka business profile complete nahi hai. Settings mein jaake profile banayein."
    */
   businessMissing: boolean;
 
@@ -70,7 +70,7 @@ export interface SellerPermissions {
 // UserProfileResponse may have business nested — handle both shapes
 function getBusiness(user: Record<string, unknown> | null): Record<string, unknown> | null {
   if (!user) return null;
-  const biz = user['business'];
+  const biz = user['business'] || (Array.isArray(user['businesses']) ? user['businesses'][0] : null);
   if (typeof biz === 'object' && biz !== null) return biz as Record<string, unknown>;
   return null;
 }

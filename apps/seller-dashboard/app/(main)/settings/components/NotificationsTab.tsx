@@ -30,9 +30,9 @@ export function NotificationsTab() {
   const isInitialMount = useRef(true);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchPreferences = async () => {
+  const fetchPreferences = useCallback(async (showLoading = true) => {
     if (!accessToken) return;
-    setIsLoading(true);
+    if (showLoading) setIsLoading(true);
     try {
       const res = await getNotificationPreferences(accessToken);
       if (res.success && res.data) {
@@ -57,12 +57,13 @@ export function NotificationsTab() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [accessToken, addToast]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchPreferences();
-  }, [accessToken]);
+    void Promise.resolve().then(() => {
+      fetchPreferences(false);
+    });
+  }, [fetchPreferences]);
 
   // Use callback for the debounced save to avoid stale closures if needed
   const savePreferences = useCallback(

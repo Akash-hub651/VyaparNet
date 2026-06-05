@@ -79,14 +79,12 @@ export function OtpStep({
     }, 1000);
   }, []);
 
-  // Start timer on mount — use ref for interval, separate from secondsLeft state init
   useEffect(() => {
-    startTimer(expiresIn);
+    startTimer();
     return () => {
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     };
-    // startTimer is stable (useCallback with no deps), expiresIn is a mount-time prop
-  }, []);
+  }, [startTimer]);
 
   const isExpired = secondsLeft === 0;
   const canResend = isExpired && !isVerifying;
@@ -164,7 +162,7 @@ export function OtpStep({
 
     // Reset timer with new expiresIn
     setSecondsLeft(result.expiresIn ?? 300);
-    startTimer(result.expiresIn ?? 300);
+    startTimer();
     setOtp("");
     otpRef.current?.clear();
     setResendMessage("Naya OTP bheja gaya ✓");

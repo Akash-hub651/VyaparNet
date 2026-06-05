@@ -76,12 +76,15 @@ export function FilterDrawer({
   // Local draft state — only committed to parent on "Apply"
   const [draft, setDraft] = useState<OrderFilterState>(activeFilters);
 
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+
   // Sync draft when drawer opens (pick up any external filter changes)
-  useEffect(() => {
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen) {
       setDraft(activeFilters);
     }
-  }, [isOpen, activeFilters]);
+  }
 
   // Escape key
   useEffect(() => {

@@ -213,7 +213,7 @@ export default function ProductEditPage({
                   mediaId: string;
                   url: string;
                   mediaClass: string;
-                  altText?: string;
+                  altText?: string | null;
                 }) => ({
                   mediaId: m.mediaId,
                   url: m.url,
@@ -272,9 +272,11 @@ export default function ProductEditPage({
 
   useEffect(() => {
     if (categories.length > 0 && !isStaff) {
-      void loadProduct();
+      void Promise.resolve().then(() => {
+        void loadProduct();
+      });
     }
-  }, [loadProduct, categories.length]);
+  }, [loadProduct, categories.length, isStaff]);
 
   // -- Auto Save (Every 60s) --
   useEffect(() => {

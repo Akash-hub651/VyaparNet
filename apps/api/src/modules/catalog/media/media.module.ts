@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { BullModule } from '@nestjs/bullmq';
+import { BullModule } from '@nestjs/bull';
 import { MediaController } from './media.controller';
 import { MediaService } from './media.service';
 import { MediaRepository } from './media.repository';

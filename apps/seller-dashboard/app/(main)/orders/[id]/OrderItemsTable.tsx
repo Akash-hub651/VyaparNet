@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { OrderItemDto } from '../../../../lib/api/orders.client';
 import { formatAmount } from '../../../../lib/formatters';
 
@@ -34,7 +35,9 @@ export function OrderItemsTable({ items, payment }: OrderItemsTableProps) {
                 <td className="px-5 py-4">
                   <div className="flex items-center gap-3">
                     {item.imageUrl ? (
-                      <img src={item.imageUrl} alt={item.name} className="w-10 h-10 rounded border border-border-default object-cover" />
+                      <div className="relative w-10 h-10 rounded border border-border-default overflow-hidden">
+                        <Image src={item.imageUrl} alt={item.name} fill unoptimized className="object-cover" />
+                      </div>
                     ) : (
                       <div className="w-10 h-10 rounded border border-border-default bg-surface-hover flex items-center justify-center">
                         <span className="text-text-muted text-xs">IMG</span>

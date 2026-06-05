@@ -40,6 +40,9 @@ export default function OrderDetailPage() {
   const [isShippingModalOpen, setIsShippingModalOpen] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
 
+  // Calculate age warning — captured once per render
+  const [nowMs] = React.useState(() => Date.now());
+
   const fetchOrder = useCallback(async () => {
     if (!accessToken) return;
     try {
@@ -62,7 +65,7 @@ export default function OrderDetailPage() {
   }, [id, accessToken, header]);
 
   useEffect(() => {
-    fetchOrder();
+    void Promise.resolve().then(() => fetchOrder());
   }, [fetchOrder]);
 
   const handleActionClick = async (
@@ -216,8 +219,6 @@ export default function OrderDetailPage() {
     );
   }
 
-  // Calculate age warning — captured once per render (not inside JSX)
-  const nowMs = Date.now();
   const hoursOld =
     (nowMs - new Date(order.createdAt).getTime()) / (1000 * 60 * 60);
   const showAgeWarning = order.status === "PLACED" && hoursOld > 4;

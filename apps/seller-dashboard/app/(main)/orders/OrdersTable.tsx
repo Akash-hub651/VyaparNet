@@ -73,7 +73,7 @@ export function OrdersTable({
 
   const allSelected = orders.length > 0 && selectedIds.size === orders.length;
   const someSelected = selectedIds.size > 0 && selectedIds.size < orders.length;
-  const nowMs = Date.now(); // captured once at render time for aging calculations
+  const [nowMs] = React.useState(() => Date.now()); // captured once at render time for aging calculations
 
   const handleCopy = (e: React.MouseEvent, text: string) => {
     e.preventDefault();

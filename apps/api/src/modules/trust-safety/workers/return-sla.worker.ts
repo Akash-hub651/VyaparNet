@@ -1,6 +1,6 @@
-import { Processor, WorkerHost, InjectQueue } from '@nestjs/bullmq';
+import { Processor, Process, InjectQueue } from '@nestjs/bull';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { Job, Queue } from 'bullmq';
+import { Job, Queue } from 'bull';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { NotificationService } from '../../notification/services/notification.service';
 import { RedisService } from '../../../core/redis/redis.service';
@@ -8,7 +8,7 @@ import { ReturnStatus } from '@vyaparnet/database';
 
 @Injectable()
 @Processor('return-sla')
-export class ReturnSlaWorker extends WorkerHost implements OnModuleInit {
+export class ReturnSlaWorker implements OnModuleInit {
   private readonly logger = new Logger(ReturnSlaWorker.name);
 
   constructor(
@@ -16,9 +16,7 @@ export class ReturnSlaWorker extends WorkerHost implements OnModuleInit {
     private readonly notificationService: NotificationService,
     private readonly redisService: RedisService,
     @InjectQueue('return-sla') private readonly queue: Queue,
-  ) {
-    super();
-  }
+  ) {}
 
   async onModuleInit() {
     this.logger.log('Registering Return SLA repeatable job...');
@@ -27,14 +25,15 @@ export class ReturnSlaWorker extends WorkerHost implements OnModuleInit {
       {},
       {
         repeat: {
-          pattern: '*/30 * * * *',
+          cron: '*/30 * * * *',
         },
         jobId: 'return-sla-repeatable', // Idempotency
       },
     );
   }
 
-  async process(_job: Job<any, any, string>) {
+  @Process('check-sla')
+  async process(_job: Job) {
     this.logger.log('Starting Return SLA check...');
 
     const threshold = new Date(Date.now() - 48 * 3600000); // 48 hours ago

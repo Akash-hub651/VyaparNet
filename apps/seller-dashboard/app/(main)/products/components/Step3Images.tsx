@@ -8,7 +8,7 @@ import { useAuth } from "../../../../app/contexts/auth.context";
 
 interface Step3Props {
   draft: DraftData;
-  updateDraft: (key: keyof DraftData, value: any) => void;
+  updateDraft: <K extends keyof DraftData>(key: K, value: DraftData[K]) => void;
 }
 
 export function Step3Images({
@@ -227,7 +227,7 @@ export function Step3Images({
                        <button
                          type="button"
                          onClick={() => {
-                           updateDraft('media', draft.media.filter((_, i) => i !== index) as any);
+                           updateDraft('media', draft.media.filter((_, i) => i !== index));
                            setPendingDeleteIndex(null);
                          }}
                          className="px-2 py-1 bg-error-700 text-white text-[10px] font-bold rounded border border-error-600"

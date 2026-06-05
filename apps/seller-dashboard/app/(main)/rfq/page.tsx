@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useHeader } from "../../contexts/header.context";
 import { useAuth } from "../../contexts/auth.context";
 import { useSellerPermissions } from "../../../lib/hooks/useSellerPermissions";
@@ -63,10 +63,10 @@ export default function RfqListPage() {
     setTitle("RFQ Center");
   }, [setTitle]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async (showLoading = true) => {
     if (!token) return;
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       setError(null);
       const res = await getSellerRfqs({}, token);
       if (res.error) {
@@ -79,12 +79,14 @@ export default function RfqListPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   // Load Data
   useEffect(() => {
-    loadData();
-  }, [token]);
+    void Promise.resolve().then(() => {
+      loadData(false); // initial state is already loading=true
+    });
+  }, [loadData]);
 
   // Derived state: Expiry Alert
   const expiringCount = useMemo(() => {
