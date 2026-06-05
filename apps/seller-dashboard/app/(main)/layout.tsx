@@ -19,6 +19,7 @@
 import React, { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "../contexts/auth.context";
+import { useSellerPermissions } from "../../lib/hooks/useSellerPermissions";
 import SellerSidebar from "../../components/SellerSidebar";
 import SellerHeader from "../../components/SellerHeader";
 import { FullPageLoader } from "../../components/ui/Skeleton";
@@ -39,6 +40,7 @@ export default function SellerMainLayout({
   children: React.ReactNode;
 }): React.JSX.Element {
   const { isLoading, isAuthenticated, user } = useAuth();
+  const perms = useSellerPermissions();
   const router = useRouter();
 
   // Auth guard — redirect to login if not authenticated
@@ -105,6 +107,16 @@ export default function SellerMainLayout({
         }
       />
 
+      {/* Staff Indicator Banner for Mobile (L-02 FIX) */}
+      {perms.isStaff && (
+        <div className="md:hidden fixed top-14 left-0 right-0 bg-warning-100 text-warning-700 min-h-[32px] px-4 py-1.5 z-[39] flex items-center justify-center text-xs font-medium shadow-sm">
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          Staff session — {(user as any)?.business?.businessName ||
+            "Business"}{" "}
+          account mein
+        </div>
+      )}
+
       {/* Fixed Sidebar */}
       <SellerSidebar />
 
@@ -119,7 +131,7 @@ export default function SellerMainLayout({
       */}
       <main
         id="seller-main-content"
-        className="md:ml-56 pt-14 md:pt-16 pb-16 md:pb-0 min-h-screen bg-surface-app"
+        className={`md:ml-56 ${perms.isStaff ? "pt-[88px]" : "pt-14"} md:pt-16 pb-16 md:pb-0 min-h-screen bg-surface-app`}
         aria-label="Main content"
       >
         {/* Skip link target */}

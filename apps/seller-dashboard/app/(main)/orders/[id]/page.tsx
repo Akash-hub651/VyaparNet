@@ -1,22 +1,27 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { useHeader } from '../../../contexts/header.context';
-import { useToast } from '../../../../components/ui/Toast';
-import { ErrorBanner } from '../../../../components/ui/ErrorBanner';
-import { Skeleton } from '../../../../components/ui/Skeleton';
-import { StatusBadge } from '../../../../components/ui/StatusBadge';
-import { Copy } from 'lucide-react';
-import { OrderDetailDto, getOrderById, updateOrderStatus, OrderStatus } from '../../../../lib/api/orders.client';
-import { OrderTimeline } from './OrderTimeline';
-import { OrderItemsTable } from './OrderItemsTable';
-import { DispatchDetails } from './DispatchDetails';
-import { ActionPanel } from './ActionPanel';
-import { BuyerInfoCard } from './BuyerInfoCard';
-import { FinancialSummaryCard } from './FinancialSummaryCard';
-import { ShippingModal } from './ShippingModal';
-import { useSellerPermissions } from '../../../../lib/hooks/useSellerPermissions';
+import React, { useEffect, useState, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useHeader } from "../../../contexts/header.context";
+import { useToast } from "../../../../components/ui/Toast";
+import { ErrorBanner } from "../../../../components/ui/ErrorBanner";
+import { Skeleton } from "../../../../components/ui/Skeleton";
+import { StatusBadge } from "../../../../components/ui/StatusBadge";
+import { Copy } from "lucide-react";
+import {
+  OrderDetailDto,
+  getOrderById,
+  updateOrderStatus,
+  OrderStatus,
+} from "../../../../lib/api/orders.client";
+import { OrderTimeline } from "./OrderTimeline";
+import { OrderItemsTable } from "./OrderItemsTable";
+import { DispatchDetails } from "./DispatchDetails";
+import { ActionPanel } from "./ActionPanel";
+import { BuyerInfoCard } from "./BuyerInfoCard";
+import { FinancialSummaryCard } from "./FinancialSummaryCard";
+import { ShippingModal } from "./ShippingModal";
+import { useSellerPermissions } from "../../../../lib/hooks/useSellerPermissions";
 
 export default function OrderDetailPage() {
   const params = useParams();
@@ -37,18 +42,18 @@ export default function OrderDetailPage() {
     try {
       setError(null);
       // In real app, get token from auth context
-      const res = await getOrderById(id, 'mock-token');
+      const res = await getOrderById(id, "mock-token");
       if (!res.success) {
-        throw new Error(res.error || 'Order fetch failed');
+        throw new Error(res.error || "Order fetch failed");
       }
       if (!res.data) {
-        throw new Error('Order not found');
+        throw new Error("Order not found");
       }
       setOrder(res.data);
       header.setTitle(`Order ${res.data.orderNumber}`);
-    } catch (err: any) {
-      setError(err);
-      header.setTitle('Order Detail');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err : new Error(String(err)));
+      header.setTitle("Order Detail");
     } finally {
       setIsLoading(false);
     }
@@ -58,45 +63,67 @@ export default function OrderDetailPage() {
     fetchOrder();
   }, [fetchOrder]);
 
-  const handleActionClick = async (action: 'CONFIRM' | 'SHIP' | 'DELIVER' | 'COMPLETE' | 'DOWNLOAD_INVOICE') => {
+  const handleActionClick = async (
+    action: "CONFIRM" | "SHIP" | "DELIVER" | "COMPLETE" | "DOWNLOAD_INVOICE",
+  ) => {
     if (!order) return;
 
-    if (action === 'SHIP') {
+    if (action === "SHIP") {
       setIsShippingModalOpen(true);
       return;
     }
 
-    if (action === 'DOWNLOAD_INVOICE') {
-      addToast({ variant: 'info', message: 'Invoice download shuru ho gaya' });
+    if (action === "DOWNLOAD_INVOICE") {
+      addToast({ variant: "info", message: "Invoice download shuru ho gaya" });
       // Mock download logic
       setTimeout(() => {
-        addToast({ variant: 'success', message: 'Invoice download complete!' });
+        addToast({ variant: "success", message: "Invoice download complete!" });
       }, 1500);
       return;
     }
 
     // Handle State Transitions
     let nextState: OrderStatus | null = null;
-    if (action === 'CONFIRM') nextState = 'CONFIRMED';
-    else if (action === 'DELIVER') nextState = 'DELIVERED';
-    else if (action === 'COMPLETE') nextState = 'COMPLETED';
+    if (action === "CONFIRM") nextState = "CONFIRMED";
+    else if (action === "DELIVER") nextState = "DELIVERED";
+    else if (action === "COMPLETE") nextState = "COMPLETED";
 
     if (nextState) {
       setIsActionLoading(true);
       try {
-        const res = await updateOrderStatus(order.id, nextState, 'mock-token');
+        const res = await updateOrderStatus(order.id, nextState, "mock-token");
         if (!res.success) throw new Error(res.error);
-        
-        addToast({ variant: 'success', message: `Order ${nextState.toLowerCase()} ho gaya` });
-        
+
+        addToast({
+          variant: "success",
+          message: `Order ${nextState.toLowerCase()} ho gaya`,
+        });
+
         // Optimistic UI update
         setOrder((prev) => {
           if (!prev) return prev;
-          const newTimeline = [...prev.timeline, { status: nextState as OrderStatus, timestamp: new Date().toISOString(), actor: 'You' }];
-          return { ...prev, status: nextState as OrderStatus, timeline: newTimeline };
+          const newTimeline = [
+            ...prev.timeline,
+            {
+              status: nextState as OrderStatus,
+              timestamp: new Date().toISOString(),
+              actor: "You",
+            },
+          ];
+          return {
+            ...prev,
+            status: nextState as OrderStatus,
+            timeline: newTimeline,
+          };
         });
-      } catch (err: any) {
-        addToast({ variant: 'error', message: err.message || 'Action fail ho gaya. Phir try karein.' });
+      } catch (err: unknown) {
+        addToast({
+          variant: "error",
+          message:
+            err instanceof Error
+              ? err.message
+              : "Action fail ho gaya. Phir try karein.",
+        });
       } finally {
         setIsActionLoading(false);
       }
@@ -106,7 +133,7 @@ export default function OrderDetailPage() {
   const handleCopyOrderNumber = () => {
     if (order) {
       navigator.clipboard.writeText(order.orderNumber);
-      addToast({ variant: 'success', message: 'Order number copy ho gaya' });
+      addToast({ variant: "success", message: "Order number copy ho gaya" });
     }
   };
 
@@ -130,12 +157,15 @@ export default function OrderDetailPage() {
   if (error || !order) {
     return (
       <div className="max-w-2xl mx-auto mt-8">
-        <ErrorBanner 
-          message={error?.message || "Order details load nahi ho paye. Shayad delete ho gai ya galat link hai."} 
+        <ErrorBanner
+          message={
+            error?.message ||
+            "Order details load nahi ho paye. Shayad delete ho gai ya galat link hai."
+          }
           onRetry={fetchOrder}
         />
-        <button 
-          onClick={() => router.push('/orders')}
+        <button
+          onClick={() => router.push("/orders")}
           className="mt-6 text-sm font-medium text-brand-600 hover:text-brand-800 focus-visible:outline-none"
         >
           ← Orders pe wapas jaiye
@@ -145,22 +175,24 @@ export default function OrderDetailPage() {
   }
 
   // Calculate age warning
-  const hoursOld = (Date.now() - new Date(order.createdAt).getTime()) / (1000 * 60 * 60);
-  const showAgeWarning = order.status === 'PLACED' && hoursOld > 4;
+
+  const hoursOld =
+    (Date.now() - new Date(order.createdAt).getTime()) / (1000 * 60 * 60);
+  const showAgeWarning = order.status === "PLACED" && hoursOld > 4;
 
   return (
     <>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-24 lg:pb-6">
-        
         {/* LEFT COLUMN */}
         <div className="lg:col-span-8 space-y-6">
-          
           {/* L1: Order Header Card */}
           <div className="bg-surface-default border border-border-default rounded-lg p-5">
             <div className="flex flex-wrap items-center justify-between gap-4 mb-3">
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold text-text-primary">{order.orderNumber}</h1>
-                <button 
+                <h1 className="text-2xl font-bold text-text-primary">
+                  {order.orderNumber}
+                </h1>
+                <button
                   onClick={handleCopyOrderNumber}
                   className="w-11 h-11 flex items-center justify-center -ml-2 text-text-muted hover:text-brand-600 transition-colors focus-visible:outline-none rounded-md"
                   aria-label="Order number copy karein"
@@ -170,61 +202,94 @@ export default function OrderDetailPage() {
               </div>
               <StatusBadge status={order.status} />
             </div>
-            
+
             <div className="flex flex-wrap items-center gap-2 text-sm text-text-secondary">
-              <span>Placed: {new Date(order.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit'})}</span>
+              <span>
+                Placed:{" "}
+                {new Date(order.createdAt).toLocaleString("en-IN", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
+              </span>
               <span className="hidden sm:inline">•</span>
               <span>Buyer: {order.buyerContact.name}</span>
               <span className="hidden sm:inline">•</span>
-              <span>{order.items.reduce((acc, i) => acc + i.qty, 0)} items</span>
+              <span>
+                {order.items.reduce((acc, i) => acc + i.qty, 0)} items
+              </span>
             </div>
 
             {showAgeWarning && (
               <div className="mt-4 bg-warning-50 rounded p-3 flex items-start gap-3">
                 <div className="text-warning-600 mt-0.5">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
                 </div>
                 <p className="text-sm font-medium text-warning-800">
-                  Ye order {hoursOld.toFixed(1)} ghante se zyada purana hai — action zaruri
+                  Ye order {hoursOld.toFixed(1)} ghante se zyada purana hai —
+                  action zaruri
                 </p>
               </div>
             )}
           </div>
 
           {/* L2: Order Timeline */}
-          <OrderTimeline timeline={order.timeline} currentStatus={order.status} />
+          <OrderTimeline
+            timeline={order.timeline}
+            currentStatus={order.status}
+          />
 
           {/* L3: Order Items Table */}
           <OrderItemsTable items={order.items} payment={order.payment} />
 
           {/* L4: Dispatch Details (Conditional) */}
-          {order.dispatch && (order.status === 'SHIPPED' || order.status === 'DELIVERED' || order.status === 'COMPLETED') && (
-            <DispatchDetails 
-              dispatch={order.dispatch} 
-              onEditClick={() => setIsShippingModalOpen(true)}
-              canEdit={order.status === 'SHIPPED' && !perms.isStaff}
-            />
-          )}
-
+          {order.dispatch &&
+            (order.status === "SHIPPED" ||
+              order.status === "DELIVERED" ||
+              order.status === "COMPLETED") && (
+              <DispatchDetails
+                dispatch={order.dispatch}
+                onEditClick={() => setIsShippingModalOpen(true)}
+                canEdit={order.status === "SHIPPED" && !perms.isStaff}
+              />
+            )}
         </div>
 
         {/* RIGHT COLUMN */}
         <div className="lg:col-span-4 space-y-6 relative">
-          
           {/* Mobile Sticky Bottom Action Bar wrapper vs Desktop Sticky Sidebar */}
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-surface-card border-t border-border-default z-30 lg:static lg:p-0 lg:bg-transparent lg:border-none lg:z-auto">
-            <ActionPanel 
-              orderId={order.id}
-              status={order.status}
-              onActionClick={handleActionClick}
-              isActionLoading={isActionLoading}
-            />
+          <div className="fixed bottom-0 left-0 right-0 h-16 px-4 py-2 flex items-center justify-center bg-surface-card border-t border-border-default z-30 lg:static lg:h-auto lg:p-0 lg:block lg:bg-transparent lg:border-none lg:z-auto">
+            <div className="w-full">
+              <ActionPanel
+                orderId={order.id}
+                status={order.status}
+                onActionClick={handleActionClick}
+                isActionLoading={isActionLoading}
+              />
+            </div>
           </div>
 
-          <BuyerInfoCard buyerContact={order.buyerContact} orderStatus={order.status} />
-          
-          <FinancialSummaryCard payment={order.payment} />
+          <BuyerInfoCard
+            buyerContact={order.buyerContact}
+            orderStatus={order.status}
+          />
 
+          <FinancialSummaryCard payment={order.payment} />
         </div>
       </div>
 

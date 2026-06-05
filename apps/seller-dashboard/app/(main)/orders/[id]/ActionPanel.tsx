@@ -1,27 +1,40 @@
-import React from 'react';
-import { useSellerPermissions } from '../../../../lib/hooks/useSellerPermissions';
-import { Check, Package, FileText, ExternalLink, HelpCircle } from 'lucide-react';
-import { Button } from '../../../../components/ui/Button';
+import React from "react";
+import { useSellerPermissions } from "../../../../lib/hooks/useSellerPermissions";
+import {
+  Check,
+  Package,
+  FileText,
+  ExternalLink,
+  HelpCircle,
+} from "lucide-react";
+import { Button } from "../../../../components/ui/Button";
 
 export interface ActionPanelProps {
   orderId: string;
   status: string;
-  onActionClick: (action: 'CONFIRM' | 'SHIP' | 'DELIVER' | 'COMPLETE' | 'DOWNLOAD_INVOICE') => void;
+  onActionClick: (
+    action: "CONFIRM" | "SHIP" | "DELIVER" | "COMPLETE" | "DOWNLOAD_INVOICE",
+  ) => void;
   isActionLoading: boolean;
 }
 
-export function ActionPanel({ orderId, status, onActionClick, isActionLoading }: ActionPanelProps) {
+export function ActionPanel({
+  orderId,
+  status,
+  onActionClick,
+  isActionLoading,
+}: ActionPanelProps) {
   const perms = useSellerPermissions();
 
   const renderContent = () => {
     switch (status) {
-      case 'PLACED':
+      case "PLACED":
         return (
           <>
-            <Button 
-              variant="primary" 
-              fullWidth 
-              onClick={() => onActionClick('CONFIRM')}
+            <Button
+              variant="primary"
+              fullWidth
+              onClick={() => onActionClick("CONFIRM")}
               isLoading={isActionLoading}
               disabled={isActionLoading || perms.isSuspended}
               icon={<Check size={18} />}
@@ -32,29 +45,31 @@ export function ActionPanel({ orderId, status, onActionClick, isActionLoading }:
           </>
         );
 
-      case 'CONFIRMED':
-      case 'PROCESSING':
+      case "CONFIRMED":
+      case "PROCESSING":
         return (
-          <Button 
-            variant="primary" 
-            fullWidth 
-            onClick={() => onActionClick('SHIP')}
+          <Button
+            variant="primary"
+            fullWidth
+            onClick={() => onActionClick("SHIP")}
             isLoading={isActionLoading}
-            disabled={isActionLoading || perms.isSuspended || perms.businessMissing}
+            disabled={
+              isActionLoading || perms.isSuspended || perms.businessMissing
+            }
             icon={<Package size={18} />}
           >
             Mark as Shipped
           </Button>
         );
 
-      case 'SHIPPED':
+      case "SHIPPED":
         return (
           <>
             {!perms.businessMissing && !perms.isStaff ? (
-              <Button 
-                variant="primary" 
-                fullWidth 
-                onClick={() => onActionClick('DELIVER')}
+              <Button
+                variant="primary"
+                fullWidth
+                onClick={() => onActionClick("DELIVER")}
                 isLoading={isActionLoading}
                 disabled={isActionLoading}
                 icon={<Check size={18} />}
@@ -62,10 +77,12 @@ export function ActionPanel({ orderId, status, onActionClick, isActionLoading }:
                 Mark Delivered
               </Button>
             ) : (
-              <p className="text-sm text-text-secondary text-center">Shipped ho gaya. Buyer delivery ka wait kar raha hai.</p>
+              <p className="text-sm text-text-secondary text-center">
+                Shipped ho gaya. Buyer delivery ka wait kar raha hai.
+              </p>
             )}
-            
-            <a 
+
+            <a
               href={`#track-${orderId}`}
               className="mt-4 flex items-center justify-center gap-2 w-full min-h-[44px] text-sm font-medium text-brand-600 hover:text-brand-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
             >
@@ -74,14 +91,14 @@ export function ActionPanel({ orderId, status, onActionClick, isActionLoading }:
           </>
         );
 
-      case 'DELIVERED':
+      case "DELIVERED":
         return (
           <>
             {!perms.businessMissing && !perms.isStaff ? (
-              <Button 
-                variant="primary" 
-                fullWidth 
-                onClick={() => onActionClick('COMPLETE')}
+              <Button
+                variant="primary"
+                fullWidth
+                onClick={() => onActionClick("COMPLETE")}
                 isLoading={isActionLoading}
                 disabled={isActionLoading}
                 icon={<Check size={18} />}
@@ -89,10 +106,12 @@ export function ActionPanel({ orderId, status, onActionClick, isActionLoading }:
                 Mark Completed
               </Button>
             ) : (
-              <p className="text-sm text-text-secondary text-center">Delivered mark ho chuka hai.</p>
+              <p className="text-sm text-text-secondary text-center">
+                Delivered mark ho chuka hai.
+              </p>
             )}
-            
-            <a 
+
+            <a
               href={`/support/dispute?order=${orderId}`}
               className="mt-4 flex items-center justify-center gap-2 w-full min-h-[44px] text-sm font-medium text-text-muted hover:text-text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
             >
@@ -101,15 +120,15 @@ export function ActionPanel({ orderId, status, onActionClick, isActionLoading }:
           </>
         );
 
-      case 'COMPLETED':
-      case 'CANCELLED':
+      case "COMPLETED":
+      case "CANCELLED":
         return (
           <div className="flex flex-col items-center">
             {!perms.isStaff && (
-              <Button 
-                variant="secondary" 
-                fullWidth 
-                onClick={() => onActionClick('DOWNLOAD_INVOICE')}
+              <Button
+                variant="secondary"
+                fullWidth
+                onClick={() => onActionClick("DOWNLOAD_INVOICE")}
                 isLoading={isActionLoading}
                 disabled={isActionLoading}
                 icon={<FileText size={18} />}
@@ -123,18 +142,20 @@ export function ActionPanel({ orderId, status, onActionClick, isActionLoading }:
           </div>
         );
 
-      case 'DISPUTE_OPEN':
+      case "DISPUTE_OPEN":
         return (
           <div className="flex flex-col items-center">
-            <Button 
-              variant="primary" 
-              fullWidth 
-              onClick={() => { window.location.href = '/support'; }}
+            <Button
+              variant="primary"
+              fullWidth
+              onClick={() => {
+                window.location.href = "/support";
+              }}
               icon={<HelpCircle size={18} />}
             >
               Support Se Contact Karein
             </Button>
-            <a 
+            <a
               href={`/disputes/${orderId}`}
               className="mt-4 flex items-center justify-center gap-2 w-full min-h-[44px] text-sm font-medium text-brand-600 hover:text-brand-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
             >
@@ -153,7 +174,7 @@ export function ActionPanel({ orderId, status, onActionClick, isActionLoading }:
   };
 
   return (
-    <div className="bg-surface-default border border-border-default rounded-lg p-5 lg:sticky lg:top-[96px]">
+    <div className="lg:bg-surface-default lg:border lg:border-border-default lg:rounded-lg lg:p-5 lg:sticky lg:top-[96px]">
       <h2 className="sr-only">Actions</h2>
       {renderContent()}
     </div>
