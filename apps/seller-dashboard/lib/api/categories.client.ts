@@ -1,21 +1,20 @@
 /**
- * Categories API Client — apps/web/lib/api/categories.client.ts
+ * Categories API Client — apps/seller-dashboard/lib/api/categories.client.ts
  *
- * Authority: SPRINT2_IMPLEMENTATION_LOCKED_final_v2.0.md Section 9.1
+ * Authority: seller_dashboard_architecture.md §9.1
  *
  * Rules:
- * - Returns { data, error } discriminated union — NEVER throws
- * - Includes Authorization header if token present
- * - Typed response with filterConfig support
- * - filterConfig is JSONB — typed as FilterConfig for runtime safety
+ * - Returns ApiResult<T> from client.ts
+ * - Uses apiGet wrapper
+ * - filterConfig is JSONB
  */
 
-import { z } from 'zod';
-import { Segment } from '@vyaparnet/types';
-import { getApiBaseUrl } from '../config';
+import { z } from "zod";
+import { Segment } from "@vyaparnet/types";
+import { apiFetch, ApiResult } from "./client";
 
 // ─────────────────────────────────────────────────────────────
-// FilterConfig type — driven by category.filterConfig JSONB
+// FilterConfig type
 // ─────────────────────────────────────────────────────────────
 
 export interface FilterConfigOption {
@@ -24,9 +23,9 @@ export interface FilterConfigOption {
 }
 
 export interface FilterConfigField {
-  key: string;          // attribute key in segmentAttributes
-  label: string;        // display label (Hindi or English)
-  type: 'range' | 'multiselect' | 'select' | 'checkbox';
+  key: string;
+  label: string;
+  type: "range" | "multiselect" | "select" | "checkbox";
   options?: FilterConfigOption[];
   min?: number;
   max?: number;
@@ -54,7 +53,7 @@ export const CategoryResponseSchema: z.ZodType<CategoryResponse> = z.lazy(() =>
     isActive: z.boolean().default(true),
     filterConfig: z.any().nullable().optional(),
     children: z.array(z.lazy(() => CategoryResponseSchema)).optional(),
-  })
+  }),
 );
 
 export interface CategoryResponse {
@@ -71,19 +70,13 @@ export interface CategoryResponse {
   children?: CategoryResponse[];
 }
 
-export const CategoryListResponseSchema = z.object({
-  data: z.array(CategoryResponseSchema),
-});
-
-export type CategoryListResponse = z.infer<typeof CategoryListResponseSchema>;
-
 // ─────────────────────────────────────────────────────────────
-// Segment attribute schema types (for dynamic form rendering)
+// Segment attribute schema types
 // ─────────────────────────────────────────────────────────────
 
 export interface AttributePropertyDef {
   label: string;
-  type: 'string' | 'number' | 'boolean' | 'enum';
+  type: "string" | "number" | "boolean" | "enum";
   options?: string[];
   min?: number;
   max?: number;
@@ -105,150 +98,51 @@ export interface SegmentAttributeSchemaResponse {
   isActive: boolean;
 }
 
-export const SegmentAttributeSchemaResponseSchema = z.object({
-  id: z.string(),
-  segment: z.nativeEnum(Segment),
-  version: z.number(),
-  schema: z.any(), // typed as SegmentAttributeSchemaDef at usage point
-  isActive: z.boolean(),
-});
-
-// ─────────────────────────────────────────────────────────────
-// Client type
-// ─────────────────────────────────────────────────────────────
-
-type ApiResult<T> =
-  | { data: T; error: null }
-  | { data: null; error: { message: string; status?: number } };
-
-// ─────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────
-
-function buildAuthHeaders(token?: string | null): HeadersInit {
-  const headers: HeadersInit = { 'Content-Type': 'application/json' };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  return headers;
-}
-
 // ─────────────────────────────────────────────────────────────
 // Categories API Client functions
 // ─────────────────────────────────────────────────────────────
 
 /**
- * GET /api/v1/categories — fetch category tree
- * Optionally filtered by segment.
+ * GET /api/v1/categories
  */
 export async function getCategories(
   segment?: Segment,
   token?: string | null,
 ): Promise<ApiResult<CategoryResponse[]>> {
-  try {
-    const url = new URL(`${getApiBaseUrl()}/api/v1/categories`);
-    if (segment) url.searchParams.set('segment', segment);
-
-    const res = await fetch(url.toString(), {
-      headers: buildAuthHeaders(token),
-      next: { revalidate: 300 }, // Category tree is semi-static — cache 5 min
-    });
-
-    if (!res.ok) {
-      return { data: null, error: { message: `Categories fetch failed: ${res.statusText}`, status: res.status } };
-    }
-
-    const json = await res.json() as { success: boolean; data: unknown };
-    if (!json.success) {
-      return { data: null, error: { message: 'Categories returned unsuccessful response' } };
-    }
-
-    // Parse as array
-    const parsed = z.array(CategoryResponseSchema).safeParse(json.data);
-    if (!parsed.success) {
-      return {
-        data: null,
-        error: { message: `Category list schema validation failed: ${parsed.error.message}` },
-      };
-    }
-
-    return { data: parsed.data, error: null };
-  } catch (err) {
-    return { data: null, error: { message: err instanceof Error ? err.message : 'Unknown error' } };
-  }
+  const url = segment
+    ? `api/v1/categories?segment=${segment}`
+    : `api/v1/categories`;
+  // Using apiFetch to pass custom cache options for SSR if needed, although client token implies client side
+  return apiFetch<CategoryResponse[]>(url, token || "", {
+    method: "GET",
+    next: { revalidate: 300 },
+  });
 }
 
 /**
- * GET /api/v1/categories/:id — fetch single category with filterConfig
+ * GET /api/v1/categories/:id
  */
 export async function getCategory(
   id: string,
   token?: string | null,
 ): Promise<ApiResult<CategoryResponse>> {
-  try {
-    const url = `${getApiBaseUrl()}/api/v1/categories/${encodeURIComponent(id)}`;
-    const res = await fetch(url, {
-      headers: buildAuthHeaders(token),
-      next: { revalidate: 300 },
-    });
-
-    if (!res.ok) {
-      return { data: null, error: { message: `Category fetch failed: ${res.statusText}`, status: res.status } };
-    }
-
-    const json = await res.json() as { success: boolean; data: unknown };
-    if (!json.success) {
-      return { data: null, error: { message: 'Category returned unsuccessful response' } };
-    }
-
-    const parsed = CategoryResponseSchema.safeParse(json.data);
-    if (!parsed.success) {
-      return {
-        data: null,
-        error: { message: `Category schema validation failed: ${parsed.error.message}` },
-      };
-    }
-
-    return { data: parsed.data, error: null };
-  } catch (err) {
-    return { data: null, error: { message: err instanceof Error ? err.message : 'Unknown error' } };
-  }
+  const url = `api/v1/categories/${encodeURIComponent(id)}`;
+  return apiFetch<CategoryResponse>(url, token || "", {
+    method: "GET",
+    next: { revalidate: 300 },
+  });
 }
 
 /**
- * GET /api/v1/segments/:segment/schema — fetch SegmentAttributeSchema
- * Used by seller form to dynamically render segment attribute fields.
+ * GET /api/v1/segments/:segment/schema
  */
 export async function getSegmentAttributeSchema(
   segment: Segment,
   token?: string | null,
 ): Promise<ApiResult<SegmentAttributeSchemaResponse>> {
-  try {
-    const url = `${getApiBaseUrl()}/api/v1/segments/${encodeURIComponent(segment)}/schema`;
-    const res = await fetch(url, {
-      headers: buildAuthHeaders(token),
-      next: { revalidate: 600 }, // Schema rarely changes
-    });
-
-    if (!res.ok) {
-      return { data: null, error: { message: `Segment schema fetch failed: ${res.statusText}`, status: res.status } };
-    }
-
-    const json = await res.json() as { success: boolean; data: unknown };
-    if (!json.success) {
-      return { data: null, error: { message: 'Segment schema returned unsuccessful response' } };
-    }
-
-    const parsed = SegmentAttributeSchemaResponseSchema.safeParse(json.data);
-    if (!parsed.success) {
-      return {
-        data: null,
-        error: { message: `Segment schema validation failed: ${parsed.error.message}` },
-      };
-    }
-
-    return { data: parsed.data as SegmentAttributeSchemaResponse, error: null };
-  } catch (err) {
-    return { data: null, error: { message: err instanceof Error ? err.message : 'Unknown error' } };
-  }
+  const url = `api/v1/segments/${encodeURIComponent(segment)}/schema`;
+  return apiFetch<SegmentAttributeSchemaResponse>(url, token || "", {
+    method: "GET",
+    next: { revalidate: 600 },
+  });
 }

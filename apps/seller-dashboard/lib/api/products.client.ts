@@ -9,9 +9,15 @@
  * - NEVER uses raw fetch
  */
 
-
-import { ProductStatus, MediaClass, Segment } from '@vyaparnet/types';
-import { apiGet, apiPost, apiPut, apiDelete, buildQueryString, ApiResult } from './client';
+import { ProductStatus, MediaClass, Segment } from "@vyaparnet/types";
+import {
+  apiGet,
+  apiPost,
+  apiPut,
+  apiDelete,
+  buildQueryString,
+  ApiResult,
+} from "./client";
 
 // ─────────────────────────────────────────────────────────────
 // Response schemas (for types)
@@ -40,7 +46,7 @@ export interface ProductResponse {
   tags: string[];
   status: ProductStatus;
   segment: Segment;
-  segmentAttributes: Record<string, any>;
+  segmentAttributes: Record<string, unknown>;
   categoryId: string;
   categoryName?: string;
   categoryPath?: Array<{ id: string; name: string; slug: string }>;
@@ -77,11 +83,13 @@ export interface CreateProductDto {
   hsnCode?: string;
   gstPercent?: number;
   tags?: string[];
+  initialStock?: number;
+  lowStockAlert?: number;
   mediaIds?: string[];
   segmentAttributes?: Record<string, unknown>;
 }
 
-export interface UpdateProductDto extends Partial<CreateProductDto> {}
+export type UpdateProductDto = Partial<CreateProductDto>;
 
 export interface GetSellerProductsParams {
   status?: ProductStatus;
@@ -104,7 +112,10 @@ export async function getProduct(
   slug: string,
   token: string,
 ): Promise<ApiResult<ProductResponse>> {
-  return apiGet<ProductResponse>(`api/v1/products/${encodeURIComponent(slug)}`, token);
+  return apiGet<ProductResponse>(
+    `api/v1/products/${encodeURIComponent(slug)}`,
+    token,
+  );
 }
 
 /**
@@ -133,7 +144,7 @@ export async function createProduct(
   dto: CreateProductDto,
   token: string,
 ): Promise<ApiResult<ProductResponse>> {
-  return apiPost<ProductResponse>('api/v1/products', token, dto);
+  return apiPost<ProductResponse>("api/v1/products", token, dto);
 }
 
 /**
