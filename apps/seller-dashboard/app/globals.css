@@ -1,6 +1,7 @@
 @import "tailwindcss";
-@config "../tailwind.config.ts";
 @source "../../packages/ui";
+@source "../../apps/seller-dashboard/components";
+@source "../../apps/seller-dashboard/app";
 
 /* ════════════════════════════════════════════════════════════════
    VYAPARNET SELLER DASHBOARD — DESIGN TOKEN SYSTEM
@@ -9,8 +10,7 @@
    Version: v1.0 — Phase 0 Foundation
    ════════════════════════════════════════════════════════════════ */
 
-@layer base {
-  :root {
+@theme {
     /* ── BRAND ──────────────────────────────────────────────── */
     --color-brand-50:        hsl(221, 100%, 98%);  /* #F0F7FF  Subtle brand tint bg     */
     --color-brand-100:       hsl(221, 91%,  96%);  /* #EFF6FF  Brand tint bg (selected) */
@@ -108,17 +108,55 @@
 
     /* ── Z-INDEX HIERARCHY ──────────────────────────────────── */
     /* Authority: seller_dashboard_screen_system.md §G.14.4      */
-    --z-sidebar:   30;
-    --z-header:    40;
-    --z-bottom-nav:40;
-    --z-drawer:    50;
-    --z-modal:     60;
-    --z-toast:     70;
+    --z-index-sidebar:   30;
+    --z-index-header:    40;
+    --z-index-bottom-nav:40;
+    --z-index-drawer:    50;
+    --z-index-modal:     60;
+    --z-index-toast:     70;
 
     /* ── FONTS ──────────────────────────────────────────────── */
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    /* ── ADDED FROM TAILWIND.CONFIG.TS ──────────────────────── */
+    --spacing-13: 3.25rem;
+    --spacing-14: 3.5rem;
+    --spacing-16: 4rem;
+    --spacing-56: 14rem;
+    --spacing-14-px: 56px;
+    --spacing-screen-minus-header: calc(100vh - 64px);
+
+    /* ── ANIMATIONS ─────────────────────────────────────────── */
+    --animate-skeleton: skeleton-shimmer 1.5s infinite;
+    --animate-toast-in: toast-in 200ms ease-out forwards;
+    --animate-modal-in: modal-in 150ms ease-out forwards;
+    --animate-sheet-up: sheet-up 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    --animate-badge-spring: badge-spring 200ms ease forwards;
+    --animate-spin-fast: spin 700ms linear infinite;
+
+    @keyframes skeleton-shimmer {
+      from { background-position: -200% 0; }
+      to { background-position: 200% 0; }
+    }
+    @keyframes toast-in {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes modal-in {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes sheet-up {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    @keyframes badge-spring {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.3); }
+      70% { transform: scale(0.9); }
+      100% { transform: scale(1); }
+    }
+
   }
-}
 
 /* ════════════════════════════════════════════════════════════════
    GLOBAL BASE STYLES
