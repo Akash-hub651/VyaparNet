@@ -24,6 +24,8 @@ import SellerHeader from "../../components/SellerHeader";
 import { FullPageLoader } from "../../components/ui/Skeleton";
 import { SuspendedBanner } from "../../components/ui/ErrorBanner";
 import { SuspendedScreen } from "../../components/ui/ErrorScreens";
+import { MobileHeader } from "../../components/MobileHeader";
+import { BottomNavigation } from "../../components/BottomNavigation";
 import dynamic from "next/dynamic";
 
 const CommandPalette = dynamic(
@@ -95,6 +97,14 @@ export default function SellerMainLayout({
         />
       )}
 
+      {/* Mobile Sidebar overlay/drawer state is managed inside SellerSidebar or locally */}
+      {/* For now we just add MobileHeader which emits an event to open sidebar if needed */}
+      <MobileHeader
+        onMenuClick={() =>
+          window.dispatchEvent(new CustomEvent("open-mobile-sidebar"))
+        }
+      />
+
       {/* Fixed Sidebar */}
       <SellerSidebar />
 
@@ -103,14 +113,13 @@ export default function SellerMainLayout({
 
       {/*
         Main content area
-        - margin-left: 224px (sidebar expanded width w-56)
-        - padding-top: 64px (header height h-16)
+        - desktop: ml-56 pt-16
+        - mobile: ml-0 pt-14 pb-16
         - bg: surface-app (#F8FAFC)
-        Authority: screen_system §G.1
       */}
       <main
         id="seller-main-content"
-        className="ml-56 pt-16 min-h-screen bg-surface-app"
+        className="md:ml-56 pt-14 md:pt-16 pb-16 md:pb-0 min-h-screen bg-surface-app"
         aria-label="Main content"
       >
         {/* Skip link target */}
@@ -119,7 +128,7 @@ export default function SellerMainLayout({
         </a>
 
         {/* Page content — max-width centered on very large screens */}
-        <div className="max-w-page mx-auto p-6">
+        <div className="max-w-page mx-auto p-4 md:p-6">
           {isSuspended && !pathname.startsWith("/support") ? (
             <SuspendedScreen />
           ) : (
@@ -127,6 +136,9 @@ export default function SellerMainLayout({
           )}
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <BottomNavigation />
     </div>
   );
 }

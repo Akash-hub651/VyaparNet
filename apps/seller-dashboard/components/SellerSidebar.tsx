@@ -503,6 +503,15 @@ export default function SellerSidebar(): React.JSX.Element {
     kycPendingBadge: 0,
   });
 
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    const handleOpenMobile = () => setIsMobileDrawerOpen(true);
+    window.addEventListener("open-mobile-sidebar", handleOpenMobile);
+    return () =>
+      window.removeEventListener("open-mobile-sidebar", handleOpenMobile);
+  }, []);
+
   const toggleCollapse = useCallback(() => {
     setIsCollapsed((prev) => {
       const next = !prev;
@@ -526,179 +535,195 @@ export default function SellerSidebar(): React.JSX.Element {
   const sidebarWidth = isCollapsed ? "w-14" : "w-56";
 
   return (
-    <aside
-      aria-label="Seller navigation"
-      className={[
-        "flex-shrink-0 flex flex-col h-screen",
-        "bg-surface-sidebar border-r border-white/5",
-        "fixed top-0 left-0 bottom-0 z-[30]",
-        "transition-all duration-200 ease-in-out",
-        sidebarWidth,
-      ].join(" ")}
-    >
-      {/* ── LOGO ──────────────────────────────────────────── */}
-      <div className="h-14 flex items-center px-3 border-b border-white/5 flex-shrink-0">
-        <Link
-          href="/dashboard"
-          aria-label="VyaparNet Seller — Dashboard jaiye"
-          className="flex items-center gap-2.5 min-w-0"
-        >
-          {/* VN monogram */}
-          <span className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center flex-shrink-0">
-            <span className="text-white text-xs font-bold tracking-tight">
-              VN
+    <>
+      {/* Mobile Drawer Overlay */}
+      {isMobileDrawerOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-[45] md:hidden"
+          onClick={() => setIsMobileDrawerOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        aria-label="Seller navigation"
+        className={[
+          "flex-shrink-0 flex-col h-screen",
+          "bg-surface-sidebar border-r border-white/5",
+          "fixed top-0 bottom-0 z-[50] md:z-[30]",
+          "transition-all duration-200 ease-in-out",
+          // Mobile Drawer styling
+          isMobileDrawerOpen
+            ? "left-0 w-64 flex"
+            : "-left-full md:left-0 hidden md:flex",
+          // Desktop Width
+          "md:" + sidebarWidth,
+        ].join(" ")}
+      >
+        {/* ── LOGO ──────────────────────────────────────────── */}
+        <div className="h-14 flex items-center px-3 border-b border-white/5 flex-shrink-0">
+          <Link
+            href="/dashboard"
+            aria-label="VyaparNet Seller — Dashboard jaiye"
+            className="flex items-center gap-2.5 min-w-0"
+          >
+            {/* VN monogram */}
+            <span className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-xs font-bold tracking-tight">
+                VN
+              </span>
             </span>
-          </span>
+            {!isCollapsed && (
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-white truncate leading-tight">
+                  VyaparNet
+                </p>
+                <p className="text-[10px] text-white/40 leading-tight">
+                  Seller Hub
+                </p>
+              </div>
+            )}
+          </Link>
+        </div>
+
+        {/* ── NAVIGATION ────────────────────────────────────── */}
+        <nav
+          className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-1.5 space-y-0.5"
+          aria-label="Main navigation"
+        >
+          {NAV_GROUPS.map((group) => (
+            <div key={group.id} className="mb-1">
+              {/* Group label */}
+              {group.label && !isCollapsed && (
+                <p className="px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/30 select-none">
+                  {group.label}
+                </p>
+              )}
+
+              {/* Nav items */}
+              {group.items.map((item) => {
+                const isActive = pathname
+                  ? item.href === "/dashboard"
+                    ? pathname === "/dashboard"
+                    : pathname.startsWith(item.href)
+                  : false;
+                const badgeCount = item.badgeKey
+                  ? (badgeCounts[item.badgeKey as keyof BadgeCounts] ?? 0)
+                  : 0;
+
+                const isDisabled =
+                  item.disabled ||
+                  (isSuspended && !item.href.startsWith("/support"));
+                const disabledReasonText =
+                  isSuspended && !item.href.startsWith("/support")
+                    ? "Account suspended. Support contact karein."
+                    : item.disabledReason;
+
+                if (isDisabled) {
+                  return (
+                    <div
+                      key={item.id}
+                      id={item.id}
+                      title={disabledReasonText}
+                      aria-disabled="true"
+                      className={[
+                        "flex items-center gap-3 px-2.5 py-2.5 rounded-lg",
+                        "opacity-35 cursor-not-allowed select-none",
+                        isCollapsed ? "justify-center" : "",
+                      ].join(" ")}
+                    >
+                      <span className="text-white flex-shrink-0">
+                        {item.icon}
+                      </span>
+                      {!isCollapsed && (
+                        <span className="text-sm font-medium text-white truncate flex-1">
+                          {item.label}
+                        </span>
+                      )}
+                    </div>
+                  );
+                }
+
+                return (
+                  <Link
+                    key={item.id}
+                    id={item.id}
+                    href={item.href}
+                    aria-current={isActive ? "page" : undefined}
+                    className={[
+                      "flex items-center gap-3 px-2.5 py-2.5 rounded-lg",
+                      "transition-colors duration-100 ease-in-out",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50",
+                      "relative group min-h-[40px]",
+                      isCollapsed ? "justify-center" : "",
+                      isActive
+                        ? "bg-white/10 border-l-2 border-brand-500 text-white"
+                        : "text-white/65 hover:bg-white/[0.06] hover:text-white border-l-2 border-transparent",
+                    ].join(" ")}
+                  >
+                    {/* Icon */}
+                    <span className="flex-shrink-0" aria-hidden="true">
+                      {item.icon}
+                    </span>
+
+                    {/* Label + badge */}
+                    {!isCollapsed && (
+                      <>
+                        <span className="text-sm font-medium truncate flex-1">
+                          {item.label}
+                        </span>
+                        {badgeCount > 0 && (
+                          <NavBadge count={badgeCount} type={item.badgeType} />
+                        )}
+                      </>
+                    )}
+
+                    {/* Collapsed tooltip */}
+                    {isCollapsed && (
+                      <div className="absolute left-full ml-2 px-2 py-1 bg-surface-sidebar text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-2 border border-white/10">
+                        {item.label}
+                      </div>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
+
+        {/* ── SIDEBAR FOOTER ────────────────────────────────── */}
+        <div className="border-t border-white/5 p-3 flex-shrink-0 flex items-center gap-2">
+          {/* Avatar */}
+          <div className="w-7 h-7 rounded-full bg-brand-600 flex items-center justify-center flex-shrink-0 text-white text-xs font-bold">
+            {user?.name?.[0]?.toUpperCase() ?? "S"}
+          </div>
           {!isCollapsed && (
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-white truncate leading-tight">
-                VyaparNet
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-white truncate">
+                {user?.name ?? "Seller"}
               </p>
-              <p className="text-[10px] text-white/40 leading-tight">
-                Seller Hub
+              <p className="text-[10px] text-white/40 truncate">
+                {user?.email ?? ""}
               </p>
             </div>
           )}
-        </Link>
-      </div>
-
-      {/* ── NAVIGATION ────────────────────────────────────── */}
-      <nav
-        className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-1.5 space-y-0.5"
-        aria-label="Main navigation"
-      >
-        {NAV_GROUPS.map((group) => (
-          <div key={group.id} className="mb-1">
-            {/* Group label */}
-            {group.label && !isCollapsed && (
-              <p className="px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/30 select-none">
-                {group.label}
-              </p>
-            )}
-
-            {/* Nav items */}
-            {group.items.map((item) => {
-              const isActive = pathname
-                ? item.href === "/dashboard"
-                  ? pathname === "/dashboard"
-                  : pathname.startsWith(item.href)
-                : false;
-              const badgeCount = item.badgeKey
-                ? (badgeCounts[item.badgeKey as keyof BadgeCounts] ?? 0)
-                : 0;
-
-              const isDisabled =
-                item.disabled ||
-                (isSuspended && !item.href.startsWith("/support"));
-              const disabledReasonText =
-                isSuspended && !item.href.startsWith("/support")
-                  ? "Account suspended. Support contact karein."
-                  : item.disabledReason;
-
-              if (isDisabled) {
-                return (
-                  <div
-                    key={item.id}
-                    id={item.id}
-                    title={disabledReasonText}
-                    aria-disabled="true"
-                    className={[
-                      "flex items-center gap-3 px-2.5 py-2.5 rounded-lg",
-                      "opacity-35 cursor-not-allowed select-none",
-                      isCollapsed ? "justify-center" : "",
-                    ].join(" ")}
-                  >
-                    <span className="text-white flex-shrink-0">
-                      {item.icon}
-                    </span>
-                    {!isCollapsed && (
-                      <span className="text-sm font-medium text-white truncate flex-1">
-                        {item.label}
-                      </span>
-                    )}
-                  </div>
-                );
-              }
-
-              return (
-                <Link
-                  key={item.id}
-                  id={item.id}
-                  href={item.href}
-                  aria-current={isActive ? "page" : undefined}
-                  className={[
-                    "flex items-center gap-3 px-2.5 py-2.5 rounded-lg",
-                    "transition-colors duration-100 ease-in-out",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50",
-                    "relative group min-h-[40px]",
-                    isCollapsed ? "justify-center" : "",
-                    isActive
-                      ? "bg-white/10 border-l-2 border-brand-500 text-white"
-                      : "text-white/65 hover:bg-white/[0.06] hover:text-white border-l-2 border-transparent",
-                  ].join(" ")}
-                >
-                  {/* Icon */}
-                  <span className="flex-shrink-0" aria-hidden="true">
-                    {item.icon}
-                  </span>
-
-                  {/* Label + badge */}
-                  {!isCollapsed && (
-                    <>
-                      <span className="text-sm font-medium truncate flex-1">
-                        {item.label}
-                      </span>
-                      {badgeCount > 0 && (
-                        <NavBadge count={badgeCount} type={item.badgeType} />
-                      )}
-                    </>
-                  )}
-
-                  {/* Collapsed tooltip */}
-                  {isCollapsed && (
-                    <div className="absolute left-full ml-2 px-2 py-1 bg-surface-sidebar text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-2 border border-white/10">
-                      {item.label}
-                    </div>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-        ))}
-      </nav>
-
-      {/* ── SIDEBAR FOOTER ────────────────────────────────── */}
-      <div className="border-t border-white/5 p-3 flex-shrink-0 flex items-center gap-2">
-        {/* Avatar */}
-        <div className="w-7 h-7 rounded-full bg-brand-600 flex items-center justify-center flex-shrink-0 text-white text-xs font-bold">
-          {user?.name?.[0]?.toUpperCase() ?? "S"}
-        </div>
-        {!isCollapsed && (
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-white truncate">
-              {user?.name ?? "Seller"}
-            </p>
-            <p className="text-[10px] text-white/40 truncate">
-              {user?.email ?? ""}
-            </p>
-          </div>
-        )}
-        {/* Collapse toggle */}
-        <button
-          onClick={toggleCollapse}
-          aria-label={
-            isCollapsed ? "Sidebar expand karein" : "Sidebar collapse karein"
-          }
-          title="Ctrl+B"
-          className="flex-shrink-0 p-1 text-white/40 hover:text-white rounded transition-colors"
-        >
-          <span
-            className={`block transition-transform duration-200 ${isCollapsed ? "rotate-180" : ""}`}
+          {/* Collapse toggle */}
+          <button
+            onClick={toggleCollapse}
+            aria-label={
+              isCollapsed ? "Sidebar expand karein" : "Sidebar collapse karein"
+            }
+            title="Ctrl+B"
+            className="flex-shrink-0 p-1 text-white/40 hover:text-white rounded transition-colors"
           >
-            {icons.ChevronLeft}
-          </span>
-        </button>
-      </div>
-    </aside>
+            <span
+              className={`block transition-transform duration-200 ${isCollapsed ? "rotate-180" : ""}`}
+            >
+              {icons.ChevronLeft}
+            </span>
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }

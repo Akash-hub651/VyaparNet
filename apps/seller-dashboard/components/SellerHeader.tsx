@@ -343,7 +343,7 @@ export default function SellerHeader(): React.JSX.Element {
         id="seller-header"
         className={[
           "h-16 flex-shrink-0 fixed top-0 right-0",
-          "left-0 md:left-56",
+          "hidden md:flex left-0 md:left-56",
           "bg-surface-header border-b border-border-default",
           "flex items-center justify-between px-4 md:px-6 gap-4",
           "z-[40]",
@@ -385,7 +385,9 @@ export default function SellerHeader(): React.JSX.Element {
 
         {/* CENTER: ⌘K Search trigger */}
         <button
-          onClick={() => window.dispatchEvent(new CustomEvent('open-command-palette'))}
+          onClick={() =>
+            window.dispatchEvent(new CustomEvent("open-command-palette"))
+          }
           aria-label="Search ya jump karein (Cmd+K)"
           className="hidden md:flex items-center gap-2 h-9 px-3 rounded-full border border-border-default bg-surface-hover text-text-muted text-sm hover:border-border-strong transition-colors"
           style={{ width: "240px" }}
