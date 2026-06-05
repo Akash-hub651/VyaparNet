@@ -23,6 +23,9 @@ import SellerSidebar from '../../components/SellerSidebar';
 import SellerHeader from '../../components/SellerHeader';
 import { FullPageLoader } from '../../components/ui/Skeleton';
 import { SuspendedBanner } from '../../components/ui/ErrorBanner';
+import dynamic from 'next/dynamic';
+
+const CommandPalette = dynamic(() => import('../../components/CommandPalette'), { ssr: false });
 
 export default function SellerMainLayout({
   children,
@@ -40,6 +43,27 @@ export default function SellerMainLayout({
     }
   }, [isLoading, isAuthenticated, router]);
 
+  // Command Palette global listener (Cmd+K / Ctrl+K and custom event)
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = React.useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen(true);
+      }
+    };
+    const handleCustomEvent = () => setIsCommandPaletteOpen(true);
+
+    document.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('open-command-palette', handleCustomEvent);
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('open-command-palette', handleCustomEvent);
+    };
+  }, []);
+
   // Show loader while auth state is being determined
   if (isLoading || !isAuthenticated) {
     return <FullPageLoader />;
@@ -55,6 +79,14 @@ export default function SellerMainLayout({
     <div className="min-h-screen bg-surface-app">
       {/* Suspended account banner — always visible above everything */}
       {isSuspended && <SuspendedBanner />}
+
+      {/* Global Command Palette */}
+      {isCommandPaletteOpen && (
+        <CommandPalette 
+          isOpen={isCommandPaletteOpen} 
+          onClose={() => setIsCommandPaletteOpen(false)} 
+        />
+      )}
 
       {/* Fixed Sidebar */}
       <SellerSidebar />

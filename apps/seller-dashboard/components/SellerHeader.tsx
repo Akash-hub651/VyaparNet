@@ -385,6 +385,7 @@ export default function SellerHeader(): React.JSX.Element {
 
         {/* CENTER: ⌘K Search trigger */}
         <button
+          onClick={() => window.dispatchEvent(new CustomEvent('open-command-palette'))}
           aria-label="Search ya jump karein (Cmd+K)"
           className="hidden md:flex items-center gap-2 h-9 px-3 rounded-full border border-border-default bg-surface-hover text-text-muted text-sm hover:border-border-strong transition-colors"
           style={{ width: "240px" }}
