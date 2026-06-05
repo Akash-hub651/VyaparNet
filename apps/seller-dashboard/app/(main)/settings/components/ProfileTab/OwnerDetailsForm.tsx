@@ -19,13 +19,11 @@ export function OwnerDetailsForm() {
   // Pre-fill from session
   useEffect(() => {
     if (user) {
-      // Safely access fields, as UserProfileResponse might have varying shapes based on API design
-      // @ts-expect-error type variance
-      const name =
-        user.fullName ||
-        `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
-        "";
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const safeUser = user as any;
+      const name = safeUser.fullName || `${safeUser.firstName || ''} ${safeUser.lastName || ''}`.trim() || '';
 
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         ownerName: name,
         email: user.email || "",

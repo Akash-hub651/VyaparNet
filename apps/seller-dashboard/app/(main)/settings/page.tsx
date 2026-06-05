@@ -6,6 +6,7 @@ import { useSellerPermissions } from "../../../lib/hooks/useSellerPermissions";
 import { useHeader } from "../../contexts/header.context";
 import { useToast } from "../../../components/ui/Toast";
 import { ProfileTab } from "./components/ProfileTab";
+import { KYCTab } from './components/KYCTab';
 
 type TabKey = "profile" | "kyc" | "bank" | "notifications";
 
@@ -34,6 +35,7 @@ export default function SettingsPage() {
 
   // Handle URL Hash for Tabs
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMounted(true);
 
     const handleHashChange = () => {
@@ -102,9 +104,7 @@ export default function SettingsPage() {
       <div className="max-w-2xl" role="tabpanel" tabIndex={0}>
         {activeTab === "profile" && <ProfileTab />}
         {activeTab === "kyc" && (
-          <div className="p-6 bg-surface-card border border-border-default rounded-lg text-center">
-            <p className="text-text-secondary">KYC Tab Content (Screen 15)</p>
-          </div>
+          <KYCTab />
         )}
         {activeTab === "bank" && (
           <div className="p-6 bg-surface-card border border-border-default rounded-lg text-center">

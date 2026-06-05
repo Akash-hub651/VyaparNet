@@ -1,4 +1,4 @@
-import { apiGet, apiPatch, ApiResult } from "./client";
+import { apiGet, apiPatch, apiPost, ApiResult } from "./client";
 
 export interface BusinessTypeViewModel {
   id: string;
@@ -30,6 +30,28 @@ export interface BusinessProfileUpdateDto {
   brandName?: string;
   brandTagline?: string;
   logoUrl?: string; // Logo file upload should ideally return URL, then we patch it.
+}
+
+export type KycStatus = 'NOT_SUBMITTED' | 'PENDING' | 'VERIFIED' | 'REJECTED';
+
+export type KycDocumentStatus = 'not_uploaded' | 'uploaded' | 'rejected';
+
+export interface KycDocumentConfig {
+  id: string;
+  name: string;
+  nameHindi?: string;
+  required: boolean;
+  acceptedFormats: string[];
+  maxSizeMB: number;
+  description: string;
+  currentFile?: {
+    id: string;
+    filename: string;
+    url: string;
+    sizeBytes: number;
+  };
+  status: KycDocumentStatus;
+  rejectionReason?: string;
 }
 
 /**
@@ -66,4 +88,22 @@ export async function updateBusinessProfile(
     token,
     data,
   );
+}
+
+/**
+ * Fetch required documents
+ */
+export async function getKycRequiredDocuments(
+  token: string,
+): Promise<ApiResult<KycDocumentConfig[]>> {
+  return apiGet<KycDocumentConfig[]>('/seller/kyc/required-documents', token);
+}
+
+/**
+ * Submit KYC for verification
+ */
+export async function submitKycDocuments(
+  token: string,
+): Promise<ApiResult<{ success: boolean; message: string }>> {
+  return apiPost<{ success: boolean; message: string }>('/seller/kyc/submit', token, {});
 }
