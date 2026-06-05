@@ -13,6 +13,16 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+type PaletteItem = {
+  id: string;
+  label: string;
+  href: string;
+  icon: React.ReactNode;
+  group: string;
+  secondary?: string;
+  type?: string;
+};
+
 /* ── MOCK DATA FOR SPRINT 8 ───────────────────────────────────── */
 const PAGES = [
   { id: "page-dash", label: "Dashboard", href: "/dashboard", icon: <LayoutDashboardIcon /> },
@@ -31,8 +41,8 @@ const QUICK_ACTIONS = [
 ];
 
 const RECENT = [
-  { id: "rec-order", label: "#VN-00456 · Ramesh Textiles", href: "/orders/VN-00456", icon: <ShoppingCartIcon /> },
-  { id: "rec-prod", label: "Cotton Kurti · CK-001", href: "/products/CK-001", icon: <PackageIcon /> },
+  { id: "rec-order", label: "#VN-00456", secondary: "Ramesh Textiles", type: "ORDER", href: "/orders/VN-00456", icon: <ShoppingCartIcon /> },
+  { id: "rec-prod", label: "Cotton Kurti", secondary: "CK-001", type: "PRODUCT", href: "/products/CK-001", icon: <PackageIcon /> },
 ];
 
 /* ── ICONS ─────────────────────────────────────────────────────── */
@@ -109,7 +119,7 @@ export default function CommandPalette({
   }, [isOpen, onClose]);
 
   // Derive flat list of visible items
-  const items = useMemo(() => {
+  const items = useMemo<PaletteItem[]>(() => {
     if (query.trim().length > 0) return []; // Empty state for Sprint 8
     
     return [
@@ -258,8 +268,8 @@ export default function CommandPalette({
                           <div
                             key={item.id}
                             data-index={globalIndex}
-                            className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-lg cursor-pointer transition-colors ${
-                              isSelected ? "bg-surface-hover" : "hover:bg-surface-hover"
+                            className={`flex items-center gap-3 px-4 h-12 mx-2 rounded-lg cursor-pointer transition-colors ${
+                              isSelected ? "bg-surface-selected" : "hover:bg-surface-hover"
                             }`}
                             onClick={() => {
                               router.push(item.href);
@@ -270,9 +280,23 @@ export default function CommandPalette({
                             <span className="text-text-secondary flex-shrink-0">
                               {item.icon}
                             </span>
-                            <span className="text-sm font-medium text-text-primary truncate">
-                              {item.label}
-                            </span>
+                            <div className="flex-1 min-w-0 flex items-center justify-between">
+                              <div className="flex flex-col truncate">
+                                <span className={`text-sm font-semibold truncate ${isSelected ? "text-brand-700" : "text-text-primary"}`}>
+                                  {item.label}
+                                </span>
+                                {'secondary' in item && item.secondary && (
+                                  <span className="text-xs text-text-muted truncate">
+                                    {item.secondary}
+                                  </span>
+                                )}
+                              </div>
+                              {'type' in item && item.type && (
+                                <span className="flex-shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded bg-surface-hover text-text-muted uppercase tracking-wide ml-2">
+                                  {item.type}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         );
                       })}
