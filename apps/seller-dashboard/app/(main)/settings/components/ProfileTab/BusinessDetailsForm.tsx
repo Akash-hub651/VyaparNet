@@ -121,7 +121,6 @@ export function BusinessDetailsForm() {
     if (safeUser && (safeUser.business || safeUser.businesses)) {
       const b = safeUser.business || safeUser.businesses?.[0];
 
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         businessName: b.businessName || "",
         businessType: b.businessType || "",
@@ -286,12 +285,17 @@ export function BusinessDetailsForm() {
       {/* Business Name & Type row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
-          <label
-            htmlFor="businessName"
-            className="block text-sm font-medium text-text-primary mb-1"
-          >
-            Business ka naam <span className="text-error-600">*</span>
-          </label>
+          <div className="flex justify-between mb-1">
+            <label
+              htmlFor="businessName"
+              className="block text-sm font-medium text-text-primary"
+            >
+              Business ka naam <span className="text-error-600">*</span>
+            </label>
+            <span className="text-xs text-text-muted">
+              {formData.businessName.length}/100
+            </span>
+          </div>
           <input
             id="businessName"
             name="businessName"
@@ -357,12 +361,17 @@ export function BusinessDetailsForm() {
       {/* PAN & GST row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
-          <label
-            htmlFor="panNumber"
-            className="block text-sm font-medium text-text-primary mb-1"
-          >
-            PAN Number <span className="text-error-600">*</span>
-          </label>
+          <div className="flex justify-between mb-1">
+            <label
+              htmlFor="panNumber"
+              className="block text-sm font-medium text-text-primary"
+            >
+              PAN Number <span className="text-error-600">*</span>
+            </label>
+            <span className="text-xs text-text-muted">
+              {formData.panNumber.length}/10
+            </span>
+          </div>
           <input
             id="panNumber"
             name="panNumber"
@@ -392,12 +401,17 @@ export function BusinessDetailsForm() {
         </div>
 
         <div>
-          <label
-            htmlFor="gstNumber"
-            className="block text-sm font-medium text-text-primary mb-1"
-          >
-            GST Number
-          </label>
+          <div className="flex justify-between mb-1">
+            <label
+              htmlFor="gstNumber"
+              className="block text-sm font-medium text-text-primary"
+            >
+              GST Number
+            </label>
+            <span className="text-xs text-text-muted">
+              {formData.gstNumber.length}/15
+            </span>
+          </div>
           <input
             id="gstNumber"
             name="gstNumber"
@@ -455,12 +469,17 @@ export function BusinessDetailsForm() {
       {/* PIN, City, State row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div>
-          <label
-            htmlFor="pincode"
-            className="block text-sm font-medium text-text-primary mb-1"
-          >
-            PIN Code <span className="text-error-600">*</span>
-          </label>
+          <div className="flex justify-between mb-1">
+            <label
+              htmlFor="pincode"
+              className="block text-sm font-medium text-text-primary"
+            >
+              PIN Code <span className="text-error-600">*</span>
+            </label>
+            <span className="text-xs text-text-muted">
+              {formData.pincode.length}/6
+            </span>
+          </div>
           <div className="relative">
             <input
               id="pincode"

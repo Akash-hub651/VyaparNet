@@ -65,22 +65,9 @@ export function ActionPanel({
       case "SHIPPED":
         return (
           <>
-            {!perms.businessMissing && !perms.isStaff ? (
-              <Button
-                variant="primary"
-                fullWidth
-                onClick={() => onActionClick("DELIVER")}
-                isLoading={isActionLoading}
-                disabled={isActionLoading}
-                icon={<Check size={18} />}
-              >
-                Mark Delivered
-              </Button>
-            ) : (
-              <p className="text-sm text-text-secondary text-center">
-                Shipped ho gaya. Buyer delivery ka wait kar raha hai.
-              </p>
-            )}
+            <p className="text-sm text-text-secondary text-center">
+              Shipped ho gaya. Buyer delivery ka wait kar raha hai.
+            </p>
 
             <a
               href={`#track-${orderId}`}
@@ -94,22 +81,9 @@ export function ActionPanel({
       case "DELIVERED":
         return (
           <>
-            {!perms.businessMissing && !perms.isStaff ? (
-              <Button
-                variant="primary"
-                fullWidth
-                onClick={() => onActionClick("COMPLETE")}
-                isLoading={isActionLoading}
-                disabled={isActionLoading}
-                icon={<Check size={18} />}
-              >
-                Mark Completed
-              </Button>
-            ) : (
-              <p className="text-sm text-text-secondary text-center">
-                Delivered mark ho chuka hai.
-              </p>
-            )}
+            <p className="text-sm text-text-secondary text-center">
+              Delivered mark ho chuka hai.
+            </p>
 
             <a
               href={`/support/dispute?order=${orderId}`}

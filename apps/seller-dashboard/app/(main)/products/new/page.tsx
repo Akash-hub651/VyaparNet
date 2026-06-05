@@ -23,6 +23,17 @@ import { Step2Pricing } from '../components/Step2Pricing';
 import { Step3Images } from '../components/Step3Images';
 import { formatRelativeTime } from "../../../../lib/formatters";
 
+/**
+ * D-02 RESOLUTION — Product Draft Storage
+ * Authority: seller_dashboard_architecture.md §4 "localStorage Exception Rule"
+ * Decision: Product draft uses sessionStorage (NOT localStorage).
+ * Rationale:
+ *   - sessionStorage is cleared on tab/session close — no cross-session persistence risk
+ *   - Contains ONLY form field data (name, price, description) — zero auth/identity data
+ *   - Scope: single page session, auto-evicted — no audit trail concerns
+ *   - UX preserved: draft survives page refresh within same tab
+ *   - Architecture compliant: localStorage remains exclusively for sidebar collapse state
+ */
 const DRAFT_PREFIX = "seller-product-draft-";
 
 export default function SellerProductNewPage(): React.JSX.Element | null {
@@ -69,16 +80,16 @@ export default function SellerProductNewPage(): React.JSX.Element | null {
   useEffect(() => {
     if (!DRAFT_KEY) return;
     try {
-      const saved = localStorage.getItem(DRAFT_KEY);
+      const saved = sessionStorage.getItem(DRAFT_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        // Expiry check: 7 days
+        // sessionStorage is already session-scoped; still validate timestamp for freshness
         const age = Date.now() - (parsed.timestamp || 0);
-        if (age < 7 * 24 * 60 * 60 * 1000) {
+        if (age < 24 * 60 * 60 * 1000) { // 24h max within same session
           setDraftTimestamp(parsed.timestamp);
           setShowRestorePrompt(true);
         } else {
-          localStorage.removeItem(DRAFT_KEY);
+          sessionStorage.removeItem(DRAFT_KEY);
         }
       }
     } catch {
@@ -89,7 +100,7 @@ export default function SellerProductNewPage(): React.JSX.Element | null {
   const restoreDraft = () => {
     if (!DRAFT_KEY) return;
     try {
-      const saved = localStorage.getItem(DRAFT_KEY);
+      const saved = sessionStorage.getItem(DRAFT_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         setDraft(parsed.fields || EMPTY_DRAFT);
@@ -105,7 +116,7 @@ export default function SellerProductNewPage(): React.JSX.Element | null {
   };
 
   const discardDraft = () => {
-    if (DRAFT_KEY) localStorage.removeItem(DRAFT_KEY);
+    if (DRAFT_KEY) sessionStorage.removeItem(DRAFT_KEY);
     setShowRestorePrompt(false);
     setDraft(EMPTY_DRAFT);
     setStep(1);
@@ -116,7 +127,7 @@ export default function SellerProductNewPage(): React.JSX.Element | null {
     if (!DRAFT_KEY || showRestorePrompt) return;
 
     const saveTimer = setTimeout(() => {
-      localStorage.setItem(
+      sessionStorage.setItem(
         DRAFT_KEY,
         JSON.stringify({
           step,
@@ -331,7 +342,7 @@ export default function SellerProductNewPage(): React.JSX.Element | null {
       return;
     }
 
-    if (DRAFT_KEY) localStorage.removeItem(DRAFT_KEY);
+    if (DRAFT_KEY) sessionStorage.removeItem(DRAFT_KEY);
 
     if (publishOption === "review") {
       const pubRes = await publishProduct(res.data.id, accessToken);

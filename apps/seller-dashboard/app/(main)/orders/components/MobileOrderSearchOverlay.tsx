@@ -83,11 +83,8 @@ export function MobileOrderSearchOverlay({
       }, 100);
     } else {
       setSearchQuery("");
-
       setDebouncedSearch("");
-
       setResults([]);
-
       setHasSearched(false);
     }
   }, [isOpen]);

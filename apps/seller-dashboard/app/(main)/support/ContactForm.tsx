@@ -104,13 +104,21 @@ export function ContactForm() {
     setIsSubmitting(true);
 
     try {
-      // In a real flow, you'd upload the file to S3 first to get a URL.
-      // We skip the explicit S3 upload step here and just pass a mock URL if file exists.
+      /**
+       * INTEGRATION PENDING: MEDIUM-BL3
+       * Screenshot upload requires: POST /seller/support/screenshot-upload-url
+       * → returns { uploadUrl, key }
+       * → then PUT uploadUrl with file
+       * → then include { screenshotUrl: key } in ticket payload
+       *
+       * Until this endpoint exists: submit ticket without screenshotUrl.
+       * File is collected client-side for UX but NOT fabricated as a URL.
+       */
       const payload: CreateSupportTicketPayload = {
         subjectType,
         message,
         ...(isOrderOrProductIssue && referenceId ? { referenceId } : {}),
-        ...(screenshotFile ? { screenshotUrl: `https://vyaparnet.com/uploads/${screenshotFile.name}` } : {}),
+        // screenshotUrl intentionally omitted — INTEGRATION PENDING (MEDIUM-BL3)
       };
 
       const result = await submitSupportTicket(payload, accessToken || "");

@@ -343,9 +343,9 @@ export default function SellerHeader(): React.JSX.Element {
         id="seller-header"
         className={[
           "h-16 flex-shrink-0 fixed top-0 right-0",
-          "hidden md:flex left-0 md:left-56",
+          isNotificationsPage ? "flex left-0 md:left-56" : "hidden md:flex left-0 md:left-56",
           "bg-surface-header border-b border-border-default",
-          "flex items-center justify-between px-4 md:px-6 gap-4",
+          "items-center justify-between px-4 md:px-6 gap-4",
           "z-[40]",
         ].join(" ")}
       >

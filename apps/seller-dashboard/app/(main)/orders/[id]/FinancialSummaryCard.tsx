@@ -29,8 +29,7 @@ export function FinancialSummaryCard({ payment }: FinancialSummaryCardProps) {
         
         <div className="flex items-center justify-between">
           <span className="text-xs text-text-secondary">Status</span>
-          {/* Note: In a real app we'd have a specific Payout/Payment status badge mapping. For now we use the raw string if the StatusBadge doesn't support it, but StatusBadge in phase 0 should support basic colors based on standard strings. We'll pass it anyway. */}
-          <StatusBadge status={payment.status as any} />
+          <StatusBadge status={payment.status} />
         </div>
         
         <div className="pt-2">
@@ -60,7 +59,7 @@ export function FinancialSummaryCard({ payment }: FinancialSummaryCardProps) {
             {payment.payoutStatus && (
               <div className="flex items-center justify-between">
                 <span className="text-xs text-text-secondary">Payout Status</span>
-                <StatusBadge status={payment.payoutStatus as any} />
+                <StatusBadge status={payment.payoutStatus} />
               </div>
             )}
             

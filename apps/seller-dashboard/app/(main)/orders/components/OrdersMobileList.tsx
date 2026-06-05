@@ -33,6 +33,7 @@ export function OrdersMobileList({
 }: OrdersMobileListProps) {
   const perms = useSellerPermissions();
   const router = useRouter();
+  const nowMs = Date.now(); // captured once per render for aging calculations
 
   if (isLoading) {
     return (
@@ -59,7 +60,7 @@ export function OrdersMobileList({
     <div className="flex flex-col gap-3 pb-24">
       {orders.map((order) => {
         const hoursOld =
-          (Date.now() - new Date(order.createdAt).getTime()) / (1000 * 60 * 60);
+          (nowMs - new Date(order.createdAt).getTime()) / (1000 * 60 * 60);
         const isAging = order.status === "PLACED" && hoursOld > 4;
 
         // Action buttons logic

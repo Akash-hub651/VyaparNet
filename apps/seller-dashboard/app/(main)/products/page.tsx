@@ -24,6 +24,18 @@ import { Button } from '../../../components/ui/Button';
 import { ProductListTable } from './ProductListTable';
 import { ProductBulkActions } from './ProductBulkActions';
 import { ProductFilterDrawer } from './ProductFilterDrawer';
+import { useColumnCustomization, ColumnDef } from '../../../components/hooks/useColumnCustomization';
+import { ColumnCustomizer } from '../../../components/ui/ColumnCustomizer';
+
+const PRODUCT_COLUMNS: ColumnDef[] = [
+  { id: 'product', label: 'Product', isMandatory: true },
+  { id: 'segment', label: 'Segment' },
+  { id: 'price', label: 'Price' },
+  { id: 'stock', label: 'Stock' },
+  { id: 'status', label: 'Status' },
+  { id: 'actions', label: 'Actions', isMandatory: true },
+];
+
 import {
   getSellerProducts,
   type ProductResponse,
@@ -66,6 +78,8 @@ export default function ProductsPage(): React.JSX.Element {
   const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set());
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const columnCust = useColumnCustomization("products", PRODUCT_COLUMNS);
 
   // ─────────────────────────────────────────────────────────────
   // Initialization & Fetching
@@ -260,7 +274,11 @@ export default function ProductsPage(): React.JSX.Element {
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="relative w-full sm:w-96">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+          <label htmlFor="products-search" className="sr-only">
+            Product naam ya SKU se search karein
+          </label>
           <input
+            id="products-search"
             type="text"
             placeholder="Product name ya SKU..."
             value={searchQuery}
@@ -277,6 +295,12 @@ export default function ProductsPage(): React.JSX.Element {
           >
             Filter
           </Button>
+          <ColumnCustomizer
+            columns={PRODUCT_COLUMNS}
+            visibleColumnIds={columnCust.visibleColumnIds}
+            onToggle={columnCust.toggleColumn}
+            onReset={columnCust.resetColumns}
+          />
         </div>
       </div>
 
@@ -299,6 +323,7 @@ export default function ProductsPage(): React.JSX.Element {
           onSelectAll={handleSelectAll}
           onRefresh={() => void loadProducts()}
           isStaff={permissions.isStaff}
+          visibleColumnIds={columnCust.visibleColumnIds}
         />
       )}
 

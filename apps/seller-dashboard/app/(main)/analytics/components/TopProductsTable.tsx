@@ -4,7 +4,7 @@ import Link from "next/link";
 import { TopProductViewModel } from "../../../../lib/api/analytics.client";
 import { formatAmount } from "../../../../lib/formatters";
 import { Skeleton } from "../../../../components/ui/Skeleton";
-import { StatusBadge } from "../../../../components/ui/StatusBadge";
+import { getSegmentLabel } from "../../../../lib/segments";
 
 interface TopProductsTableProps {
   products: TopProductViewModel[] | null;
@@ -118,16 +118,22 @@ export function TopProductsTable({
                         className="flex items-center gap-3 outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded-md"
                       >
                         <Image
-                          src={
-                            product.thumbnailUrl ||
-                            "https://placehold.co/32x32/E2E8F0/94A3B8.png"
-                          }
+                          src={product.thumbnailUrl || ''}
                           alt=""
                           width={32}
                           height={32}
-                          className="w-8 h-8 rounded object-cover flex-shrink-0 border border-border-default bg-surface-base"
+                          className={`w-8 h-8 rounded object-cover flex-shrink-0 border border-border-default bg-surface-base ${!product.thumbnailUrl ? 'opacity-0 absolute' : ''}`}
                           unoptimized
                         />
+                        {!product.thumbnailUrl && (
+                          <span className="w-8 h-8 rounded flex-shrink-0 border border-border-default bg-neutral-100 flex items-center justify-center" aria-hidden="true">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-neutral-400">
+                              <rect x="3" y="3" width="18" height="18" rx="2" />
+                              <circle cx="8.5" cy="8.5" r="1.5" />
+                              <polyline points="21 15 16 10 5 21" />
+                            </svg>
+                          </span>
+                        )}
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium text-text-primary group-hover:text-brand-600 transition-colors truncate">
                             {product.name}
@@ -139,9 +145,16 @@ export function TopProductsTable({
                       </Link>
                     </td>
                     <td className="px-5 py-3 align-middle">
-                      <StatusBadge
-                        status={product.segment as "TEXTILE" | "SPARE_PARTS"}
-                      />
+                      {/**
+                       * D-03 FIX — Segment Isolation
+                       * Authority: seller_dashboard_architecture.md §21
+                       * Removed hardcoded `as "TEXTILE" | "SPARE_PARTS"` cast.
+                       * getSegmentLabel() resolves any segment key to a human label
+                       * without hardcoding segment values in the UI layer.
+                       */}
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-700">
+                        {getSegmentLabel(product.segment)}
+                      </span>
                     </td>
                     <td className="px-5 py-3 align-middle text-right">
                       <span className="text-sm tabular-nums text-text-primary">
@@ -196,16 +209,22 @@ export function TopProductsTable({
                   {index + 1}
                 </span>
                 <Image
-                  src={
-                    product.thumbnailUrl ||
-                    "https://placehold.co/40x40/E2E8F0/94A3B8.png"
-                  }
+                  src={product.thumbnailUrl || ''}
                   alt=""
                   width={40}
                   height={40}
-                  className="w-10 h-10 rounded-md object-cover flex-shrink-0 border border-border-default bg-surface-base"
+                  className={`w-10 h-10 rounded-md object-cover flex-shrink-0 border border-border-default bg-surface-base ${!product.thumbnailUrl ? 'opacity-0 absolute' : ''}`}
                   unoptimized
                 />
+                {!product.thumbnailUrl && (
+                  <span className="w-10 h-10 rounded-md flex-shrink-0 border border-border-default bg-neutral-100 flex items-center justify-center" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-neutral-400">
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <polyline points="21 15 16 10 5 21" />
+                    </svg>
+                  </span>
+                )}
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-text-primary truncate">
                     {product.name}

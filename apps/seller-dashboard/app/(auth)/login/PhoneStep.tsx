@@ -107,12 +107,17 @@ export function PhoneStep({ onSuccess, onSendOtp }: PhoneStepProps): React.JSX.E
       {/* ── PHONE INPUT ──────────────────────────────────────── */}
       {/* Authority: §34.3 — Combined border, country code read-only, +91 India only */}
       <div className="mb-5">
-        <label
-          htmlFor="login-mobile"
-          className="block text-sm font-semibold text-text-primary mb-1.5"
-        >
-          Mobile Number
-        </label>
+        <div className="flex justify-between mb-1.5">
+          <label
+            htmlFor="login-mobile"
+            className="block text-sm font-semibold text-text-primary"
+          >
+            Mobile Number
+          </label>
+          <span className="text-xs text-text-muted">
+            {mobile.length}/10
+          </span>
+        </div>
 
         {/*
           Phone input group — §34.3 visual spec:

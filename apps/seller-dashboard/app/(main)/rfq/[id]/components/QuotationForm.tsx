@@ -257,9 +257,14 @@ export function QuotationForm({ rfq, token, onSuccess }: QuotationFormProps) {
 
         {/* Notes */}
         <div className="pb-8">
-          <label className="block text-sm font-medium text-text-primary mb-2">
-            Buyer ke liye koi special note?
-          </label>
+          <div className="flex justify-between mb-2">
+            <label className="block text-sm font-medium text-text-primary">
+              Buyer ke liye koi special note?
+            </label>
+            <span className="text-xs text-text-muted">
+              {notes.length}/500
+            </span>
+          </div>
           <textarea
             rows={3}
             className="w-full px-4 py-3 bg-surface-base border border-neutral-300 rounded-lg text-base focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none resize-none"

@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useHeader } from "../../../contexts/header.context";
+import { useAuth } from "../../../../app/contexts/auth.context";
 import { useToast } from "../../../../components/ui/Toast";
 import { ErrorBanner } from "../../../../components/ui/ErrorBanner";
 import { Skeleton } from "../../../../components/ui/Skeleton";
@@ -29,6 +30,7 @@ export default function OrderDetailPage() {
   const router = useRouter();
   const header = useHeader();
   const { addToast } = useToast();
+  const { accessToken } = useAuth();
   const perms = useSellerPermissions();
 
   const [order, setOrder] = useState<OrderDetailDto | null>(null);
@@ -39,10 +41,10 @@ export default function OrderDetailPage() {
   const [isActionLoading, setIsActionLoading] = useState(false);
 
   const fetchOrder = useCallback(async () => {
+    if (!accessToken) return;
     try {
       setError(null);
-      // In real app, get token from auth context
-      const res = await getOrderById(id, "mock-token");
+      const res = await getOrderById(id, accessToken);
       if (!res.success) {
         throw new Error(res.error || "Order fetch failed");
       }
@@ -57,7 +59,7 @@ export default function OrderDetailPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [id, header]);
+  }, [id, accessToken, header]);
 
   useEffect(() => {
     fetchOrder();
@@ -74,11 +76,18 @@ export default function OrderDetailPage() {
     }
 
     if (action === "DOWNLOAD_INVOICE") {
-      addToast({ variant: "info", message: "Invoice download shuru ho gaya" });
-      // Mock download logic
-      setTimeout(() => {
-        addToast({ variant: "success", message: "Invoice download complete!" });
-      }, 1500);
+      /**
+       * INTEGRATION PENDING: HIGH-BL2
+       * Invoice download requires: GET /seller/orders/{id}/invoice
+       * → returns PDF binary (Content-Type: application/pdf) or presigned URL
+       * This endpoint is NOT yet confirmed in Sprint 8 backend.
+       * Until live: show informational unavailable toast.
+       */
+      addToast({
+        variant: "info",
+        message:
+          "Invoice download jald aayega — is feature par kaam ho raha hai.",
+      });
       return;
     }
 
@@ -91,7 +100,11 @@ export default function OrderDetailPage() {
     if (nextState) {
       setIsActionLoading(true);
       try {
-        const res = await updateOrderStatus(order.id, nextState, "mock-token");
+        const res = await updateOrderStatus(
+          order.id,
+          nextState,
+          accessToken ?? "",
+        );
         if (!res.success) throw new Error(res.error);
 
         addToast({
@@ -131,9 +144,38 @@ export default function OrderDetailPage() {
   };
 
   const handleCopyOrderNumber = () => {
-    if (order) {
-      navigator.clipboard.writeText(order.orderNumber);
-      addToast({ variant: "success", message: "Order number copy ho gaya" });
+    if (!order) return;
+    // MEDIUM-S3 FIX: clipboard.writeText requires HTTPS (secure context).
+    // Guard with try/catch; fall back to execCommand for HTTP deployments.
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard
+        .writeText(order.orderNumber)
+        .then(() => {
+          addToast({
+            variant: "success",
+            message: "Order number copy ho gaya",
+          });
+        })
+        .catch(() => {
+          addToast({ variant: "error", message: "Copy nahi ho paya" });
+        });
+    } else {
+      // Fallback for non-HTTPS environments
+      try {
+        const textarea = document.createElement("textarea");
+        textarea.value = order.orderNumber;
+        textarea.style.cssText = "position:fixed;top:-9999px;left:-9999px";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+        addToast({ variant: "success", message: "Order number copy ho gaya" });
+      } catch {
+        addToast({
+          variant: "error",
+          message: "Copy nahi ho paya — manually copy karein",
+        });
+      }
     }
   };
 
@@ -174,10 +216,10 @@ export default function OrderDetailPage() {
     );
   }
 
-  // Calculate age warning
-
+  // Calculate age warning — captured once per render (not inside JSX)
+  const nowMs = Date.now();
   const hoursOld =
-    (Date.now() - new Date(order.createdAt).getTime()) / (1000 * 60 * 60);
+    (nowMs - new Date(order.createdAt).getTime()) / (1000 * 60 * 60);
   const showAgeWarning = order.status === "PLACED" && hoursOld > 4;
 
   return (

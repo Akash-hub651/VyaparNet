@@ -27,7 +27,6 @@ export function BrandDetailsForm() {
       const initialBrandName = business.brandName || "";
       const initialTagline = business.brandTagline || "";
 
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         brandName: initialBrandName,
         brandTagline: initialTagline,
@@ -214,7 +213,6 @@ export function BrandDetailsForm() {
                 {logoPreview ? (
                   <>
                     {}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={logoPreview}
                       alt="Brand Logo Preview"

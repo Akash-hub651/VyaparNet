@@ -13,8 +13,21 @@ import {
 import { ErrorBanner } from "../../../components/ui/ErrorBanner";
 import { RfqTable } from "./components/RfqTable";
 import { RfqMobileList } from "./components/RfqMobileList";
+import { PullToRefresh } from "../../../components/ui/PullToRefresh";
 import { RfqEmptyState } from "./components/RfqEmptyState";
 import { RfqFilterDrawer, RfqFilters } from "./components/RfqFilterDrawer";
+import { useColumnCustomization, ColumnDef } from "../../../components/hooks/useColumnCustomization";
+import { ColumnCustomizer } from "../../../components/ui/ColumnCustomizer";
+
+const RFQ_COLUMNS: ColumnDef[] = [
+  { id: 'id_segment', label: 'RFQ ID + Segment', isMandatory: true },
+  { id: 'product', label: 'Product Required' },
+  { id: 'quantity', label: 'Quantity' },
+  { id: 'budget', label: 'Budget Range' },
+  { id: 'expires_in', label: 'Expires In' },
+  { id: 'status', label: 'Status' },
+  { id: 'actions', label: 'Actions', isMandatory: true },
+];
 
 export default function RfqListPage() {
   const { setTitle } = useHeader();
@@ -44,29 +57,32 @@ export default function RfqListPage() {
     showClosed: false,
   });
 
+  const columnCust = useColumnCustomization("rfq", RFQ_COLUMNS);
+
   useEffect(() => {
     setTitle("RFQ Center");
   }, [setTitle]);
 
+  const loadData = async () => {
+    if (!token) return;
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await getSellerRfqs({}, token);
+      if (res.error) {
+        setError(res.error.message);
+      } else {
+        setItems(res.data.data.map(adaptRfqToViewModel));
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load RFQs");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Load Data
   useEffect(() => {
-    async function loadData() {
-      if (!token) return;
-      try {
-        setLoading(true);
-        setError(null);
-        const res = await getSellerRfqs({}, token);
-        if (res.error) {
-          setError(res.error.message);
-        } else {
-          setItems(res.data.data.map(adaptRfqToViewModel));
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load RFQs");
-      } finally {
-        setLoading(false);
-      }
-    }
     loadData();
   }, [token]);
 
@@ -309,7 +325,11 @@ export default function RfqListPage() {
               />
             </svg>
           </div>
+          <label htmlFor="rfq-search" className="sr-only">
+            Product naam ya segment se search karein
+          </label>
           <input
+            id="rfq-search"
             type="text"
             className="block w-full pl-9 pr-3 py-2 border border-neutral-300 rounded-md leading-5 bg-surface-base placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-500 sm:text-sm"
             placeholder="Product naam ya segment search karein..."
@@ -352,6 +372,14 @@ export default function RfqListPage() {
               <span className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-brand-600 border-2 border-surface-base rounded-full"></span>
             )}
           </button>
+          <div className="hidden sm:block">
+            <ColumnCustomizer
+              columns={RFQ_COLUMNS}
+              visibleColumnIds={columnCust.visibleColumnIds}
+              onToggle={columnCust.toggleColumn}
+              onReset={columnCust.resetColumns}
+            />
+          </div>
         </div>
       </div>
 
@@ -476,16 +504,19 @@ export default function RfqListPage() {
               canQuote={
                 permissions.canSubmitRfqQuote && !permissions.isSuspended
               }
+              visibleColumnIds={columnCust.visibleColumnIds}
             />
           </div>
           <div className="block md:hidden">
-            <RfqMobileList
-              items={filteredItems}
-              isLoading={loading}
-              canQuote={
-                permissions.canSubmitRfqQuote && !permissions.isSuspended
-              }
-            />
+            <PullToRefresh onRefresh={async () => { await loadData(); }}>
+              <RfqMobileList
+                items={filteredItems}
+                isLoading={loading}
+                canQuote={
+                  permissions.canSubmitRfqQuote && !permissions.isSuspended
+                }
+              />
+            </PullToRefresh>
           </div>
         </>
       ) : (

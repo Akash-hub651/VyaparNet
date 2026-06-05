@@ -3,6 +3,7 @@ import { Download, PackageCheck, Truck } from 'lucide-react';
 import { useSellerPermissions } from '../../../lib/hooks/useSellerPermissions';
 import { OrderPreviewDto, confirmOrder } from '../../../lib/api/orders.client';
 import { useToast } from '../../../components/ui/Toast';
+import { useAuth } from '../../../app/contexts/auth.context';
 
 export interface BulkActionBarProps {
   selectedCount: number;
@@ -23,6 +24,7 @@ export function BulkActionBar({
 }: BulkActionBarProps) {
   const perms = useSellerPermissions();
   const { addToast } = useToast();
+  const { accessToken } = useAuth();
   const firstActionRef = useRef<HTMLButtonElement>(null);
   
   const [isConfirming, setIsConfirming] = useState(false);
@@ -49,7 +51,7 @@ export function BulkActionBar({
 
     for (let i = 0; i < selectedIds.length; i++) {
       const id = selectedIds[i];
-      const res = await confirmOrder(id, 'mock-token');
+      const res = await confirmOrder(id, accessToken ?? '');
       if (!res.success) failCount++;
       else successCount++;
       

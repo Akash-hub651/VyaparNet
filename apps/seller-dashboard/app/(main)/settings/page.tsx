@@ -6,9 +6,9 @@ import { useSellerPermissions } from "../../../lib/hooks/useSellerPermissions";
 import { useHeader } from "../../contexts/header.context";
 import { useToast } from "../../../components/ui/Toast";
 import { ProfileTab } from "./components/ProfileTab";
-import { KYCTab } from './components/KYCTab';
-import { BankTab } from './components/BankTab';
-import { NotificationsTab } from './components/NotificationsTab';
+import { KYCTab } from "./components/KYCTab";
+import { BankTab } from "./components/BankTab";
+import { NotificationsTab } from "./components/NotificationsTab";
 
 type TabKey = "profile" | "kyc" | "bank" | "notifications";
 
@@ -37,7 +37,6 @@ export default function SettingsPage() {
 
   // Handle URL Hash for Tabs
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMounted(true);
 
     const handleHashChange = () => {
@@ -71,7 +70,10 @@ export default function SettingsPage() {
     window.history.replaceState(null, "", "#" + tabId);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLButtonElement>,
+    index: number,
+  ) => {
     let nextIndex = index;
     if (e.key === "ArrowRight") {
       nextIndex = (index + 1) % TABS.length;
@@ -82,7 +84,7 @@ export default function SettingsPage() {
     if (nextIndex !== index) {
       const nextTab = TABS[nextIndex];
       handleTabClick(nextTab.id);
-      
+
       // Move focus to the new tab
       setTimeout(() => {
         const btn = document.getElementById(`tab-${nextTab.id}`);
@@ -127,17 +129,17 @@ export default function SettingsPage() {
       </div>
 
       {/* ROW C: CONTENT AREA */}
-      <div className="max-w-2xl" role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`} tabIndex={0}>
+      <div
+        className="max-w-2xl"
+        role="tabpanel"
+        id={`tabpanel-${activeTab}`}
+        aria-labelledby={`tab-${activeTab}`}
+        tabIndex={0}
+      >
         {activeTab === "profile" && <ProfileTab />}
-        {activeTab === "kyc" && (
-          <KYCTab />
-        )}
-        {activeTab === "bank" && (
-          <BankTab />
-        )}
-        {activeTab === "notifications" && (
-          <NotificationsTab />
-        )}
+        {activeTab === "kyc" && <KYCTab />}
+        {activeTab === "bank" && <BankTab />}
+        {activeTab === "notifications" && <NotificationsTab />}
       </div>
     </div>
   );

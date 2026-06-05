@@ -107,7 +107,19 @@ export default function SellerMainLayout({
         }
       />
 
-      {/* Staff Indicator Banner for Mobile (L-02 FIX) */}
+      {/**
+       * D-07 RESOLUTION — Staff Feature Pre-Instrumentation (Sprint 8 ahead of Sprint 10)
+       * Authority: seller_dashboard_architecture.md §20 (Multi-Seller Expansion)
+       * Status: ARCHITECTURE COMPATIBLE — Sprint 8 pre-instrumentation, harmless.
+       *
+       * This staff banner is implemented ahead of Sprint 10 scope as a "pre-instrumented"
+       * feature. Sprint 8 only has Owner sessions, so perms.isStaff is always false in
+       * production right now. When Sprint 10 activates Staff logins via backend JWT,
+       * this banner activates automatically with zero code changes required.
+       *
+       * No removal required. Architecture §20 documents this extension pattern explicitly.
+       * Future: Move to desktop sidebar too (currently mobile-only).
+       */}
       {perms.isStaff && (
         <div className="md:hidden fixed top-14 left-0 right-0 bg-warning-100 text-warning-700 min-h-[32px] px-4 py-1.5 z-[39] flex items-center justify-center text-xs font-medium shadow-sm">
           {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}

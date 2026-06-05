@@ -43,6 +43,12 @@ export default function NotificationsPage() {
           // Only update global unread count if we are on 'Sab' or if the API returns it reliably
           if (res.data.unreadCount !== undefined) {
             setUnreadCount(res.data.unreadCount);
+            // D-05 FIX: Update sidebar notification badge count
+            window.dispatchEvent(
+              new CustomEvent('kpi-badges-updated', {
+                detail: { unreadNotifCount: res.data.unreadCount },
+              }),
+            );
           }
         }
         setIsLoading(false);

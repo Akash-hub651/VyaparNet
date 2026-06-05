@@ -493,8 +493,14 @@ export default function SellerSidebar(): React.JSX.Element {
     return localStorage.getItem(SIDEBAR_COLLAPSE_KEY) === "true";
   });
 
-  // Stub badge counts — will be populated from KPI API in Dashboard phase
-  const [badgeCounts] = useState<BadgeCounts>({
+  /**
+   * D-05 FIX — Sidebar KPI Badge Counts
+   * Authority: seller_dashboard_architecture.md §4 "Badge Count Strategy"
+   * Implementation: Event-driven. Dashboard page dispatches 'kpi-badges-updated'
+   * custom event when KPI data loads. Sidebar listens and updates without extra API calls.
+   * No prop drilling, no extra HTTP requests. Architecture-compliant.
+   */
+  const [badgeCounts, setBadgeCounts] = useState<BadgeCounts>({
     pendingOrderCount: 0,
     lowStockCount: 0,
     unreadNotifCount: 0,
@@ -510,6 +516,18 @@ export default function SellerSidebar(): React.JSX.Element {
     window.addEventListener("open-mobile-sidebar", handleOpenMobile);
     return () =>
       window.removeEventListener("open-mobile-sidebar", handleOpenMobile);
+  }, []);
+
+  // Listen for KPI badge updates from Dashboard page (D-05 Fix)
+  useEffect(() => {
+    const handleKpiBadges = (e: Event) => {
+      const detail = (e as CustomEvent<Partial<BadgeCounts>>).detail;
+      if (detail) {
+        setBadgeCounts((prev) => ({ ...prev, ...detail }));
+      }
+    };
+    window.addEventListener("kpi-badges-updated", handleKpiBadges);
+    return () => window.removeEventListener("kpi-badges-updated", handleKpiBadges);
   }, []);
 
   const toggleCollapse = useCallback(() => {

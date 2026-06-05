@@ -12,3 +12,4 @@ export * from './Toast';
 export * from './ErrorBanner';
 export * from './EmptyState';
 export * from './Modal';
+export * from './BottomSheet';

@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 import { RfqStatus } from "../../../../lib/api/rfq.client";
+import { useAuth } from "../../../contexts/auth.context";
+import { deriveSegmentOptions } from "../../../../lib/segments";
 
 export interface RfqFilters {
   segments: string[];
@@ -20,8 +22,13 @@ interface RfqFilterDrawerProps {
   onReset: () => void;
 }
 
-// Config-driven segments (hardcoded fallback for UI illustration, in real app comes from context or config)
-const SEGMENTS = ["TEXTILE", "SPARE_PARTS", "ELECTRONICS"];
+/**
+ * D-03 FIX — Segment Isolation
+ * Authority: seller_dashboard_architecture.md §21
+ * The hardcoded SEGMENTS constant is removed.
+ * Segment options are derived from backend user profile via useAuth().
+ * Sprint 10 TODO: Replace deriveSegmentOptions() internals with GET /api/v1/segments.
+ */
 const STATUSES: { value: RfqStatus; label: string }[] = [
   { value: "NOT_QUOTED", label: "Not Quoted" },
   { value: "QUOTED", label: "Quoted" },
@@ -36,6 +43,12 @@ export function RfqFilterDrawer({
   onReset,
 }: RfqFilterDrawerProps) {
   const [local, setLocal] = useState<RfqFilters>(filters);
+  const { user } = useAuth();
+
+  // Segment options derived from user profile — backend-driven, not hardcoded
+  const segmentOptions = deriveSegmentOptions(
+    user?.businesses?.[0]?.segment as string | undefined,
+  );
 
   // Sync when opened
   React.useEffect(() => {
@@ -100,19 +113,19 @@ export function RfqFilterDrawer({
               Segment
             </h3>
             <div className="space-y-2">
-              {SEGMENTS.map((seg) => (
+              {segmentOptions.map((opt) => (
                 <label
-                  key={seg}
+                  key={opt.value}
                   className="flex items-center gap-2 cursor-pointer"
                 >
                   <input
                     type="checkbox"
                     className="rounded border-neutral-300 text-brand-600 focus:ring-brand-500 w-4 h-4"
-                    checked={local.segments.includes(seg)}
-                    onChange={() => handleToggleSegment(seg)}
+                    checked={local.segments.includes(opt.value)}
+                    onChange={() => handleToggleSegment(opt.value)}
                   />
-                  <span className="text-sm text-text-primary capitalize">
-                    {seg.replace(/_/g, " ").toLowerCase()}
+                  <span className="text-sm text-text-primary">
+                    {opt.label}
                   </span>
                 </label>
               ))}

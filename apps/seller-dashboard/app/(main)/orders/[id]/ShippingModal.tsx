@@ -3,6 +3,7 @@ import { FormModal } from '../../../../components/ui/Modal';
 import { Button } from '../../../../components/ui/Button';
 import { useToast } from '../../../../components/ui/Toast';
 import { useSellerPermissions } from '../../../../lib/hooks/useSellerPermissions';
+import { useAuth } from '../../../../app/contexts/auth.context';
 import { confirmDispatchProof, getDispatchProofUploadUrl } from '../../../../lib/api/orders.client';
 
 export interface ShippingModalProps {
@@ -16,6 +17,7 @@ export interface ShippingModalProps {
 export function ShippingModal({ orderId, orderNumber, isOpen, onClose, onSuccess }: ShippingModalProps) {
   const { addToast } = useToast();
   const perms = useSellerPermissions();
+  const { accessToken } = useAuth();
   const [carrier, setCarrier] = useState('Delhivery');
   const [trackingNumber, setTrackingNumber] = useState('');
   const [shipDate, setShipDate] = useState(new Date().toISOString().split('T')[0]);
@@ -48,7 +50,7 @@ export function ShippingModal({ orderId, orderNumber, isOpen, onClose, onSuccess
     setIsSubmitting(true);
     try {
       // Step 1: Get S3 upload URL (mock)
-      const uploadUrlRes = await getDispatchProofUploadUrl(orderId, file.name, file.type, 'mock-token');
+      const uploadUrlRes = await getDispatchProofUploadUrl(orderId, file.name, file.type, accessToken ?? '');
       if (!uploadUrlRes.success) {
         throw new Error(uploadUrlRes.error || 'Upload URL nahi mili');
       }
@@ -56,15 +58,25 @@ export function ShippingModal({ orderId, orderNumber, isOpen, onClose, onSuccess
         throw new Error('Upload URL response missing');
       }
 
-      // Step 2: Simulate actual file upload to S3 (in production this would be a PUT to uploadUrlRes.data.uploadUrl)
-      await new Promise(resolve => setTimeout(resolve, 800)); 
+      // Step 2: Upload file to S3 using the presigned PUT URL — MEDIUM-BL2 FIX
+      // This is the actual upload; no simulation or mock.
+      const uploadResponse = await fetch(uploadUrlRes.data.uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+        },
+      });
+      if (!uploadResponse.ok) {
+        throw new Error(`File upload fail ho gaya (${uploadResponse.status}). Dobara try karein.`);
+      }
 
       // Step 3: Confirm dispatch proof and ship order
       const confirmRes = await confirmDispatchProof(
         orderId, 
         uploadUrlRes.data.key, 
         { carrier, trackingNumber, shipDate }, 
-        'mock-token'
+        accessToken ?? ''
       );
 
       if (!confirmRes.success) {
@@ -74,8 +86,8 @@ export function ShippingModal({ orderId, orderNumber, isOpen, onClose, onSuccess
       addToast({ variant: 'success', message: `${orderNumber} ship mark ho gaya!` });
       onSuccess();
       onClose();
-    } catch (err: any) {
-      addToast({ variant: 'error', message: err.message || 'Kuch galat ho gaya. Phir try karein.' });
+    } catch (err: unknown) {
+      addToast({ variant: 'error', message: err instanceof Error ? err.message : 'Kuch galat ho gaya. Phir try karein.' });
     } finally {
       setIsSubmitting(false);
     }

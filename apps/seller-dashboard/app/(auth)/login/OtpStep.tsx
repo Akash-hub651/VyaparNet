@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * OtpStep — apps/seller-dashboard/app/(auth)/login/OtpStep.tsx
@@ -16,13 +16,13 @@
  * - Success: green flash on all boxes → redirect
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { OtpInput, type OtpInputHandle } from './OtpInput';
-import { Button } from '../../../components/ui/Button';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { OtpInput, type OtpInputHandle } from "./OtpInput";
+import { Button } from "../../../components/ui/Button";
 
 export interface OtpStepProps {
-  phoneNumber: string;       // Full number with +91 (masked for display)
-  expiresIn: number;         // OTP TTL in seconds from server
+  phoneNumber: string; // Full number with +91 (masked for display)
+  expiresIn: number; // OTP TTL in seconds from server
   onSuccess: () => void;
   onBack: () => void;
   onVerifyOtp: (otp: string) => Promise<{
@@ -48,7 +48,7 @@ export function OtpStep({
   onVerifyOtp,
   onResendOtp,
 }: OtpStepProps): React.JSX.Element {
-  const [otp, setOtp] = useState('');
+  const [otp, setOtp] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,7 +66,7 @@ export function OtpStep({
 
   /* ── OTP EXPIRY TIMER ─────────────────────────────────────── */
   // startTimer: clear old interval, set new countdown
-  const startTimer = useCallback((_seconds: number) => {
+  const startTimer = useCallback(() => {
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     timerIntervalRef.current = setInterval(() => {
       setSecondsLeft((prev) => {
@@ -85,61 +85,66 @@ export function OtpStep({
     return () => {
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     };
-  // startTimer is stable (useCallback with no deps), expiresIn is a mount-time prop
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // startTimer is stable (useCallback with no deps), expiresIn is a mount-time prop
   }, []);
 
   const isExpired = secondsLeft === 0;
   const canResend = isExpired && !isVerifying;
 
-  const timerMM = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
-  const timerSS = String(secondsLeft % 60).padStart(2, '0');
+  const timerMM = String(Math.floor(secondsLeft / 60)).padStart(2, "0");
+  const timerSS = String(secondsLeft % 60).padStart(2, "0");
 
   // Timer color logic — §34.4
   function getTimerClass(): string {
-    if (secondsLeft < 10) return 'text-error-700 font-semibold';
-    if (secondsLeft < 60) return 'text-warning-700';
-    return 'text-text-secondary';
+    if (secondsLeft < 10) return "text-error-700 font-semibold";
+    if (secondsLeft < 60) return "text-warning-700";
+    return "text-text-secondary";
   }
 
   /* ── OTP VERIFY ───────────────────────────────────────────── */
-  const handleVerify = useCallback(async (otpValue: string) => {
-    if (otpValue.length !== 6 || isVerifying) return;
+  const handleVerify = useCallback(
+    async (otpValue: string) => {
+      if (otpValue.length !== 6 || isVerifying) return;
 
-    // Announce for screen readers before auto-submit — §34.11
-    if (ariaLiveRef.current) {
-      ariaLiveRef.current.textContent = 'OTP submit ho raha hai...';
-    }
-
-    setIsVerifying(true);
-    setError(null);
-
-    const result = await onVerifyOtp(otpValue);
-
-    if (!result.success) {
-      setIsVerifying(false);
-
-      // Error state: shake + clear boxes — §34.7
-      setError(result.error ?? 'OTP galat hai. Dobara check karein.');
-      setOtp('');
-      // Clear boxes and refocus
-      setTimeout(() => {
-        otpRef.current?.clear();
-      }, 50);
-
-      // If rate limited / locked
-      if (result.code === 'RATE_LIMITED' || result.code === 'ACCOUNT_LOCKED') {
-        // Error already shown via error state
+      // Announce for screen readers before auto-submit — §34.11
+      if (ariaLiveRef.current) {
+        ariaLiveRef.current.textContent = "OTP submit ho raha hai...";
       }
-      return;
-    }
 
-    // Success flash — §34.6: brief green flash on all boxes
-    setSuccessFlash(true);
-    setTimeout(() => {
-      onSuccess();
-    }, 300);
-  }, [isVerifying, onVerifyOtp, onSuccess]);
+      setIsVerifying(true);
+      setError(null);
+
+      const result = await onVerifyOtp(otpValue);
+
+      if (!result.success) {
+        setIsVerifying(false);
+
+        // Error state: shake + clear boxes — §34.7
+        setError(result.error ?? "OTP galat hai. Dobara check karein.");
+        setOtp("");
+        // Clear boxes and refocus
+        setTimeout(() => {
+          otpRef.current?.clear();
+        }, 50);
+
+        // If rate limited / locked
+        if (
+          result.code === "RATE_LIMITED" ||
+          result.code === "ACCOUNT_LOCKED"
+        ) {
+          // Error already shown via error state
+        }
+        return;
+      }
+
+      // Success flash — §34.6: brief green flash on all boxes
+      setSuccessFlash(true);
+      setTimeout(() => {
+        onSuccess();
+      }, 300);
+    },
+    [isVerifying, onVerifyOtp, onSuccess],
+  );
 
   /* ── RESEND OTP ───────────────────────────────────────────── */
   async function handleResend() {
@@ -153,16 +158,16 @@ export function OtpStep({
     setIsResending(false);
 
     if (!result.success) {
-      setError(result.error ?? 'OTP nahi bhej paye. Dobara try karein.');
+      setError(result.error ?? "OTP nahi bhej paye. Dobara try karein.");
       return;
     }
 
     // Reset timer with new expiresIn
     setSecondsLeft(result.expiresIn ?? 300);
     startTimer(result.expiresIn ?? 300);
-    setOtp('');
+    setOtp("");
     otpRef.current?.clear();
-    setResendMessage('Naya OTP bheja gaya ✓');
+    setResendMessage("Naya OTP bheja gaya ✓");
     // Clear resend success message after 3s
     setTimeout(() => setResendMessage(null), 3000);
   }
@@ -179,8 +184,10 @@ export function OtpStep({
       {/* ── CONTEXT BANNER — §34.4 ─────────────────────────── */}
       <div className="flex items-center justify-between mb-5">
         <p className="text-sm text-text-secondary">
-          OTP bheja gaya{' '}
-          <span className="font-semibold text-text-primary">{displayPhone}</span>
+          OTP bheja gaya{" "}
+          <span className="font-semibold text-text-primary">
+            {displayPhone}
+          </span>
         </p>
         <button
           type="button"
@@ -223,12 +230,14 @@ export function OtpStep({
           disabled={isVerifying || isExpired}
           hasError={!!error}
           className={[
-            'justify-center',
+            "justify-center",
             // Success flash: green override — §34.6
-            successFlash ? '[&_input]:bg-success-100 [&_input]:border-success-500' : '',
+            successFlash
+              ? "[&_input]:bg-success-100 [&_input]:border-success-500"
+              : "",
             // Error shake animation — §34.7
-            error ? 'animate-[shake_200ms_ease-in-out]' : '',
-          ].join(' ')}
+            error ? "animate-[shake_200ms_ease-in-out]" : "",
+          ].join(" ")}
         />
       </div>
 
@@ -240,10 +249,10 @@ export function OtpStep({
             aria-live="polite"
             aria-atomic="true"
           >
-            OTP{' '}
+            OTP{" "}
             <span className="font-mono font-semibold">
               {timerMM}:{timerSS}
-            </span>{' '}
+            </span>{" "}
             mein expire hoga
           </p>
         ) : (
@@ -263,9 +272,13 @@ export function OtpStep({
         disabled={otp.length !== 6 || isExpired}
         className="h-11 mb-4"
         onClick={() => void handleVerify(otp)}
-        aria-label={isVerifying ? 'OTP verify ho raha hai, please wait' : 'OTP Verify Karein'}
+        aria-label={
+          isVerifying
+            ? "OTP verify ho raha hai, please wait"
+            : "OTP Verify Karein"
+        }
       >
-        {isVerifying ? 'Verify ho raha hai...' : 'Verify Karein'}
+        {isVerifying ? "Verify ho raha hai..." : "Verify Karein"}
       </Button>
 
       {/* ── RESEND LINK — §34.4 ─────────────────────────────── */}
@@ -273,8 +286,10 @@ export function OtpStep({
         {!isExpired ? (
           // Timer active — non-clickable, muted text
           <p className="text-sm text-text-muted">
-            OTP nahi mila?{' '}
-            <span className="font-mono">{timerMM}:{timerSS}</span>{' '}
+            OTP nahi mila?{" "}
+            <span className="font-mono">
+              {timerMM}:{timerSS}
+            </span>{" "}
             baad resend karein
           </p>
         ) : (
@@ -286,7 +301,9 @@ export function OtpStep({
             className="text-sm text-brand-600 font-medium hover:text-brand-700 underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1 rounded disabled:opacity-50"
             aria-label="Naya OTP bhejein"
           >
-            {isResending ? 'OTP bhej rahe hain...' : 'OTP nahi mila? Dobara bhejein'}
+            {isResending
+              ? "OTP bhej rahe hain..."
+              : "OTP nahi mila? Dobara bhejein"}
           </button>
         )}
       </div>

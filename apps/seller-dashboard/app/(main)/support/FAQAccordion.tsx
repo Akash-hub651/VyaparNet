@@ -19,7 +19,17 @@ export interface FAQSectionData {
 // --- Icons ---
 function ChevronDownIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      className={className}
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <polyline points="6 9 12 15 18 9" />
     </svg>
   );
@@ -27,7 +37,17 @@ function ChevronDownIcon({ className }: { className?: string }) {
 
 function PlusIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      className={className}
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <line x1="12" y1="5" x2="12" y2="19" />
       <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
@@ -36,7 +56,17 @@ function PlusIcon({ className }: { className?: string }) {
 
 function XIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      className={className}
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <line x1="18" y1="6" x2="6" y2="18" />
       <line x1="6" y1="6" x2="18" y2="18" />
     </svg>
@@ -45,7 +75,17 @@ function XIcon({ className }: { className?: string }) {
 
 function HelpCircleIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      className={className}
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <circle cx="12" cy="12" r="10" />
       <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
       <line x1="12" y1="17" x2="12.01" y2="17" />
@@ -117,14 +157,20 @@ function FAQSection({
     if (isOpen && headerRef.current) {
       // Small timeout to allow max-height transition to start
       setTimeout(() => {
-        headerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        headerRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
         headerRef.current?.focus();
       }, 50);
     }
   }, [isOpen]);
 
   return (
-    <div id={`faq-section-${section.id}`} className="border border-border-default rounded-xl overflow-hidden mb-4 bg-surface-card shadow-1">
+    <div
+      id={`faq-section-${section.id}`}
+      className="border border-border-default rounded-xl overflow-hidden mb-4 bg-surface-card shadow-1"
+    >
       <h2 className="m-0">
         <button
           ref={headerRef}
@@ -141,7 +187,8 @@ function FAQSection({
               {section.title}
             </span>
             <span className="text-xs text-text-muted ml-2 bg-surface-hover px-2 py-0.5 rounded-full">
-              {section.items.length} {section.items.length === 1 ? 'item' : 'items'}
+              {section.items.length}{" "}
+              {section.items.length === 1 ? "item" : "items"}
             </span>
           </div>
           <ChevronDownIcon
@@ -172,13 +219,18 @@ function FAQSection({
 }
 
 // --- Main Component ---
-export function FAQAccordion({ sections, targetSectionId }: { sections: FAQSectionData[], targetSectionId?: string | null }) {
+export function FAQAccordion({
+  sections,
+  targetSectionId,
+}: {
+  sections: FAQSectionData[];
+  targetSectionId?: string | null;
+}) {
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 
   // When targetSectionId changes (e.g. via QuickHelpCard click), open it
   useEffect(() => {
     if (targetSectionId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setOpenSections((prev) => ({
         ...prev,
         [targetSectionId]: true,

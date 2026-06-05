@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
+import { useAuth } from '../../../app/contexts/auth.context';
+import { deriveSegmentOptions } from '../../../lib/segments';
 
 interface ProductFilterDrawerProps {
   isOpen: boolean;
@@ -9,6 +11,18 @@ interface ProductFilterDrawerProps {
 
 export function ProductFilterDrawer({ isOpen, onClose }: ProductFilterDrawerProps): React.JSX.Element | null {
   const containerRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+
+  /**
+   * D-03 FIX — Segment Isolation
+   * Authority: seller_dashboard_architecture.md §21
+   * Segment options derived from user.businesses[0].segment (backend-driven).
+   * Adding a new segment requires ZERO changes to this component.
+   * Sprint 10 TODO: Replace with GET /api/v1/segments when endpoint is live.
+   */
+  const segmentOptions = deriveSegmentOptions(
+    user?.businesses?.[0]?.segment as string | undefined,
+  );
 
   // Close on Escape
   useEffect(() => {
@@ -81,8 +95,9 @@ export function ProductFilterDrawer({ isOpen, onClose }: ProductFilterDrawerProp
             <h3 className="text-sm font-semibold text-text-primary mb-3">Segment</h3>
             <select className="w-full px-3 py-2 text-sm border border-border-default rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 bg-surface-default min-h-[44px]">
               <option value="">All Segments</option>
-              <option value="TEXTILE">Textile</option>
-              <option value="SPARE_PARTS">Spare Parts</option>
+              {segmentOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
             </select>
           </div>
 

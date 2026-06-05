@@ -8,8 +8,21 @@ import { getSellerInventory, InventoryViewModel, adaptInventoryToViewModel } fro
 import { useAuth } from '../../contexts/auth.context';
 import { InventoryTable } from './components/InventoryTable';
 import { InventoryMobileList } from './components/InventoryMobileList';
+import { PullToRefresh } from '../../../components/ui/PullToRefresh';
 import { StockUpdateModal } from './components/StockUpdateModal';
 import { BulkStockUpdateModal } from './components/BulkStockUpdateModal';
+import { useColumnCustomization, ColumnDef } from '../../../components/hooks/useColumnCustomization';
+import { ColumnCustomizer } from '../../../components/ui/ColumnCustomizer';
+
+const INVENTORY_COLUMNS: ColumnDef[] = [
+  { id: 'product', label: 'Product', isMandatory: true },
+  { id: 'segment', label: 'Segment' },
+  { id: 'stock', label: 'Current Stock' },
+  { id: 'low_stock', label: 'Low Stock Threshold' },
+  { id: 'price', label: 'Price' },
+  { id: 'last_updated', label: 'Last Updated' },
+  { id: 'actions', label: 'Actions', isMandatory: true },
+];
 
 type FilterStatus = 'ALL' | 'LOW_STOCK' | 'OUT_OF_STOCK';
 
@@ -32,6 +45,8 @@ export default function SellerInventoryPage() {
   // Modals
   const [updateModalProduct, setUpdateModalProduct] = useState<InventoryViewModel | null>(null);
   const [showBulkModal, setShowBulkModal] = useState(false);
+
+  const columnCust = useColumnCustomization("inventory", INVENTORY_COLUMNS);
 
   useEffect(() => {
     setTitle('Inventory');
@@ -202,7 +217,11 @@ export default function SellerInventoryPage() {
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <span aria-hidden="true">🔍</span>
             </div>
+            <label htmlFor="inventory-search" className="sr-only">
+              Product naam ya SKU se search karein
+            </label>
             <input
+              id="inventory-search"
               type="text"
               placeholder="Product naam ya SKU..."
               value={searchQuery}
@@ -227,12 +246,30 @@ export default function SellerInventoryPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button className="px-3 py-2 text-sm font-medium text-text-secondary border border-neutral-200 rounded-lg bg-surface-card hover:bg-neutral-50 transition-colors">
+          {/* LOW-A3 FIX: Sort/Filter buttons have aria-labels.
+               Sprint 8 scope: these are visual placeholders; wiring is Sprint 9. */}
+          <button
+            aria-label="Inventory sort karein"
+            title="Sort inventory"
+            className="px-3 py-2 text-sm font-medium text-text-secondary border border-neutral-200 rounded-lg bg-surface-card hover:bg-neutral-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+          >
             Sort ▾
           </button>
-          <button className="px-3 py-2 text-sm font-medium text-text-secondary border border-neutral-200 rounded-lg bg-surface-card hover:bg-neutral-50 transition-colors">
+          <button
+            aria-label="Inventory filter karein"
+            title="Filter inventory"
+            className="px-3 py-2 text-sm font-medium text-text-secondary border border-neutral-200 rounded-lg bg-surface-card hover:bg-neutral-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+          >
             Filter ≡
           </button>
+          <div className="hidden sm:block">
+            <ColumnCustomizer
+              columns={INVENTORY_COLUMNS}
+              visibleColumnIds={columnCust.visibleColumnIds}
+              onToggle={columnCust.toggleColumn}
+              onReset={columnCust.resetColumns}
+            />
+          </div>
         </div>
       </div>
 
@@ -246,14 +283,17 @@ export default function SellerInventoryPage() {
           onUpdateStock={setUpdateModalProduct}
           isLoading={loading}
           hasAnyItems={items.length > 0}
+          visibleColumnIds={columnCust.visibleColumnIds}
         />
       </div>
       <div className="md:hidden">
-        <InventoryMobileList
-          items={filteredItems}
-          isLoading={loading}
-          onUpdateStock={setUpdateModalProduct}
-        />
+        <PullToRefresh onRefresh={async () => { await loadData(); }}>
+          <InventoryMobileList
+            items={filteredItems}
+            isLoading={loading}
+            onUpdateStock={setUpdateModalProduct}
+          />
+        </PullToRefresh>
       </div>
 
       {/* MODALS */}

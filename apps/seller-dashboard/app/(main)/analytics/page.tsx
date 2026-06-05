@@ -68,7 +68,12 @@ export default function AnalyticsPage() {
   if (period === "custom") periodLabel = "Custom Range";
 
   useEffect(() => {
-    setTitle("Analytics");
+    /**
+     * D-04 FIX — Analytics Title Drift
+     * Authority: seller_dashboard_architecture.md §4 (ARCH-REV-SD-18 RESOLVED)
+     * Sidebar label: "Performance" — page header must match.
+     */
+    setTitle("Performance");
   }, [setTitle]);
 
   // Auth & Permissions (Staff block)
@@ -135,16 +140,29 @@ export default function AnalyticsPage() {
     };
   }, [accessToken, from, to, period]);
 
-  // Helper for trend display
+  // LOW-MS4 FIX: Trend display.
+  // INTEGRATION PENDING: Backend needs to return historical delta (e.g. vs previous period).
+  // Until historical delta is available, show neutral "No prev data" instead of
+  // a fabricated positive green arrow that misleads sellers.
   const renderTrend = (value: number | undefined) => {
-    // Dummy trend since we don't have historical delta in summary object yet
-    const val = value || 0;
-    if (val === 0)
+    const val = value ?? 0;
+    if (val === 0) {
+      // No historical delta — show neutral state, not false positivity
       return (
-        <span className="text-xs text-text-secondary">No previous data</span>
+        <span className="text-xs text-text-muted">
+          — prev data nahi
+        </span>
       );
+    }
+    const isPositive = val > 0;
     return (
-      <span className="text-xs text-success-700 bg-success-50 px-1.5 py-0.5 rounded flex items-center gap-0.5 font-medium">
+      <span
+        className={`text-xs px-1.5 py-0.5 rounded flex items-center gap-0.5 font-medium ${
+          isPositive
+            ? 'text-success-700 bg-success-50'
+            : 'text-error-700 bg-error-50'
+        }`}
+      >
         <svg
           width="10"
           height="10"
@@ -154,10 +172,11 @@ export default function AnalyticsPage() {
           strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
+          aria-hidden="true"
         >
-          <polyline points="18 15 12 9 6 15" />
+          <polyline points={isPositive ? '18 15 12 9 6 15' : '6 9 12 15 18 9'} />
         </svg>
-        {val}%
+        {Math.abs(val)}%
       </span>
     );
   };
@@ -169,7 +188,7 @@ export default function AnalyticsPage() {
       {/* ROW A: PAGE HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h1 className="text-xl md:text-2xl font-bold text-text-primary">
-          Analytics
+          Performance
         </h1>
         <div className="self-start sm:self-auto order-first sm:order-last">
           <DateRangeSelector />

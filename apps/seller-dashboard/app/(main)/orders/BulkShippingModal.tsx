@@ -4,6 +4,7 @@ import { ErrorBanner } from '../../../components/ui/ErrorBanner';
 import { OrderPreviewDto, shipOrder } from '../../../lib/api/orders.client';
 import { useToast } from '../../../components/ui/Toast';
 import { ChevronDown, ChevronRight, CheckCircle2, XCircle } from 'lucide-react';
+import { useAuth } from '../../../app/contexts/auth.context';
 
 export interface BulkShippingModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export function BulkShippingModal({
   onSuccess
 }: BulkShippingModalProps) {
   const { addToast } = useToast();
+  const { accessToken } = useAuth();
   const selectedOrders = orders.filter(o => selectedIds.includes(o.id));
   
   const [mode, setMode] = useState<'SINGLE' | 'PER_ORDER'>('SINGLE');
@@ -78,7 +80,7 @@ export function BulkShippingModal({
         carrier: finalCarrier,
         trackingNumber,
         shipDate
-      }, 'mock-token');
+      }, accessToken ?? '');
 
       if (!res.success) {
         failCount++;
@@ -184,7 +186,10 @@ export function BulkShippingModal({
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-1">Tracking number</label>
+              <div className="flex justify-between mb-1">
+                <label className="block text-sm font-medium text-text-primary">Tracking number</label>
+                <span className="text-xs text-text-muted">{singleTracking.length}/60</span>
+              </div>
               <input 
                 type="text"
                 value={singleTracking}

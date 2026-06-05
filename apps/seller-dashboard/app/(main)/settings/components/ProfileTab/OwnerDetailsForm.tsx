@@ -21,9 +21,11 @@ export function OwnerDetailsForm() {
     if (user) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const safeUser = user as any;
-      const name = safeUser.fullName || `${safeUser.firstName || ''} ${safeUser.lastName || ''}`.trim() || '';
+      const name =
+        safeUser.fullName ||
+        `${safeUser.firstName || ""} ${safeUser.lastName || ""}`.trim() ||
+        "";
 
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         ownerName: name,
         email: user.email || "",
@@ -115,12 +117,17 @@ export function OwnerDetailsForm() {
     <div className="space-y-5">
       {/* FIELD: Owner Name */}
       <div>
-        <label
-          htmlFor="ownerName"
-          className="block text-sm font-medium text-text-primary mb-1"
-        >
-          Owner ka pura naam
-        </label>
+        <div className="flex justify-between mb-1">
+          <label
+            htmlFor="ownerName"
+            className="block text-sm font-medium text-text-primary"
+          >
+            Owner ka pura naam
+          </label>
+          <span className="text-xs text-text-muted">
+            {formData.ownerName.length}/80
+          </span>
+        </div>
         <input
           id="ownerName"
           name="ownerName"

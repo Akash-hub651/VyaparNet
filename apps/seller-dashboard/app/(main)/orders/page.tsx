@@ -21,9 +21,21 @@ import {
 } from "lucide-react";
 import { OrdersTable } from "./OrdersTable";
 import { OrdersMobileList } from "./components/OrdersMobileList";
+import { PullToRefresh } from "../../../components/ui/PullToRefresh";
 import { BulkActionBar } from "./BulkActionBar";
 import { BulkShippingModal } from "./BulkShippingModal";
-import { FilterDrawer } from "./FilterDrawer";
+import { FilterDrawer, OrderFilterState, EMPTY_ORDER_FILTER } from "./FilterDrawer";
+import { useColumnCustomization, ColumnDef } from "../../../components/hooks/useColumnCustomization";
+import { ColumnCustomizer } from "../../../components/ui/ColumnCustomizer";
+
+const ORDER_COLUMNS: ColumnDef[] = [
+  { id: 'order_number', label: 'Order #', isMandatory: true },
+  { id: 'amount', label: 'Amount' },
+  { id: 'status', label: 'Status' },
+  { id: 'created_at', label: 'Age' },
+  { id: 'segment', label: 'Segment' },
+  { id: 'actions', label: 'Actions', isMandatory: true },
+];
 import { MobileOrderSearchOverlay } from "./components/MobileOrderSearchOverlay";
 
 const STATUS_TABS: { label: string; value: OrderStatus | "ALL" }[] = [
@@ -74,6 +86,12 @@ export default function SellerOrdersPage() {
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const [isBulkShipModalOpen, setIsBulkShipModalOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+
+  // Filter Drawer state — MEDIUM-BL1 FIX: active filters are lifted here and
+  // passed to getOrders() API params
+  const [activeOrderFilters, setActiveOrderFilters] = useState<OrderFilterState>(EMPTY_ORDER_FILTER);
+
+  const columnCust = useColumnCustomization("orders", ORDER_COLUMNS);
   const [isAutoRefreshOn, setIsAutoRefreshOn] = useState(true);
   const [newOrdersToast, setNewOrdersToast] = useState<{
     count: number;
@@ -84,6 +102,7 @@ export default function SellerOrdersPage() {
     setStatusFilter("ALL");
     setSearchQuery("");
     setDebouncedSearch("");
+    setActiveOrderFilters(EMPTY_ORDER_FILTER);
   }, []);
 
   // Search Debounce
@@ -453,6 +472,12 @@ export default function SellerOrdersPage() {
               <SlidersHorizontal size={16} />
               Filter
             </button>
+            <ColumnCustomizer 
+              columns={ORDER_COLUMNS}
+              visibleColumnIds={columnCust.visibleColumnIds}
+              onToggle={columnCust.toggleColumn}
+              onReset={columnCust.resetColumns}
+            />
             <div className="flex items-center gap-2 border-l border-border-default pl-3">
               <button
                 onClick={() => setIsAutoRefreshOn(!isAutoRefreshOn)}
@@ -507,33 +532,36 @@ export default function SellerOrdersPage() {
             }}
             onActionSuccess={() => fetchOrders(false)}
             onClearFilters={handleClearFilters}
+            visibleColumnIds={columnCust.visibleColumnIds}
           />
         </div>
 
         {/* Mobile View */}
         <div className="flex md:hidden flex-col h-full overflow-visible">
-          <OrdersMobileList
-            orders={orders}
-            isLoading={isLoading}
-            actionLoadingId={actionLoadingId}
-            onActionClick={async (id, action) => {
-              // Implementation of mobile actions matching desktop ActionPanel but locally for list
-              if (action === "SHIP") {
-                setSelectedOrderIds(new Set([id]));
-                setIsBulkShipModalOpen(true);
-                return;
-              }
-              // Other actions would be API calls... here we simulate optimistic success
-              setActionLoadingId(id);
-              try {
-                // await updateOrderStatus(...)
-                await new Promise((r) => setTimeout(r, 800));
-                handleManualRefresh();
-              } finally {
-                setActionLoadingId(null);
-              }
-            }}
-          />
+          <PullToRefresh onRefresh={async () => { await fetchOrders(true); }}>
+            <OrdersMobileList
+              orders={orders}
+              isLoading={isLoading}
+              actionLoadingId={actionLoadingId}
+              onActionClick={async (id, action) => {
+                if (action === "SHIP") {
+                  setSelectedOrderIds(new Set([id]));
+                  setIsBulkShipModalOpen(true);
+                  return;
+                }
+                if (action === "CONFIRM" && accessToken) {
+                  setActionLoadingId(id);
+                  try {
+                    const { confirmOrder } = await import('../../../lib/api/orders.client');
+                    const res = await confirmOrder(id, accessToken);
+                    if (res.success) handleManualRefresh();
+                  } finally {
+                    setActionLoadingId(null);
+                  }
+                }
+              }}
+            />
+          </PullToRefresh>
         </div>
       </div>
 
@@ -580,9 +608,19 @@ export default function SellerOrdersPage() {
       )}
 
       {isFilterDrawerOpen && (
-        <FilterDrawer
+      <FilterDrawer
           isOpen={isFilterDrawerOpen}
           onClose={() => setIsFilterDrawerOpen(false)}
+          activeFilters={activeOrderFilters}
+          onApply={(filters) => {
+            setActiveOrderFilters(filters);
+            // Reset to ALL status tab when drawer filters are applied
+            // so the tab badge count doesn't conflict
+            if (filters.statuses.length > 0) setStatusFilter('ALL');
+          }}
+          onClear={() => {
+            setActiveOrderFilters(EMPTY_ORDER_FILTER);
+          }}
         />
       )}
 

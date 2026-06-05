@@ -13,6 +13,7 @@ interface InventoryTableProps {
   onUpdateStock: (item: InventoryViewModel) => void;
   isLoading?: boolean;
   hasAnyItems: boolean;
+  visibleColumnIds?: string[];
 }
 
 export function InventoryTable({
@@ -23,7 +24,10 @@ export function InventoryTable({
   onUpdateStock,
   isLoading = false,
   hasAnyItems,
+  visibleColumnIds = ['product', 'segment', 'stock', 'low_stock', 'price', 'last_updated', 'actions'],
 }: InventoryTableProps) {
+  const isColVisible = (id: string) => visibleColumnIds.includes(id);
+
   if (isLoading) {
     return (
       <div className="bg-surface-card rounded-xl shadow-1 overflow-hidden border border-neutral-200" aria-busy="true">
@@ -33,11 +37,11 @@ export function InventoryTable({
         {[...Array(5)].map((_, i) => (
           <div key={i} className="flex gap-4 p-4 border-b border-neutral-100 items-center">
             <div className="h-4 w-4 bg-neutral-200 animate-pulse rounded"></div>
-            <div className="h-10 w-10 bg-neutral-200 animate-pulse rounded-md"></div>
-            <div className="flex-1 space-y-2">
+            {isColVisible('product') && <div className="h-10 w-10 bg-neutral-200 animate-pulse rounded-md"></div>}
+            {isColVisible('product') && <div className="flex-1 space-y-2">
               <div className="h-4 w-1/3 bg-neutral-200 animate-pulse rounded"></div>
               <div className="h-3 w-1/4 bg-neutral-100 animate-pulse rounded"></div>
-            </div>
+            </div>}
             <div className="h-4 w-24 bg-neutral-200 animate-pulse rounded"></div>
           </div>
         ))}
@@ -91,13 +95,13 @@ export function InventoryTable({
                   aria-label="Select all rows"
                 />
               </th>
-              <th className="py-3 px-4 text-xs font-medium text-text-secondary uppercase tracking-wider">Product</th>
-              <th className="py-3 px-4 text-xs font-medium text-text-secondary uppercase tracking-wider">Segment</th>
-              <th className="py-3 px-4 text-xs font-medium text-text-secondary uppercase tracking-wider">Current Stock</th>
-              <th className="py-3 px-4 text-xs font-medium text-text-secondary uppercase tracking-wider">Low Stock Threshold</th>
-              <th className="py-3 px-4 text-xs font-medium text-text-secondary uppercase tracking-wider">Price</th>
-              <th className="py-3 px-4 text-xs font-medium text-text-secondary uppercase tracking-wider">Last Updated</th>
-              <th className="py-3 px-4 text-xs font-medium text-text-secondary uppercase tracking-wider text-right">Actions</th>
+              {isColVisible('product') && <th className="py-3 px-4 text-xs font-medium text-text-secondary uppercase tracking-wider">Product</th>}
+              {isColVisible('segment') && <th className="py-3 px-4 text-xs font-medium text-text-secondary uppercase tracking-wider">Segment</th>}
+              {isColVisible('stock') && <th className="py-3 px-4 text-xs font-medium text-text-secondary uppercase tracking-wider">Current Stock</th>}
+              {isColVisible('low_stock') && <th className="py-3 px-4 text-xs font-medium text-text-secondary uppercase tracking-wider">Low Stock Threshold</th>}
+              {isColVisible('price') && <th className="py-3 px-4 text-xs font-medium text-text-secondary uppercase tracking-wider">Price</th>}
+              {isColVisible('last_updated') && <th className="py-3 px-4 text-xs font-medium text-text-secondary uppercase tracking-wider">Last Updated</th>}
+              {isColVisible('actions') && <th className="py-3 px-4 text-xs font-medium text-text-secondary uppercase tracking-wider text-right">Actions</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
@@ -129,69 +133,83 @@ export function InventoryTable({
                       aria-label={`Select ${item.productName}`}
                     />
                   </td>
-                  <td className="py-3 px-4 align-top min-w-[200px]">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded bg-neutral-100 border border-neutral-200 overflow-hidden flex-shrink-0 relative">
-                        {item.productImage ? (
-                          <Image src={item.productImage} alt={item.productName} fill className="object-cover" sizes="40px" />
+                  {isColVisible('product') && (
+                    <td className="py-3 px-4 align-top min-w-[200px]">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded bg-neutral-100 border border-neutral-200 overflow-hidden flex-shrink-0 relative">
+                          {item.productImage ? (
+                            <Image src={item.productImage} alt={item.productName} fill className="object-cover" sizes="40px" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-neutral-400">
+                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-text-primary line-clamp-2">{item.productName}</p>
+                          <p className="text-xs text-text-muted mt-0.5 font-mono">{item.productSku}</p>
+                        </div>
+                      </div>
+                    </td>
+                  )}
+                  {isColVisible('segment') && (
+                    <td className="py-3 px-4 align-top whitespace-nowrap">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-800 border border-neutral-200">
+                        {item.segment.replace(/_/g, ' ')}
+                      </span>
+                    </td>
+                  )}
+                  {isColVisible('stock') && (
+                    <td className="py-3 px-4 align-top whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        {isOutOfStock ? (
+                           <div className="w-2 h-2 rounded-full bg-error-500" aria-label="Stock status: Out of stock" />
+                        ) : isLowStock ? (
+                           <div className="w-2 h-2 rounded-full bg-warning-500" aria-label={`Stock status: Low — ${item.quantity} units remaining`} />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-neutral-400">
-                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                          </div>
+                           <div className="w-2 h-2 rounded-full bg-success-500" aria-label={`Stock status: In stock — ${item.quantity} units`} />
+                        )}
+                        
+                        {isOutOfStock ? (
+                           <span className="text-sm font-bold text-error-700">Out of stock</span>
+                        ) : (
+                           <span className={`text-sm font-semibold ${isLowStock ? 'text-warning-800' : 'text-text-primary'}`}>
+                             {item.quantity.toLocaleString('en-IN')} <span className="font-normal text-text-secondary">{item.unit}</span>
+                           </span>
                         )}
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-text-primary line-clamp-2">{item.productName}</p>
-                        <p className="text-xs text-text-muted mt-0.5 font-mono">{item.productSku}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 align-top whitespace-nowrap">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-800 border border-neutral-200">
-                      {item.segment.replace(/_/g, ' ')}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 align-top whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      {isOutOfStock ? (
-                         <div className="w-2 h-2 rounded-full bg-error-500" aria-label="Stock status: Out of stock" />
-                      ) : isLowStock ? (
-                         <div className="w-2 h-2 rounded-full bg-warning-500" aria-label={`Stock status: Low — ${item.quantity} units remaining`} />
+                    </td>
+                  )}
+                  {isColVisible('low_stock') && (
+                    <td className="py-3 px-4 align-top whitespace-nowrap text-sm text-text-secondary">
+                      {item.lowStockThreshold > 0 ? (
+                        `${item.lowStockThreshold.toLocaleString('en-IN')} ${item.unit}`
                       ) : (
-                         <div className="w-2 h-2 rounded-full bg-success-500" aria-label={`Stock status: In stock — ${item.quantity} units`} />
+                        '—'
                       )}
-                      
-                      {isOutOfStock ? (
-                         <span className="text-sm font-bold text-error-700">Out of stock</span>
-                      ) : (
-                         <span className={`text-sm font-semibold ${isLowStock ? 'text-warning-800' : 'text-text-primary'}`}>
-                           {item.quantity.toLocaleString('en-IN')} <span className="font-normal text-text-secondary">{item.unit}</span>
-                         </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 align-top whitespace-nowrap text-sm text-text-secondary">
-                    {item.lowStockThreshold > 0 ? (
-                      `${item.lowStockThreshold.toLocaleString('en-IN')} ${item.unit}`
-                    ) : (
-                      '—'
-                    )}
-                  </td>
-                  <td className="py-3 px-4 align-top whitespace-nowrap font-mono text-sm text-text-primary">
-                    ₹{item.price.toLocaleString('en-IN')}/{item.unit.charAt(0)}
-                  </td>
-                  <td className="py-3 px-4 align-top whitespace-nowrap text-xs text-text-secondary">
-                    {formatDate(item.lastUpdated)}
-                  </td>
-                  <td className="py-3 px-4 align-top whitespace-nowrap text-right" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      type="button"
-                      onClick={() => onUpdateStock(item)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-md transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                    >
-                      <span>✏️</span> Stock Update
-                    </button>
-                  </td>
+                    </td>
+                  )}
+                  {isColVisible('price') && (
+                    <td className="py-3 px-4 align-top whitespace-nowrap font-mono text-sm text-text-primary">
+                      ₹{item.price.toLocaleString('en-IN')}/{item.unit.charAt(0)}
+                    </td>
+                  )}
+                  {isColVisible('last_updated') && (
+                    <td className="py-3 px-4 align-top whitespace-nowrap text-xs text-text-secondary">
+                      {formatDate(item.lastUpdated)}
+                    </td>
+                  )}
+                  {isColVisible('actions') && (
+                    <td className="py-3 px-4 align-top whitespace-nowrap text-right" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => onUpdateStock(item)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-md transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      >
+                        <span>✏️</span> Stock Update
+                      </button>
+                    </td>
+                  )}
                 </tr>
               );
             })}

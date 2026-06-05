@@ -27,6 +27,27 @@ export const DEFAULT_PAGE_LIMIT = 20;
 export const MAX_NEGOTIATION_ROUNDS = 3;
 
 /** Sidebar collapse localStorage key.
- *  Authority: architecture §4 — the ONLY permitted localStorage usage.
+ *  Authority: architecture §4 — approved localStorage usage.
  *  NEVER store auth data in localStorage. */
 export const SIDEBAR_COLLAPSE_KEY = 'seller-sidebar-collapsed';
+
+/**
+ * Column customization localStorage key pattern.
+ * MEDIUM-S2 FIX: Documented as an approved localStorage exception alongside sidebar key.
+ *
+ * Pattern: `seller-{moduleName}-columns-{businessId}`
+ * Example: `seller-orders-columns-biz_abc123`
+ *
+ * Rules:
+ * - Per-business (businessId scoped) — multi-seller safe
+ * - Stores only column visibility arrays (string[]) — no auth or PII data
+ * - XSS risk: NONE (no sensitive data)
+ * - Used by: useColumnCustomization hook (components/hooks/useColumnCustomization.ts)
+ * - Sprint 9: Migrate to GET/PUT /seller/preferences/columns for server persistence
+ */
+export const COLUMN_PREFS_KEY_PREFIX = 'seller';
+export const COLUMN_PREFS_KEY_SUFFIX = 'columns';
+/** Builds the full column prefs key: `seller-{module}-columns-{businessId}` */
+export function buildColumnPrefsKey(moduleName: string, businessId: string): string {
+  return `${COLUMN_PREFS_KEY_PREFIX}-${moduleName}-${COLUMN_PREFS_KEY_SUFFIX}-${businessId}`;
+}

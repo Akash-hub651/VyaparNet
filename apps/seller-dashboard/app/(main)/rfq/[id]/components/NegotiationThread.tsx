@@ -13,6 +13,7 @@ import {
   createToastHelpers,
 } from "../../../../../components/ui/Toast";
 import Link from "next/link";
+import { MAX_NEGOTIATION_ROUNDS } from "../../../../../lib/config";
 
 interface NegotiationThreadProps {
   rfq: RfqViewModel;
@@ -40,8 +41,8 @@ export function NegotiationThread({
     null,
   );
 
-  // Derive maximum rounds (placeholder configurable limit)
-  const MAX_ROUNDS = 3;
+  // LOW-MS3 FIX: Use MAX_NEGOTIATION_ROUNDS from lib/config.ts (not hardcoded).
+  // Authority: seller_dashboard_architecture.md §12 (ARCH-REV-SD-11 RESOLVED)
   const currentRound = Math.max(
     ...(rfq.negotiations || []).map((n) => n.round),
     1,
@@ -51,7 +52,7 @@ export function NegotiationThread({
   // Terminal state logic (Round 3 and buyer sent last message)
   const lastEvent = negotiations[negotiations.length - 1];
   const isTerminalState =
-    currentRound >= MAX_ROUNDS && lastEvent?.type === "BUYER_COUNTER";
+    currentRound >= MAX_NEGOTIATION_ROUNDS && lastEvent?.type === "BUYER_COUNTER";
 
   const handleAccept = async () => {
     setIsAccepting(true);
@@ -142,11 +143,17 @@ export function NegotiationThread({
         })}
       </div>
 
-      {actionError && (
-        <div className="bg-error-50 text-error-700 p-3 rounded text-sm border border-error-200">
-          {actionError}
-        </div>
-      )}
+      {/* LOW-A6 FIX: aria-live region announces action outcomes to screen readers */}
+      <div aria-live="polite" aria-atomic="true">
+        {actionError && (
+          <div
+            role="alert"
+            className="bg-error-50 text-error-700 p-3 rounded text-sm border border-error-200"
+          >
+            {actionError}
+          </div>
+        )}
+      </div>
 
       {isActionable &&
         !isTerminalState &&
