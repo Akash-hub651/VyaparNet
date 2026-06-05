@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * Seller Dashboard Main Layout — apps/seller-dashboard/app/(main)/layout.tsx
@@ -16,16 +16,20 @@
  * - Main: margin-left 224px + padding-top 64px (header clearance)
  */
 
-import React, { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '../contexts/auth.context';
-import SellerSidebar from '../../components/SellerSidebar';
-import SellerHeader from '../../components/SellerHeader';
-import { FullPageLoader } from '../../components/ui/Skeleton';
-import { SuspendedBanner } from '../../components/ui/ErrorBanner';
-import dynamic from 'next/dynamic';
+import React, { useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { useAuth } from "../contexts/auth.context";
+import SellerSidebar from "../../components/SellerSidebar";
+import SellerHeader from "../../components/SellerHeader";
+import { FullPageLoader } from "../../components/ui/Skeleton";
+import { SuspendedBanner } from "../../components/ui/ErrorBanner";
+import { SuspendedScreen } from "../../components/ui/ErrorScreens";
+import dynamic from "next/dynamic";
 
-const CommandPalette = dynamic(() => import('../../components/CommandPalette'), { ssr: false });
+const CommandPalette = dynamic(
+  () => import("../../components/CommandPalette"),
+  { ssr: false },
+);
 
 export default function SellerMainLayout({
   children,
@@ -39,28 +43,30 @@ export default function SellerMainLayout({
   // Authority: architecture §10 "Auth Guard — Main Layout"
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.replace('/login');
+      router.replace("/login");
     }
   }, [isLoading, isAuthenticated, router]);
+
+  const pathname = usePathname();
 
   // Command Palette global listener (Cmd+K / Ctrl+K and custom event)
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = React.useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         setIsCommandPaletteOpen(true);
       }
     };
     const handleCustomEvent = () => setIsCommandPaletteOpen(true);
 
-    document.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('open-command-palette', handleCustomEvent);
-    
+    document.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("open-command-palette", handleCustomEvent);
+
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('open-command-palette', handleCustomEvent);
+      document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("open-command-palette", handleCustomEvent);
     };
   }, []);
 
@@ -71,9 +77,10 @@ export default function SellerMainLayout({
 
   // Derive suspension status from user object
   // Authority: architecture §10 "SUSPENDED STATE (ARCH-REV-SD-13 RESOLVED)"
-  const isSuspended = (
-    (user as unknown as Record<string, Record<string, string>>)?.['business']?.['status'] === 'SUSPENDED'
-  );
+  const isSuspended =
+    (user as unknown as Record<string, Record<string, string>>)?.["business"]?.[
+      "status"
+    ] === "SUSPENDED";
 
   return (
     <div className="min-h-screen bg-surface-app">
@@ -82,9 +89,9 @@ export default function SellerMainLayout({
 
       {/* Global Command Palette */}
       {isCommandPaletteOpen && (
-        <CommandPalette 
-          isOpen={isCommandPaletteOpen} 
-          onClose={() => setIsCommandPaletteOpen(false)} 
+        <CommandPalette
+          isOpen={isCommandPaletteOpen}
+          onClose={() => setIsCommandPaletteOpen(false)}
         />
       )}
 
@@ -113,7 +120,11 @@ export default function SellerMainLayout({
 
         {/* Page content — max-width centered on very large screens */}
         <div className="max-w-page mx-auto p-6">
-          {children}
+          {isSuspended && !pathname.startsWith("/support") ? (
+            <SuspendedScreen />
+          ) : (
+            children
+          )}
         </div>
       </main>
     </div>

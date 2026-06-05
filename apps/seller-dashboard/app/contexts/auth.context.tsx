@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * AuthProvider — apps/seller-dashboard/app/contexts/auth.context.tsx
@@ -21,10 +21,11 @@ import React, {
   useEffect,
   useRef,
   type ReactNode,
-} from 'react';
-import type { UserProfileResponse, AuthTokensResponse } from '@vyaparnet/types';
+} from "react";
+import { useRouter } from "next/navigation";
+import type { UserProfileResponse, AuthTokensResponse } from "@vyaparnet/types";
 
-const API_BASE = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3003';
+const API_BASE = process.env["NEXT_PUBLIC_API_URL"] ?? "http://localhost:3003";
 
 /* ── CONTEXT TYPE ────────────────────────────────────────────── */
 interface AuthContextValue {
@@ -41,7 +42,11 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 /* ── PROVIDER ────────────────────────────────────────────────── */
-export function AuthProvider({ children }: { children: ReactNode }): React.JSX.Element {
+export function AuthProvider({
+  children,
+}: {
+  children: ReactNode;
+}): React.JSX.Element {
   const [user, setUser] = useState<UserProfileResponse | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
@@ -52,6 +57,8 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
   // Updated via useEffect (not during render) to satisfy lint rules
   const accessTokenRef = useRef<string | null>(null);
   const refreshTokenRef = useRef<string | null>(null);
+  const isLoggingOutRef = useRef(false);
+  const router = useRouter();
 
   useEffect(() => {
     accessTokenRef.current = accessToken;
@@ -70,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
       const res = await fetch(`${API_BASE}/api/v1/users/me`, {
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
       if (res.status === 401) {
@@ -81,7 +88,10 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
         return;
       }
       if (res.ok) {
-        const data = await res.json() as { success: true; data: UserProfileResponse };
+        const data = (await res.json()) as {
+          success: true;
+          data: UserProfileResponse;
+        };
         setUser(data.data);
       }
     } catch {
@@ -100,14 +110,16 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
     if (token) {
       try {
         await fetch(`${API_BASE}/api/v1/auth/logout`, {
-          method: 'POST',
+          method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({ refreshToken: refresh }),
         });
-      } catch { /* Fire-and-forget — always clear local state */ }
+      } catch {
+        /* Fire-and-forget — always clear local state */
+      }
     }
     setUser(null);
     setAccessToken(null);
@@ -118,18 +130,22 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
   // API client dispatches 'auth:401' when any request gets a 401 response.
   // This allows centralized session clearing without prop drilling.
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     function handleUnauthorized() {
-      void performLogout();
+      if (isLoggingOutRef.current) return;
+      isLoggingOutRef.current = true;
+
+      void performLogout().then(() => {
+        router.replace("/session-expired");
+      });
     }
-    window.addEventListener('auth:401', handleUnauthorized);
-    return () => window.removeEventListener('auth:401', handleUnauthorized);
-  // performLogout uses refs — stable, no dep needed
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    window.addEventListener("auth:401", handleUnauthorized);
+    return () => window.removeEventListener("auth:401", handleUnauthorized);
+  }, [router]);
 
   /* ── LOGIN ───────────────────────────────────────────────────── */
   function login(tokens: AuthTokensResponse): void {
+    isLoggingOutRef.current = false;
     setIsLoading(true); // hold loading until profile resolves
     setAccessToken(tokens.accessToken);
     setRefreshToken(tokens.refreshToken);
@@ -161,6 +177,6 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
 /* ── HOOK ────────────────────────────────────────────────────── */
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 }
