@@ -21,9 +21,54 @@ export const InventoryResponseSchema = z.object({
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   version: z.number(),
+  product: z.object({
+    id: z.string().optional(),
+    image: z.string().nullable().optional(),
+    sku: z.string().optional(),
+    unit: z.string().optional(),
+    price: z.number().optional(),
+    name: z.string().optional(),
+  }).optional(),
 });
 
 export type InventoryResponse = z.infer<typeof InventoryResponseSchema>;
+
+// Normalized view model for UI consumption
+export interface InventoryViewModel {
+  id: string;
+  productId: string;
+  productName: string;
+  productSku: string;
+  productImage?: string | null;
+  unit: string;
+  price: number;
+  businessId: string;
+  segment: string;
+  quantity: number;
+  lowStockThreshold: number;
+  isLowStock: boolean;
+  isOutOfStock: boolean;
+  lastUpdated: string;
+}
+
+export function adaptInventoryToViewModel(raw: InventoryResponse): InventoryViewModel {
+  return {
+    id: raw.id,
+    productId: raw.productId,
+    productName: raw.product?.name || raw.productName || 'Unknown Product',
+    productSku: raw.product?.sku || raw.productSlug || 'N/A',
+    productImage: raw.product?.image,
+    unit: raw.product?.unit || 'unit',
+    price: raw.product?.price || 0,
+    businessId: raw.businessId,
+    segment: raw.segment,
+    quantity: raw.quantity,
+    lowStockThreshold: raw.lowStockThreshold,
+    isLowStock: raw.quantity > 0 && raw.quantity <= raw.lowStockThreshold,
+    isOutOfStock: raw.quantity === 0,
+    lastUpdated: raw.updatedAt,
+  };
+}
 
 export const InventoryListResponseSchema = z.object({
   data: z.array(InventoryResponseSchema),
@@ -122,7 +167,7 @@ export async function getSellerInventory(
  */
 export async function updateSellerStock(
   productId: string,
-  dto: { quantity: number; lowStockThreshold: number; reason: string },
+  dto: { quantity: number; lowStockThreshold?: number; reason?: string },
   token: string,
 ): Promise<ApiResult<InventoryResponse>> {
   try {

@@ -1,568 +1,265 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { useHeader } from '../../contexts/header.context';
+import { useSellerPermissions } from '../../../lib/hooks/useSellerPermissions';
+import { ErrorBanner } from '../../../components/ui/ErrorBanner';
+import { getSellerInventory, InventoryViewModel, adaptInventoryToViewModel } from '../../../lib/api/inventory.client';
 import { useAuth } from '../../contexts/auth.context';
-import {
-  getSellerInventory,
-  updateSellerStock,
-  getMovementHistory,
-  type InventoryResponse,
-  type MovementResponse,
-} from '../../../lib/api/inventory.client';
+import { InventoryTable } from './components/InventoryTable';
+import { StockUpdateModal } from './components/StockUpdateModal';
+import { BulkStockUpdateModal } from './components/BulkStockUpdateModal';
 
+type FilterStatus = 'ALL' | 'LOW_STOCK' | 'OUT_OF_STOCK';
 
-function formatDate(isoString: string): string {
-  return new Date(isoString).toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
-export default function SellerInventoryPage(): React.JSX.Element {
+export default function SellerInventoryPage() {
+  const { setTitle } = useHeader();
   const { accessToken } = useAuth();
-  const [inventories, setInventories] = useState<InventoryResponse[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const { kycStatus, isSuspended } = useSellerPermissions();
+
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [items, setItems] = useState<InventoryViewModel[]>([]);
+  
+  // Selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Filters
-  const [lowStockOnly, setLowStockOnly] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>('ALL');
 
-  // Pagination / Cursor State for Inventory list
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-
-  // Edit Modal State
-  const [editingItem, setEditingItem] = useState<InventoryResponse | null>(null);
-  const [editQty, setEditQty] = useState<number>(0);
-  const [editThreshold, setEditThreshold] = useState<number>(10);
-  const [editReason, setEditReason] = useState<string>('');
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [modalError, setModalError] = useState<string | null>(null);
-
-  // Movement History Modal State
-  const [viewingHistoryProduct, setViewingHistoryProduct] = useState<InventoryResponse | null>(null);
-  const [movements, setMovements] = useState<MovementResponse[]>([]);
-  const [movementsNextCursor, setMovementsNextCursor] = useState<string | null>(null);
-  const [isMovementsLoading, setIsMovementsLoading] = useState(false);
-
-  // Load Inventory list
-  const loadInventory = useCallback(async (reset = true, cursor?: string) => {
-    if (!accessToken) return;
-    setIsLoading(true);
-    setError(null);
-
-    const res = await getSellerInventory(
-      {
-        limit: 20,
-        cursor: cursor,
-        lowStockOnly: lowStockOnly || undefined,
-      },
-      accessToken
-    );
-
-    if (res.error) {
-      setError(res.error.message);
-    } else {
-      if (reset) {
-        setInventories(res.data?.data ?? []);
-      } else {
-        setInventories((prev) => [...prev, ...(res.data?.data ?? [])]);
-      }
-      setNextCursor(res.data?.nextCursor ?? null);
-    }
-    setIsLoading(false);
-  }, [accessToken, lowStockOnly]);
+  // Modals
+  const [updateModalProduct, setUpdateModalProduct] = useState<InventoryViewModel | null>(null);
+  const [showBulkModal, setShowBulkModal] = useState(false);
 
   useEffect(() => {
-    void loadInventory(true);
-  }, [loadInventory]);
+    setTitle('Inventory');
+  }, [setTitle]);
 
-  // Load movements history for a specific inventory/product
-  const loadMovements = async (productId: string, reset = true, cursor?: string) => {
+  const loadData = async () => {
     if (!accessToken) return;
-    setIsMovementsLoading(true);
-    const res = await getMovementHistory(productId, { limit: 10, cursor }, accessToken);
-    if (!res.error) {
-      if (reset) {
-        setMovements(res.data?.data ?? []);
-      } else {
-        setMovements((prev) => [...prev, ...(res.data?.data ?? [])]);
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await getSellerInventory({}, accessToken);
+      if (res.error) {
+        setError(res.error.message || 'Inventory load nahi ho payi.');
+      } else if (res.data) {
+        setItems(res.data.data.map(adaptInventoryToViewModel));
       }
-      setMovementsNextCursor(res.data?.nextCursor ?? null);
+    } catch (err) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      setError('Network error. Inventory load nahi ho payi.');
+    } finally {
+      setLoading(false);
     }
-    setIsMovementsLoading(false);
   };
 
-  // Open inline edit modal
-  const openEditModal = (item: InventoryResponse) => {
-    setEditingItem(item);
-    setEditQty(item.quantity);
-    setEditThreshold(item.lowStockThreshold);
-    setEditReason('');
-    setModalError(null);
-  };
-
-  // Save inline edit with optimistic update support
-  const handleSaveStock = async () => {
-    if (!editingItem || !accessToken) return;
-    if (!editReason.trim()) {
-      setModalError('अपडेट का कारण लिखना अनिवार्य है (Reason is mandatory)');
-      return;
-    }
-
-    setIsUpdating(true);
-    setModalError(null);
-
-    const originalInventories = [...inventories];
-    const prevItem = { ...editingItem };
-
-    // Optimistic Update
-    setInventories((prev) =>
-      prev.map((item) =>
-        item.productId === prevItem.productId
-          ? {
-              ...item,
-              quantity: editQty,
-              lowStockThreshold: editThreshold,
-              isLowStock: editQty <= editThreshold,
-              updatedAt: new Date().toISOString(),
-            }
-          : item
-      )
-    );
-
-    const res = await updateSellerStock(
-      editingItem.productId,
-      {
-        quantity: editQty,
-        lowStockThreshold: editThreshold,
-        reason: editReason,
-      },
-      accessToken
-    );
-
-    if (res.error) {
-      // Rollback
-      setInventories(originalInventories);
-      setModalError(res.error.message);
+  useEffect(() => {
+    if (kycStatus === 'VERIFIED') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      void loadData();
     } else {
-      // Replace with actual updated payload from API
-      setInventories((prev) =>
-        prev.map((item) => (item.productId === prevItem.productId ? res.data! : item))
-      );
-      setEditingItem(null);
+      setLoading(false); // If not verified, we might show a block or just empty depending on rules
     }
-    setIsUpdating(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessToken, kycStatus]);
+
+  // Derived state (Client-side filtering for simplicity since API list might just return everything if limit is high)
+  const filteredItems = useMemo(() => {
+    return items.filter(item => {
+      // Status filter
+      if (filterStatus === 'OUT_OF_STOCK' && !item.isOutOfStock) return false;
+      if (filterStatus === 'LOW_STOCK' && !item.isLowStock && !item.isOutOfStock) return false; // Usually low stock might include out of stock or be strictly low. Let's say strictly low stock:
+      if (filterStatus === 'LOW_STOCK' && (!item.isLowStock || item.isOutOfStock)) return false; 
+      
+      // Search
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        return item.productName.toLowerCase().includes(q) || item.productSku.toLowerCase().includes(q);
+      }
+      return true;
+    }).sort((a, b) => {
+      // Default Sort: Out of stock first, then low stock, then alpha
+      if (a.isOutOfStock && !b.isOutOfStock) return -1;
+      if (!a.isOutOfStock && b.isOutOfStock) return 1;
+      if (a.isLowStock && !b.isLowStock) return -1;
+      if (!a.isLowStock && b.isLowStock) return 1;
+      return a.productName.localeCompare(b.productName);
+    });
+  }, [items, filterStatus, searchQuery]);
+
+  // KPIs
+  const totalItems = items.length;
+  const lowStockCount = items.filter(i => i.isLowStock && !i.isOutOfStock).length;
+  const outOfStockCount = items.filter(i => i.isOutOfStock).length;
+
+  const handleToggleSelect = (id: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedIds(next);
   };
 
-  // Check if safety warning should be rendered
-  const showSafetyWarning = editingItem && editQty < editingItem.reservedQty;
+  const handleToggleAll = (selectAll: boolean) => {
+    if (selectAll) setSelectedIds(new Set(filteredItems.map(i => i.id)));
+    else setSelectedIds(new Set());
+  };
+
+  const handleUpdateSuccess = (updatedItem: InventoryViewModel) => {
+    setItems(prev => prev.map(i => i.id === updatedItem.id ? updatedItem : i));
+  };
+
+  const handleBulkUpdateSuccess = (updatedItems: InventoryViewModel[]) => {
+    setItems(prev => prev.map(item => {
+      const matched = updatedItems.find(u => u.id === item.id);
+      return matched || item;
+    }));
+    setSelectedIds(new Set());
+  };
+
+  if (kycStatus !== 'VERIFIED') {
+    return (
+      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+         <ErrorBanner message="Inventory access ke liye KYC complete karna zaroori hai." />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-[#1E293B]">Inventory Management</h1>
-          <p className="text-sm text-[#64748B] mt-1">
-            Real-time B2B stock tracking, thresholds, and append-only audits.
-          </p>
+    <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+      {isSuspended && (
+        <div className="mb-6">
+          <ErrorBanner message="Aapka account suspended hai. App sirf read-only mode mein inventory dekh sakte hain." />
         </div>
+      )}
 
-        {/* Filter Toggle */}
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-semibold text-[#475569] cursor-pointer" htmlFor="low-stock-toggle">
-            Low Stock Only
-          </label>
+      {error && (
+        <div className="mb-6">
+          <ErrorBanner message={error} />
+          <button onClick={() => void loadData()} className="mt-2 text-sm text-brand-600 hover:text-brand-700">↻ Dobara Try Karein</button>
+        </div>
+      )}
+
+      {/* ROW A: PAGE HEADER */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-bold text-text-primary">Inventory</h1>
+          <span className="px-2.5 py-0.5 rounded-full bg-neutral-100 text-neutral-600 text-xs font-medium">
+            {totalItems} products
+          </span>
+        </div>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
           <button
-            id="low-stock-toggle"
-            role="switch"
-            aria-checked={lowStockOnly}
-            onClick={() => setLowStockOnly(!lowStockOnly)}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-              lowStockOnly ? 'bg-[#EF4444]' : 'bg-[#CBD5E1]'
-            }`}
+            onClick={() => {}}
+            disabled={isSuspended}
+            className="flex-1 sm:flex-none px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg text-sm font-semibold hover:bg-neutral-50 transition-colors disabled:opacity-50"
           >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                lowStockOnly ? 'translate-x-6' : 'translate-x-1'
-              }`}
-            />
+            ↓ Export
+          </button>
+          <button
+            onClick={() => setShowBulkModal(true)}
+            disabled={isSuspended || selectedIds.size === 0}
+            className="flex-1 sm:flex-none px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-semibold hover:bg-brand-700 transition-colors disabled:opacity-50 disabled:bg-brand-400"
+          >
+            + Stock Update {selectedIds.size > 0 ? `(${selectedIds.size})` : ''}
           </button>
         </div>
       </div>
 
-      {/* Global Error Banner */}
-      {error && (
-        <div className="bg-[#FEE2E2] border border-[#FECACA] rounded-lg px-4 py-3 text-sm text-[#991B1B] mb-4" role="alert">
-          {error}
-        </div>
-      )}
-
-      {/* Loading Skeleton */}
-      {isLoading && inventories.length === 0 && (
-        <div className="flex items-center justify-center py-20 text-[#64748B]">
-          <svg className="animate-spin w-6 h-6 mr-2" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.25" />
-            <path d="M22 12a10 10 0 01-10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-          Loading Inventory…
-        </div>
-      )}
-
-      {/* Empty State */}
-      {!isLoading && inventories.length === 0 && (
-        <div className="text-center py-20 bg-white rounded-xl border border-[#E2E8F0]">
-          <div className="text-5xl mb-4">📦</div>
-          <h2 className="text-lg font-semibold text-[#1E293B] mb-2">कोई स्टॉक रिकॉर्ड नहीं मिला</h2>
-          <p className="text-sm text-[#64748B]">
-            Ensure products are published. Published products automatically receive stock initialized to 0.
-          </p>
-        </div>
-      )}
-
-      {/* Inventory Table */}
-      {inventories.length > 0 && (
-        <div className="bg-white rounded-xl border border-[#E2E8F0] overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left" aria-label="Seller stock list">
-              <thead>
-                <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC]">
-                  <th className="px-4 py-3.5 text-xs font-semibold text-[#64748B] uppercase tracking-wide w-12">#</th>
-                  <th className="px-4 py-3.5 text-xs font-semibold text-[#64748B] uppercase tracking-wide">Product</th>
-                  <th className="px-4 py-3.5 text-xs font-semibold text-[#64748B] uppercase tracking-wide">Segment</th>
-                  <th className="px-4 py-3.5 text-xs font-semibold text-[#64748B] uppercase tracking-wide text-right">Reserved</th>
-                  <th className="px-4 py-3.5 text-xs font-semibold text-[#64748B] uppercase tracking-wide text-right">Available Qty</th>
-                  <th className="px-4 py-3.5 text-xs font-semibold text-[#64748B] uppercase tracking-wide text-right">Threshold</th>
-                  <th className="px-4 py-3.5 text-xs font-semibold text-[#64748B] uppercase tracking-wide text-center">Status</th>
-                  <th className="px-4 py-3.5 text-xs font-semibold text-[#64748B] uppercase tracking-wide text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#F1F5F9]">
-                {inventories.map((item, index) => {
-                  // Badges:
-                  // Red: isLowStock=true
-                  // Amber: quantity < 10 && !isLowStock
-                  let statusBadge = (
-                    <span className="inline-flex text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#D1FAE5] text-[#065F46] border border-[#A7F3D0]">
-                      Healthy
-                    </span>
-                  );
-
-                  if (item.isLowStock) {
-                    statusBadge = (
-                      <span className="inline-flex text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#FEE2E2] text-[#991B1B] border border-[#FCA5A5]">
-                        Low Stock
-                      </span>
-                    );
-                  } else if (item.quantity < 10) {
-                    statusBadge = (
-                      <span className="inline-flex text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] border border-[#FCD34D]">
-                        Warning
-                      </span>
-                    );
-                  }
-
-                  return (
-                    <tr
-                      key={item.id}
-                      id={`inventory-row-${item.productId}`}
-                      className="hover:bg-[#F8FAFC] transition-colors"
-                    >
-                      <td className="px-4 py-4 text-[#94A3B8] text-xs">{index + 1}</td>
-                      <td className="px-4 py-4">
-                        <div className="font-semibold text-[#1E293B] line-clamp-1">{item.productName ?? 'Unknown Product'}</div>
-                        <div className="text-xs text-[#94A3B8] mt-0.5 font-mono">{item.productId}</div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <span className="text-xs bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE] px-2 py-0.5 rounded font-medium">
-                          {item.segment}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 text-right font-medium text-[#64748B]">
-                        {item.reservedQty}
-                      </td>
-                      <td className="px-4 py-4 text-right font-bold text-[#1E293B]">
-                        {item.quantity}
-                      </td>
-                      <td className="px-4 py-4 text-right text-[#475569]">
-                        {item.lowStockThreshold}
-                      </td>
-                      <td className="px-4 py-4 text-center">
-                        {statusBadge}
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex items-center justify-end gap-3">
-                          <button
-                            id={`btn-edit-stock-${item.productId}`}
-                            onClick={() => openEditModal(item)}
-                            className="text-xs text-[#2563EB] hover:text-[#1D4ED8] font-semibold transition-colors"
-                          >
-                            Update Stock
-                          </button>
-                          <button
-                            id={`btn-view-history-${item.productId}`}
-                            onClick={() => {
-                              setViewingHistoryProduct(item);
-                              void loadMovements(item.productId, true);
-                            }}
-                            className="text-xs text-[#64748B] hover:text-[#1E293B] font-semibold transition-colors"
-                          >
-                            History
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Load More Pagination */}
-          {nextCursor && (
-            <div className="border-t border-[#E2E8F0] p-4 text-center">
-              <button
-                onClick={() => void loadInventory(false, nextCursor)}
-                disabled={isLoading}
-                className="inline-flex items-center text-xs font-semibold text-[#2563EB] hover:text-[#1D4ED8] bg-white border border-[#CBD5E1] px-4 py-2 rounded-lg shadow-sm hover:bg-[#F8FAFC] transition-all disabled:opacity-50"
-              >
-                {isLoading ? 'Loading…' : 'Load More Products'}
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── EDIT STOCK MODAL ────────────────────────────────────── */}
-      {editingItem && (
-        <div className="fixed inset-0 z-50 bg-[#0F172A]/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-2xl border border-[#E2E8F0] p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-[#1E293B]">Update Stock Quantity</h2>
-              <button
-                onClick={() => setEditingItem(null)}
-                className="text-[#94A3B8] hover:text-[#475569] transition-colors"
-                aria-label="Close modal"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Product description header */}
-            <div className="bg-[#F8FAFC] p-3 rounded-lg border border-[#E2E8F0]">
-              <div className="text-xs text-[#64748B] font-medium">Product</div>
-              <div className="text-sm font-bold text-[#1E293B] mt-0.5">{editingItem.productName}</div>
-              <div className="flex gap-4 mt-2 pt-2 border-t border-[#E2E8F0]/60 text-xs">
-                <div>
-                  <span className="text-[#64748B] block">Current Stock</span>
-                  <span className="font-bold text-[#1E293B]">{editingItem.quantity}</span>
-                </div>
-                <div>
-                  <span className="text-[#64748B] block">Reserved Qty</span>
-                  <span className="font-bold text-[#EF4444]">{editingItem.reservedQty}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Form Fields */}
-            <div className="space-y-3.5">
-              {/* Safety Warning for Reserved stock breach */}
-              {showSafetyWarning && (
-                <div className="bg-[#FFFBEB] border border-[#FDE68A] text-[#92400E] p-3 rounded-lg text-xs font-semibold leading-relaxed flex gap-2">
-                  <span>⚠️</span>
-                  <span>
-                    Warning: active reservations exceed new stock — active reservations may fail to consume.
-                  </span>
-                </div>
-              )}
-
-              {/* Quantity Input */}
-              <div>
-                <label className="block text-xs font-bold text-[#475569] mb-1.5" htmlFor="input-new-quantity">
-                  NEW QUANTITY
-                </label>
-                <input
-                  id="input-new-quantity"
-                  type="number"
-                  min="0"
-                  value={editQty}
-                  onChange={(e) => setEditQty(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                  className="w-full border border-[#CBD5E1] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
-                />
-              </div>
-
-              {/* Threshold Input */}
-              <div>
-                <label className="block text-xs font-bold text-[#475569] mb-1.5" htmlFor="input-threshold">
-                  LOW STOCK THRESHOLD
-                </label>
-                <input
-                  id="input-threshold"
-                  type="number"
-                  min="0"
-                  value={editThreshold}
-                  onChange={(e) => setEditThreshold(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                  className="w-full border border-[#CBD5E1] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
-                />
-              </div>
-
-              {/* Reason Input */}
-              <div>
-                <label className="block text-xs font-bold text-[#475569] mb-1.5" htmlFor="input-reason">
-                  REASON FOR UPDATE (RECONCILIATION / RE-STOCK)*
-                </label>
-                <textarea
-                  id="input-reason"
-                  rows={2}
-                  value={editReason}
-                  onChange={(e) => setEditReason(e.target.value)}
-                  placeholder="e.g. Received shipment from warehouse / Damage adjustment"
-                  className="w-full border border-[#CBD5E1] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent resize-none"
-                />
-              </div>
-            </div>
-
-            {/* Modal Error */}
-            {modalError && (
-              <div className="bg-[#FEE2E2] border border-[#FECACA] rounded-lg px-3 py-2 text-xs text-[#991B1B]">
-                {modalError}
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={() => setEditingItem(null)}
-                disabled={isUpdating}
-                className="flex-1 border border-[#CBD5E1] hover:bg-[#F8FAFC] text-[#475569] font-semibold py-2.5 rounded-lg text-sm transition-colors disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                id="btn-confirm-update-stock"
-                onClick={handleSaveStock}
-                disabled={isUpdating}
-                className="flex-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold py-2.5 rounded-lg text-sm transition-colors disabled:opacity-50 flex items-center justify-center"
-              >
-                {isUpdating ? 'Updating…' : 'Save Changes'}
-              </button>
-            </div>
+      {/* ROW B: KPI STRIP */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div className="bg-surface-card border border-neutral-200 rounded-xl p-5 shadow-1" role="region" aria-label="Total SKUs">
+          <p className="text-sm font-medium text-text-secondary mb-1">Total SKUs</p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-info-600">{totalItems}</span>
+            <span className="text-xs text-text-secondary">products</span>
           </div>
         </div>
-      )}
-
-      {/* ── MOVEMENT HISTORY MODAL ──────────────────────────────── */}
-      {viewingHistoryProduct && (
-        <div className="fixed inset-0 z-50 bg-[#0F172A]/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-xl rounded-2xl border border-[#E2E8F0] p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between flex-shrink-0">
-              <div>
-                <h2 className="text-lg font-bold text-[#1E293B]">Stock Movement History</h2>
-                <p className="text-xs text-[#64748B] mt-0.5">
-                  Append-only stock updates audit trail for: <span className="font-semibold text-[#1E293B]">{viewingHistoryProduct.productName}</span>
-                </p>
-              </div>
-              <button
-                onClick={() => setViewingHistoryProduct(null)}
-                className="text-[#94A3B8] hover:text-[#475569] transition-colors"
-                aria-label="Close modal"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* List */}
-            <div className="flex-1 overflow-y-auto min-h-[250px] pr-2">
-              {isMovementsLoading && movements.length === 0 ? (
-                <div className="flex items-center justify-center py-20 text-[#64748B]">
-                  <svg className="animate-spin w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.25" />
-                    <path d="M22 12a10 10 0 01-10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
-                  Loading movements history…
-                </div>
-              ) : movements.length === 0 ? (
-                <div className="text-center py-20 text-[#64748B]">
-                  No movement history recorded yet for this product.
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {movements.map((mv) => {
-                    const isInbound = ['INBOUND', 'RESTOCK'].includes(mv.type) || (mv.type === 'ADJUSTMENT' && mv.quantity > 0);
-                    return (
-                      <div
-                        key={mv.id}
-                        className="border border-[#E2E8F0] hover:border-[#CBD5E1] p-3 rounded-lg bg-[#F8FAFC] transition-colors"
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <span
-                              className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                isInbound
-                                  ? 'bg-[#E8F5E9] text-[#2E7D32] border border-[#C8E6C9]'
-                                  : 'bg-[#FFEBEE] text-[#C62828] border border-[#FFCDD2]'
-                              }`}
-                            >
-                              {mv.type}
-                            </span>
-                            <div className="text-xs text-[#64748B] mt-1">
-                              By: <span className="font-semibold text-[#475569]">{mv.createdBy || 'System'}</span>
-                            </div>
-                            {mv.reason && (
-                              <p className="text-xs font-medium text-[#1E293B] mt-1.5 italic bg-white border border-[#E2E8F0]/70 rounded p-1.5">
-                                "{mv.reason}"
-                              </p>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            <span
-                              className={`text-sm font-bold ${
-                                isInbound ? 'text-[#2E7D32]' : 'text-[#C62828]'
-                              }`}
-                            >
-                              {isInbound ? '+' : '-'}
-                              {Math.abs(mv.quantity)}
-                            </span>
-                            <div className="text-[10px] text-[#94A3B8] mt-1">
-                              {formatDate(mv.createdAt)}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  {/* Movements Pagination Load More */}
-                  {movementsNextCursor && (
-                    <div className="pt-2 text-center">
-                      <button
-                        onClick={() => void loadMovements(viewingHistoryProduct.productId, false, movementsNextCursor)}
-                        disabled={isMovementsLoading}
-                        className="text-xs font-semibold text-[#2563EB] hover:text-[#1D4ED8] bg-white border border-[#CBD5E1] px-3 py-1.5 rounded-lg shadow-sm hover:bg-[#F8FAFC] disabled:opacity-50 transition-all"
-                      >
-                        {isMovementsLoading ? 'Loading…' : 'Load Older Movements'}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="border-t border-[#E2E8F0] pt-4 flex-shrink-0">
-              <button
-                onClick={() => setViewingHistoryProduct(null)}
-                className="w-full bg-[#F1F5F9] hover:bg-[#E2E8F0] text-[#334155] font-semibold py-2.5 rounded-lg text-sm transition-colors text-center"
-              >
-                Close Audit Log
-              </button>
-            </div>
+        <div className="bg-surface-card border border-warning-200 rounded-xl p-5 shadow-1 relative overflow-hidden" role="region" aria-label="Low Stock">
+          <div className="absolute top-0 left-0 w-1 h-full bg-warning-500"></div>
+          <p className="text-sm font-medium text-text-secondary mb-1">Low Stock</p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-warning-700">{lowStockCount}</span>
+            <span className="text-xs text-text-secondary">products</span>
           </div>
         </div>
-      )}
+        <div className="bg-surface-card border border-error-200 rounded-xl p-5 shadow-1 relative overflow-hidden" role="region" aria-label="Out of Stock">
+          <div className="absolute top-0 left-0 w-1 h-full bg-error-500"></div>
+          <p className="text-sm font-medium text-text-secondary mb-1">Out of Stock</p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-error-700">{outOfStockCount}</span>
+            <span className="text-xs text-text-secondary">products</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ROW C: SECONDARY BAR */}
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-3 flex-1">
+          <div className="relative flex-1 max-w-sm">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <span aria-hidden="true">🔍</span>
+            </div>
+            <input
+              type="text"
+              placeholder="Product naam ya SKU..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="block w-full pl-10 pr-3 py-2 border border-neutral-300 rounded-lg text-sm bg-surface-card focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
+          </div>
+          <div className="flex bg-neutral-100 p-1 rounded-lg">
+            {(['ALL', 'LOW_STOCK', 'OUT_OF_STOCK'] as FilterStatus[]).map(status => (
+              <button
+                key={status}
+                onClick={() => setFilterStatus(status)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                  filterStatus === status 
+                    ? 'bg-white shadow-1 text-text-primary' 
+                    : 'text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                {status === 'ALL' ? 'All' : status === 'LOW_STOCK' ? 'Low Stock' : 'Out of Stock'}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <button className="px-3 py-2 text-sm font-medium text-text-secondary border border-neutral-200 rounded-lg bg-surface-card hover:bg-neutral-50 transition-colors">
+            Sort ▾
+          </button>
+          <button className="px-3 py-2 text-sm font-medium text-text-secondary border border-neutral-200 rounded-lg bg-surface-card hover:bg-neutral-50 transition-colors">
+            Filter ≡
+          </button>
+        </div>
+      </div>
+
+      {/* ROW D: INVENTORY TABLE */}
+      <InventoryTable
+        items={filteredItems}
+        selectedIds={selectedIds}
+        onToggleSelect={handleToggleSelect}
+        onToggleAll={handleToggleAll}
+        onUpdateStock={setUpdateModalProduct}
+        isLoading={loading}
+        hasAnyItems={items.length > 0}
+      />
+
+      {/* MODALS */}
+      <StockUpdateModal
+        isOpen={!!updateModalProduct}
+        onClose={() => setUpdateModalProduct(null)}
+        product={updateModalProduct}
+        onSuccess={handleUpdateSuccess}
+      />
+
+      <BulkStockUpdateModal
+        isOpen={showBulkModal}
+        onClose={() => setShowBulkModal(false)}
+        selectedItems={items.filter(i => selectedIds.has(i.id))}
+        onSuccess={handleBulkUpdateSuccess}
+      />
     </div>
   );
 }

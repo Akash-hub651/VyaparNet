@@ -5,8 +5,9 @@ import { DraftData } from "./types";
 
 interface Step2Props {
   draft: DraftData;
-  updateDraft: (key: keyof DraftData, value: string) => void;
+  updateDraft: (key: keyof DraftData, value: any) => void;
   isEditMode?: boolean;
+  errors: Record<string, string>;
 }
 
 export function Step2Pricing({
