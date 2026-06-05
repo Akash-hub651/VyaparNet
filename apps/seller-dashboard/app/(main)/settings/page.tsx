@@ -7,6 +7,8 @@ import { useHeader } from "../../contexts/header.context";
 import { useToast } from "../../../components/ui/Toast";
 import { ProfileTab } from "./components/ProfileTab";
 import { KYCTab } from './components/KYCTab';
+import { BankTab } from './components/BankTab';
+import { NotificationsTab } from './components/NotificationsTab';
 
 type TabKey = "profile" | "kyc" | "bank" | "notifications";
 
@@ -107,14 +109,10 @@ export default function SettingsPage() {
           <KYCTab />
         )}
         {activeTab === "bank" && (
-          <div className="p-6 bg-surface-card border border-border-default rounded-lg text-center">
-            <p className="text-text-secondary">Bank Account Content</p>
-          </div>
+          <BankTab />
         )}
         {activeTab === "notifications" && (
-          <div className="p-6 bg-surface-card border border-border-default rounded-lg text-center">
-            <p className="text-text-secondary">Notifications Content</p>
-          </div>
+          <NotificationsTab />
         )}
       </div>
     </div>

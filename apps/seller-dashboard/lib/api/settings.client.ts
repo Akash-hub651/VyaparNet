@@ -1,4 +1,4 @@
-import { apiGet, apiPatch, apiPost, ApiResult } from "./client";
+import { apiGet, apiPatch, apiPost, apiPut, ApiResult } from "./client";
 
 export interface BusinessTypeViewModel {
   id: string;
@@ -9,6 +9,40 @@ export interface PincodeLookupResponse {
   city: string;
   state: string;
   pincode: string;
+}
+
+export interface IfscLookupResponse {
+  bankName: string;
+  branchName: string;
+  ifsc: string;
+}
+
+export interface NotificationPreferences {
+  // Order Notifications
+  orderReceived: boolean;
+  orderStatusUpdate: boolean;
+  returnRequest: boolean;
+  
+  // Business Notifications
+  rfqReceived: boolean;
+  quoteAccepted: boolean;
+  payoutInitiated: boolean;
+  
+  // Stock Alerts
+  lowStockAlert: boolean;
+  lowStockThreshold: number;
+  
+  // Account Notifications (Fixed/Disabled in UI)
+  kycStatusChange: boolean;
+  accountStatusChange: boolean;
+}
+
+export interface BankAccountVerifyDto {
+  accountHolderName: string;
+  accountNumber: string;
+  ifscCode: string;
+  bankName: string;
+  branchName: string;
 }
 
 export interface BusinessProfileUpdateDto {
@@ -106,4 +140,47 @@ export async function submitKycDocuments(
   token: string,
 ): Promise<ApiResult<{ success: boolean; message: string }>> {
   return apiPost<{ success: boolean; message: string }>('/seller/kyc/submit', token, {});
+}
+
+/* ── BANK ACCOUNT APIs ───────────────────────────────────────── */
+
+/**
+ * Lookup Bank Details by IFSC Code
+ */
+export async function getIfscDetails(
+  code: string,
+  token: string,
+): Promise<ApiResult<IfscLookupResponse>> {
+  return apiGet<IfscLookupResponse>(`/ifsc/${code}`, token);
+}
+
+/**
+ * Submit Bank Account for verification
+ */
+export async function verifyBankAccount(
+  data: BankAccountVerifyDto,
+  token: string,
+): Promise<ApiResult<{ success: boolean; message: string }>> {
+  return apiPost<{ success: boolean; message: string }>('/seller/bank/verify', token, data);
+}
+
+/* ── NOTIFICATION APIs ───────────────────────────────────────── */
+
+/**
+ * Get Notification Preferences
+ */
+export async function getNotificationPreferences(
+  token: string,
+): Promise<ApiResult<NotificationPreferences>> {
+  return apiGet<NotificationPreferences>('/notifications/preferences', token);
+}
+
+/**
+ * Update Notification Preferences
+ */
+export async function updateNotificationPreferences(
+  data: Partial<NotificationPreferences>,
+  token: string,
+): Promise<ApiResult<{ success: boolean; message: string }>> {
+  return apiPut<{ success: boolean; message: string }>('/notifications/preferences', token, data);
 }
