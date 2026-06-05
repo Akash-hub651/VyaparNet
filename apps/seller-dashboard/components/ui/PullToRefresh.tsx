@@ -124,6 +124,7 @@ export function PullToRefresh({ onRefresh, children }: PullToRefreshProps) {
       container.removeEventListener("touchmove", handleTouchMove);
       container.removeEventListener("touchend", handleTouchEnd);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty deps — handlers read from refs, not closures
 
   const translateY = isRefreshing

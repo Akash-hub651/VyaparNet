@@ -22,7 +22,7 @@ export function QuickHelpCard({ title, subtitle, icon, onClick }: QuickHelpCardP
       ].join(" ")}
       aria-label={title}
     >
-      <div className="flex-shrink-0 flex items-center justify-center w-12 h-12 bg-brand-100 text-brand-600 rounded-lg">
+      <div className="shrink-0 flex items-center justify-center w-12 h-12 bg-brand-100 text-brand-600 rounded-lg">
         {icon}
       </div>
       <div className="flex flex-col min-w-0">

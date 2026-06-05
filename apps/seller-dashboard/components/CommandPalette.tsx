@@ -169,7 +169,7 @@ export default function CommandPalette({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[70] flex justify-center items-start pt-[96px] px-4">
+    <div className="fixed inset-0 z-70 flex justify-center items-start pt-[96px] px-4">
       {/* Overlay */}
       <div 
         className="fixed inset-0 bg-black/40 backdrop-blur-sm animate-[fadeIn_150ms_ease]"
@@ -186,7 +186,7 @@ export default function CommandPalette({
       >
         {/* Search Input */}
         <div className="flex items-center px-4 h-14 border-b border-border-default">
-          <span className="text-text-secondary mr-3 flex-shrink-0">
+          <span className="text-text-secondary mr-3 shrink-0">
             <SearchIcon />
           </span>
           <input
@@ -277,7 +277,7 @@ export default function CommandPalette({
                             }}
                             onMouseEnter={() => setSelectedIndex(globalIndex)}
                           >
-                            <span className="text-text-secondary flex-shrink-0">
+                            <span className="text-text-secondary shrink-0">
                               {item.icon}
                             </span>
                             <div className="flex-1 min-w-0 flex items-center justify-between">
@@ -292,7 +292,7 @@ export default function CommandPalette({
                                 )}
                               </div>
                               {'type' in item && item.type && (
-                                <span className="flex-shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded bg-surface-hover text-text-muted uppercase tracking-wide ml-2">
+                                <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded bg-surface-hover text-text-muted uppercase tracking-wide ml-2">
                                   {item.type}
                                 </span>
                               )}

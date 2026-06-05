@@ -31,6 +31,7 @@ export function useColumnCustomization(moduleName: string, initialColumns: Colum
           // Always ensure mandatory columns are present
           const mandatoryIds = initialColumns.filter(c => c.isMandatory).map(c => c.id);
           const combined = Array.from(new Set([...parsed, ...mandatoryIds]));
+          // eslint-disable-next-line react-hooks/set-state-in-effect
           setVisibleColumnIds(combined);
         }
       }

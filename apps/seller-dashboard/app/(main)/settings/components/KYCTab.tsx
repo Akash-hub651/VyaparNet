@@ -58,6 +58,7 @@ export function KYCTab() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchDocuments();
   }, [accessToken]);
 

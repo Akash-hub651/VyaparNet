@@ -149,14 +149,14 @@ export function FilterDrawer({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-neutral-900/50 z-[40] transition-opacity"
+        className="fixed inset-0 bg-neutral-900/50 z-40 transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
 
       {/* Drawer */}
       <div
-        className="fixed inset-y-0 right-0 w-full sm:w-[340px] bg-surface-default shadow-3 z-[50] flex flex-col transform transition-transform animate-slide-in-right"
+        className="fixed inset-y-0 right-0 w-full sm:w-[340px] bg-surface-default shadow-3 z-50 flex flex-col transform transition-transform animate-slide-in-right"
         role="dialog"
         aria-modal="true"
         aria-label="Orders filter karein"

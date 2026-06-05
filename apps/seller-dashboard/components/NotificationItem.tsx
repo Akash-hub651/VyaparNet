@@ -296,7 +296,7 @@ export function NotificationItem({
         if (e.key === "Enter") handleClick();
       }}
     >
-      <div className="flex-shrink-0 mt-0.5">{getIcon()}</div>
+      <div className="shrink-0 mt-0.5">{getIcon()}</div>
 
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-text-primary leading-snug">
@@ -309,7 +309,7 @@ export function NotificationItem({
         </p>
       </div>
 
-      <div className="flex-shrink-0 flex flex-col items-end gap-2">
+      <div className="shrink-0 flex flex-col items-end gap-2">
         <span className="text-xs text-text-muted whitespace-nowrap">
           {formatRelativeTime(createdAt)}
         </span>

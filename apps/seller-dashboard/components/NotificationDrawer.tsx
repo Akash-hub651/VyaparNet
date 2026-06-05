@@ -98,21 +98,21 @@ export function NotificationDrawer({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-neutral-900/50 z-[60] transition-opacity animate-in fade-in"
+        className="fixed inset-0 bg-neutral-900/50 z-60 transition-opacity animate-in fade-in"
         onClick={onClose}
         aria-hidden="true"
       />
 
       {/* Drawer */}
       <div
-        className="fixed right-0 top-0 bottom-0 w-full sm:w-[400px] bg-surface-base z-[60] shadow-3 flex flex-col animate-slide-in-right focus:outline-none"
+        className="fixed right-0 top-0 bottom-0 w-full sm:w-[400px] bg-surface-base z-60 shadow-3 flex flex-col animate-slide-in-right focus:outline-none"
         role="dialog"
         aria-modal="true"
         aria-label="Notification Drawer"
         tabIndex={-1}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border-default bg-surface-card flex-shrink-0">
+        <div className="flex items-center justify-between p-4 border-b border-border-default bg-surface-card shrink-0">
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-bold text-text-primary">
               Notifications
@@ -215,7 +215,7 @@ export function NotificationDrawer({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-border-default bg-surface-card flex-shrink-0">
+        <div className="p-4 border-t border-border-default bg-surface-card shrink-0">
           <Link
             href="/notifications"
             onClick={onClose}

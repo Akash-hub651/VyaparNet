@@ -121,7 +121,7 @@ export default function SellerMainLayout({
        * Future: Move to desktop sidebar too (currently mobile-only).
        */}
       {perms.isStaff && (
-        <div className="md:hidden fixed top-14 left-0 right-0 bg-warning-100 text-warning-700 min-h-[32px] px-4 py-1.5 z-[39] flex items-center justify-center text-xs font-medium shadow-sm">
+        <div className="md:hidden fixed top-14 left-0 right-0 bg-warning-100 text-warning-700 min-h-[32px] px-4 py-1.5 z-39 flex items-center justify-center text-xs font-medium shadow-sm">
           {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           Staff session — {(user as any)?.business?.businessName ||
             "Business"}{" "}

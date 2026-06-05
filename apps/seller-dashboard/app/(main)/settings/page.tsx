@@ -37,6 +37,7 @@ export default function SettingsPage() {
 
   // Handle URL Hash for Tabs
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMounted(true);
 
     const handleHashChange = () => {

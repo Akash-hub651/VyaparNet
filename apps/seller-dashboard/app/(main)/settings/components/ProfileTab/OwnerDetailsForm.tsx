@@ -26,6 +26,7 @@ export function OwnerDetailsForm() {
         `${safeUser.firstName || ""} ${safeUser.lastName || ""}`.trim() ||
         "";
 
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         ownerName: name,
         email: user.email || "",

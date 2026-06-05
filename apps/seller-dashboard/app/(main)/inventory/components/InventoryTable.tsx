@@ -136,7 +136,7 @@ export function InventoryTable({
                   {isColVisible('product') && (
                     <td className="py-3 px-4 align-top min-w-[200px]">
                       <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded bg-neutral-100 border border-neutral-200 overflow-hidden flex-shrink-0 relative">
+                        <div className="w-10 h-10 rounded bg-neutral-100 border border-neutral-200 overflow-hidden shrink-0 relative">
                           {item.productImage ? (
                             <Image src={item.productImage} alt={item.productName} fill className="object-cover" sizes="40px" />
                           ) : (

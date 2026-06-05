@@ -45,7 +45,7 @@ export function DocumentPreviewModal({ isOpen, onClose, fileUrl, filename, fileT
           </h2>
           <button 
             onClick={onClose}
-            className="p-2 text-text-secondary hover:text-text-primary hover:bg-neutral-100 rounded-full transition-colors flex-shrink-0"
+            className="p-2 text-text-secondary hover:text-text-primary hover:bg-neutral-100 rounded-full transition-colors shrink-0"
             aria-label="Close preview"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

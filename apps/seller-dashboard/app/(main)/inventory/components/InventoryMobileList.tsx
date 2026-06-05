@@ -19,7 +19,7 @@ export function InventoryMobileList({ items, isLoading, onUpdateStock }: Invento
       <div className="flex flex-col gap-3">
         {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className="bg-surface-card border border-border-default rounded-lg p-3 h-20 flex gap-3">
-            <Skeleton className="w-12 h-12 rounded-md flex-shrink-0" />
+            <Skeleton className="w-12 h-12 rounded-md shrink-0" />
             <div className="flex-1 flex flex-col justify-center">
               <Skeleton className="w-2/3 h-4 mb-2" />
               <Skeleton className="w-1/2 h-4" />
@@ -52,7 +52,7 @@ export function InventoryMobileList({ items, isLoading, onUpdateStock }: Invento
             className="bg-surface-card rounded-lg border border-border-default p-3 flex items-center gap-3 active:bg-surface-hover transition-colors cursor-pointer min-h-[80px]"
           >
             {/* Thumbnail */}
-            <div className="w-12 h-12 rounded bg-neutral-50 border border-neutral-200 overflow-hidden relative flex-shrink-0 flex items-center justify-center">
+            <div className="w-12 h-12 rounded bg-neutral-50 border border-neutral-200 overflow-hidden relative shrink-0 flex items-center justify-center">
               {item.productImage ? (
                 <Image src={item.productImage} alt={item.productName} fill className="object-cover" sizes="48px" />
               ) : (
@@ -69,7 +69,7 @@ export function InventoryMobileList({ items, isLoading, onUpdateStock }: Invento
             </div>
 
             {/* Stock Status */}
-            <div className="flex flex-col items-end flex-shrink-0 mr-1">
+            <div className="flex flex-col items-end shrink-0 mr-1">
               <div className="flex items-center gap-1.5 mb-1">
                 <span className={`w-2 h-2 rounded-full ${item.isOutOfStock ? 'bg-error-500' : item.isLowStock ? 'bg-warning-500' : 'bg-success-500'}`}></span>
                 <span className="text-sm font-semibold tabular-nums text-text-primary">{item.quantity}</span>
@@ -80,7 +80,7 @@ export function InventoryMobileList({ items, isLoading, onUpdateStock }: Invento
             </div>
 
             {/* Chevron */}
-            <div className="text-text-muted flex-shrink-0 -mr-1">
+            <div className="text-text-muted shrink-0 -mr-1">
               <ChevronRight size={20} />
             </div>
           </div>

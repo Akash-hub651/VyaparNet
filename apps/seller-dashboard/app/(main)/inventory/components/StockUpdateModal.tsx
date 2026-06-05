@@ -130,7 +130,7 @@ export function StockUpdateModal({
       <form onSubmit={handleSubmit} className="p-1">
         {/* Product Preview Box */}
         <div className="bg-neutral-50 rounded-lg p-3 flex items-center gap-3 mb-6 border border-neutral-200">
-          <div className="w-10 h-10 rounded bg-white border border-neutral-200 overflow-hidden relative flex-shrink-0">
+          <div className="w-10 h-10 rounded bg-white border border-neutral-200 overflow-hidden relative shrink-0">
             {product.productImage ? (
               <Image
                 src={product.productImage}

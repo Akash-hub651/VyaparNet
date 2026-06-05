@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@config "../tailwind.config.ts";
+@source "../../packages/ui";
 
 /* ════════════════════════════════════════════════════════════════
    VYAPARNET SELLER DASHBOARD — DESIGN TOKEN SYSTEM

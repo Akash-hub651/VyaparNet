@@ -63,7 +63,7 @@ function Overlay({ onClick }: { onClick?: () => void }) {
   return (
     <div
       aria-hidden="true"
-      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] animate-[fadeIn_150ms_ease]"
+      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-60 animate-[fadeIn_150ms_ease]"
       onClick={onClick}
     />
   );
@@ -126,7 +126,7 @@ export function ConfirmDialog({
     <>
       <Overlay onClick={onClose} />
       <div
-        className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+        className="fixed inset-0 z-60 flex items-center justify-center p-4"
         aria-hidden="false"
       >
         <div
@@ -160,7 +160,7 @@ export function ConfirmDialog({
             )}
             {warning && (
               <div className="flex items-start gap-2 text-error-700">
-                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0">
+                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0">
                   <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
                   <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
                 </svg>
@@ -238,7 +238,7 @@ export function FormModal({
   return (
     <>
       <Overlay onClick={onClose} />
-      <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center sm:p-4 pointer-events-none">
+      <div className="fixed inset-0 z-60 flex items-end md:items-center justify-center sm:p-4 pointer-events-none">
         <div
           ref={containerRef}
           role="dialog"
@@ -255,12 +255,12 @@ export function FormModal({
           ].join(' ')}
         >
           {/* Mobile Handle Bar */}
-          <div className="md:hidden flex justify-center pt-3 pb-1 flex-shrink-0" aria-hidden="true">
+          <div className="md:hidden flex justify-center pt-3 pb-1 shrink-0" aria-hidden="true">
             <div className="w-12 h-1.5 bg-neutral-300 rounded-full" />
           </div>
 
           {/* Header — sticky */}
-          <div className="flex items-center gap-3 px-6 pb-4 md:py-4 border-b border-border-default flex-shrink-0">
+          <div className="flex items-center gap-3 px-6 pb-4 md:py-4 border-b border-border-default shrink-0">
             {showBack && (
               <button
                 onClick={onBack}
@@ -293,7 +293,7 @@ export function FormModal({
 
           {/* Footer — sticky */}
           {footer && (
-            <div className="px-6 py-4 border-t border-border-default flex-shrink-0 flex justify-end gap-3">
+            <div className="px-6 py-4 border-t border-border-default shrink-0 flex justify-end gap-3">
               {footer}
             </div>
           )}

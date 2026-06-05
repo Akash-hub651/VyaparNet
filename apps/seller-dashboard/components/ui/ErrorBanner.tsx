@@ -42,7 +42,7 @@ export function ErrorBanner({
       ].join(' ')}
     >
       {/* Error icon */}
-      <span aria-hidden="true" className="flex-shrink-0 mt-0.5 text-error-500">
+      <span aria-hidden="true" className="shrink-0 mt-0.5 text-error-500">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10" />
           <line x1="12" y1="8" x2="12" y2="12" />
@@ -68,7 +68,7 @@ export function ErrorBanner({
         <button
           onClick={onDismiss}
           aria-label="Error dismiss karein"
-          className="flex-shrink-0 text-error-500 hover:text-error-700 transition-colors p-0.5"
+          className="shrink-0 text-error-500 hover:text-error-700 transition-colors p-0.5"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -103,7 +103,7 @@ export function InfoBanner({
         className,
       ].join(' ')}
     >
-      <span aria-hidden="true" className={`flex-shrink-0 mt-0.5 ${isWarning ? 'text-warning-500' : 'text-info-500'}`}>
+      <span aria-hidden="true" className={`shrink-0 mt-0.5 ${isWarning ? 'text-warning-500' : 'text-info-500'}`}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10" />
           <line x1="12" y1="16" x2="12" y2="12" />
@@ -117,7 +117,7 @@ export function InfoBanner({
         <button
           onClick={onDismiss}
           aria-label="Dismiss"
-          className={`flex-shrink-0 transition-colors p-0.5 ${isWarning ? 'text-warning-500 hover:text-warning-700' : 'text-info-500 hover:text-info-700'}`}
+          className={`shrink-0 transition-colors p-0.5 ${isWarning ? 'text-warning-500 hover:text-warning-700' : 'text-info-500 hover:text-info-700'}`}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />

@@ -58,7 +58,7 @@ export default function ErrorBoundary({
   return (
     <div className="min-h-screen bg-surface-app flex flex-col">
       {/* Minimal Standard Header */}
-      <header className="h-16 bg-surface-card border-b border-border-default flex items-center px-6 flex-shrink-0">
+      <header className="h-16 bg-surface-card border-b border-border-default flex items-center px-6 shrink-0">
         <button
           onClick={() => router.push("/dashboard")}
           className="text-xl font-bold text-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"

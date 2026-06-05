@@ -163,7 +163,7 @@ export default function RfqDetailPage() {
         {/* LEFT COLUMN */}
         <div className="contents lg:block lg:col-span-8 lg:space-y-6">
           {/* L1: RFQ Header Card */}
-          <div className="order-1 lg:order-none w-full bg-surface-card rounded-xl shadow-1 p-5 lg:p-6 border border-neutral-200">
+          <div className="order-1 lg:order-0 w-full bg-surface-card rounded-xl shadow-1 p-5 lg:p-6 border border-neutral-200">
             <div className="flex items-start justify-between mb-4">
               <h1 className="text-2xl font-bold text-text-primary">
                 {rfq.rfqId}
@@ -191,7 +191,7 @@ export default function RfqDetailPage() {
           </div>
 
           {/* L2: Buyer Requirements */}
-          <div className="order-3 lg:order-none w-full bg-surface-card rounded-xl shadow-1 p-5 lg:p-6 border border-neutral-200">
+          <div className="order-3 lg:order-0 w-full bg-surface-card rounded-xl shadow-1 p-5 lg:p-6 border border-neutral-200">
             <h2 className="text-lg font-semibold text-text-primary mb-4 border-b border-neutral-100 pb-2">
               Kya chahiye buyer ko?
             </h2>
@@ -230,7 +230,7 @@ export default function RfqDetailPage() {
 
           {/* L3: Buyer Context (if available) */}
           {rfq.buyerContext?.type && (
-            <div className="order-4 lg:order-none w-full bg-neutral-50 rounded-lg p-4 border border-neutral-200 flex items-center justify-between">
+            <div className="order-4 lg:order-0 w-full bg-neutral-50 rounded-lg p-4 border border-neutral-200 flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-semibold text-text-primary">
                   Buyer Context
@@ -250,7 +250,7 @@ export default function RfqDetailPage() {
 
           {/* L4: Negotiation Thread (if quoted) */}
           {rfq.status === "QUOTED" && !showCounterForm && (
-            <div className="order-5 lg:order-none w-full bg-surface-card rounded-xl shadow-1 p-5 lg:p-6 border border-neutral-200">
+            <div className="order-5 lg:order-0 w-full bg-surface-card rounded-xl shadow-1 p-5 lg:p-6 border border-neutral-200">
               <NegotiationThread
                 rfq={rfq}
                 token={accessToken!}
@@ -265,7 +265,7 @@ export default function RfqDetailPage() {
         <div className="contents lg:block lg:col-span-4 sticky top-24 lg:space-y-6">
           {/* R1: Expiry Timer */}
           <div
-            className={`order-2 lg:order-none w-full rounded-xl shadow-1 p-4 lg:p-6 border flex flex-col items-center lg:items-start ${isExpired ? "border-error-200 bg-error-50" : `border-neutral-200 ${timerBg}`}`}
+            className={`order-2 lg:order-0 w-full rounded-xl shadow-1 p-4 lg:p-6 border flex flex-col items-center lg:items-start ${isExpired ? "border-error-200 bg-error-50" : `border-neutral-200 ${timerBg}`}`}
           >
             {isExpired ? (
               <div
@@ -310,7 +310,7 @@ export default function RfqDetailPage() {
           </div>
 
           {/* R2: Quote Form */}
-          <div className="order-6 lg:order-none w-full flex flex-col gap-6">
+          <div className="order-6 lg:order-0 w-full flex flex-col gap-6">
             {!isExpired &&
             permissions.canSubmitRfqQuote &&
             !permissions.isSuspended &&

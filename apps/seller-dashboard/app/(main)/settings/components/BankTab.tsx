@@ -215,7 +215,7 @@ export function BankTab() {
           role="status"
           className="w-full bg-success-50 border-[1.5px] border-success-300 rounded-lg p-5 mb-8 flex items-start md:items-center gap-4"
         >
-          <div className="flex-shrink-0 text-success-500 mt-1 md:mt-0">
+          <div className="shrink-0 text-success-500 mt-1 md:mt-0">
             <svg
               width="32"
               height="32"
@@ -244,7 +244,7 @@ export function BankTab() {
           role="status"
           className="w-full bg-warning-50 border-[1.5px] border-warning-300 rounded-lg p-5 mb-8 flex items-start md:items-center gap-4"
         >
-          <div className="flex-shrink-0 text-warning-500 mt-1 md:mt-0">
+          <div className="shrink-0 text-warning-500 mt-1 md:mt-0">
             <svg
               width="32"
               height="32"

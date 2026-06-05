@@ -174,7 +174,7 @@ export function StatusBadge({
       aria-label={ariaLabel}
       className={[
         'inline-flex items-center rounded-full font-medium',
-        'select-none whitespace-nowrap flex-shrink-0',
+        'select-none whitespace-nowrap shrink-0',
         sizes.wrapper,
         colors.bg,
         colors.text,
@@ -185,7 +185,7 @@ export function StatusBadge({
       <span
         aria-hidden="true"
         className={[
-          'rounded-full flex-shrink-0',
+          'rounded-full shrink-0',
           sizes.dot,
           colors.dot,
         ].join(' ')}

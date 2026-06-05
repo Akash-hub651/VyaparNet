@@ -139,7 +139,7 @@ export function PhoneStep({ onSuccess, onSendOtp }: PhoneStepProps): React.JSX.E
           ].join(' ')}
         >
           {/* Country code — read-only, §34.3 */}
-          <div className="flex items-center justify-center w-16 h-11 border-r border-border-default bg-surface-app text-sm text-text-secondary select-none flex-shrink-0">
+          <div className="flex items-center justify-center w-16 h-11 border-r border-border-default bg-surface-app text-sm text-text-secondary select-none shrink-0">
             +91
           </div>
 

@@ -122,11 +122,11 @@ export function TopProductsTable({
                           alt=""
                           width={32}
                           height={32}
-                          className={`w-8 h-8 rounded object-cover flex-shrink-0 border border-border-default bg-surface-base ${!product.thumbnailUrl ? 'opacity-0 absolute' : ''}`}
+                          className={`w-8 h-8 rounded object-cover shrink-0 border border-border-default bg-surface-base ${!product.thumbnailUrl ? 'opacity-0 absolute' : ''}`}
                           unoptimized
                         />
                         {!product.thumbnailUrl && (
-                          <span className="w-8 h-8 rounded flex-shrink-0 border border-border-default bg-neutral-100 flex items-center justify-center" aria-hidden="true">
+                          <span className="w-8 h-8 rounded shrink-0 border border-border-default bg-neutral-100 flex items-center justify-center" aria-hidden="true">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-neutral-400">
                               <rect x="3" y="3" width="18" height="18" rx="2" />
                               <circle cx="8.5" cy="8.5" r="1.5" />
@@ -204,7 +204,7 @@ export function TopProductsTable({
             >
               <div className="flex items-center gap-3 min-w-0 pr-4">
                 <span
-                  className={`text-xs font-bold w-4 flex-shrink-0 text-center ${index < 3 ? "text-accent-600" : "text-text-muted"}`}
+                  className={`text-xs font-bold w-4 shrink-0 text-center ${index < 3 ? "text-accent-600" : "text-text-muted"}`}
                 >
                   {index + 1}
                 </span>
@@ -213,11 +213,11 @@ export function TopProductsTable({
                   alt=""
                   width={40}
                   height={40}
-                  className={`w-10 h-10 rounded-md object-cover flex-shrink-0 border border-border-default bg-surface-base ${!product.thumbnailUrl ? 'opacity-0 absolute' : ''}`}
+                  className={`w-10 h-10 rounded-md object-cover shrink-0 border border-border-default bg-surface-base ${!product.thumbnailUrl ? 'opacity-0 absolute' : ''}`}
                   unoptimized
                 />
                 {!product.thumbnailUrl && (
-                  <span className="w-10 h-10 rounded-md flex-shrink-0 border border-border-default bg-neutral-100 flex items-center justify-center" aria-hidden="true">
+                  <span className="w-10 h-10 rounded-md shrink-0 border border-border-default bg-neutral-100 flex items-center justify-center" aria-hidden="true">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-neutral-400">
                       <rect x="3" y="3" width="18" height="18" rx="2" />
                       <circle cx="8.5" cy="8.5" r="1.5" />
@@ -234,7 +234,7 @@ export function TopProductsTable({
                   </p>
                 </div>
               </div>
-              <div className="flex flex-col items-end flex-shrink-0">
+              <div className="flex flex-col items-end shrink-0">
                 <span className="text-sm font-bold text-text-primary tabular-nums">
                   {formatAmount(product.revenue)}
                 </span>
@@ -264,7 +264,7 @@ function LoadingRow() {
       </td>
       <td className="px-5 py-3">
         <div className="flex items-center gap-3">
-          <Skeleton className="w-8 h-8 rounded flex-shrink-0" />
+          <Skeleton className="w-8 h-8 rounded shrink-0" />
           <div className="space-y-1.5 flex-1">
             <Skeleton className="h-4 w-3/4" />
             <Skeleton className="h-3 w-1/3" />
@@ -291,8 +291,8 @@ function LoadingMobileCard() {
   return (
     <div className="p-4 flex items-center justify-between">
       <div className="flex items-center gap-3 flex-1">
-        <Skeleton className="h-3 w-3 rounded-sm flex-shrink-0" />
-        <Skeleton className="w-10 h-10 rounded-md flex-shrink-0" />
+        <Skeleton className="h-3 w-3 rounded-sm shrink-0" />
+        <Skeleton className="w-10 h-10 rounded-md shrink-0" />
         <div className="space-y-2 flex-1">
           <Skeleton className="h-4 w-3/4" />
           <Skeleton className="h-3 w-1/3" />

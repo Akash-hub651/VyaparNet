@@ -159,7 +159,7 @@ export function BottomSheet({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] animate-[fadeIn_150ms_ease]"
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-60 animate-[fadeIn_150ms_ease]"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -170,19 +170,19 @@ export function BottomSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="fixed bottom-0 left-0 right-0 z-[61] bg-surface-card rounded-t-2xl shadow-3 animate-[slideUp_200ms_ease] max-h-[85vh] flex flex-col"
+        className="fixed bottom-0 left-0 right-0 z-61 bg-surface-card rounded-t-2xl shadow-3 animate-[slideUp_200ms_ease] max-h-[85vh] flex flex-col"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
         {/* Handle bar — spec: 36×4px, bg-neutral-300, centered */}
-        <div className="flex justify-center pt-3 pb-1 flex-shrink-0" aria-hidden="true">
+        <div className="flex justify-center pt-3 pb-1 shrink-0" aria-hidden="true">
           <div className="w-9 h-1 bg-neutral-300 rounded-full" />
         </div>
 
         {/* Title */}
-        <div className="px-5 py-3 border-b border-border-default flex-shrink-0">
+        <div className="px-5 py-3 border-b border-border-default shrink-0">
           <h2
             id={titleId}
             className="text-base font-semibold text-text-primary"

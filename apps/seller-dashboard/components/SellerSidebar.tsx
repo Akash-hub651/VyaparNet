@@ -557,7 +557,7 @@ export default function SellerSidebar(): React.JSX.Element {
       {/* Mobile Drawer Overlay */}
       {isMobileDrawerOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-[45] md:hidden"
+          className="fixed inset-0 bg-black/50 z-45 md:hidden"
           onClick={() => setIsMobileDrawerOpen(false)}
           aria-hidden="true"
         />
@@ -566,9 +566,9 @@ export default function SellerSidebar(): React.JSX.Element {
       <aside
         aria-label="Seller navigation"
         className={[
-          "flex-shrink-0 flex-col h-screen",
+          "shrink-0 flex-col h-screen",
           "bg-surface-sidebar border-r border-white/5",
-          "fixed top-0 bottom-0 z-[50] md:z-[30]",
+          "fixed top-0 bottom-0 z-50 md:z-30",
           "transition-all duration-200 ease-in-out",
           // Mobile Drawer styling
           isMobileDrawerOpen
@@ -579,14 +579,14 @@ export default function SellerSidebar(): React.JSX.Element {
         ].join(" ")}
       >
         {/* ── LOGO ──────────────────────────────────────────── */}
-        <div className="h-14 flex items-center px-3 border-b border-white/5 flex-shrink-0">
+        <div className="h-14 flex items-center px-3 border-b border-white/5 shrink-0">
           <Link
             href="/dashboard"
             aria-label="VyaparNet Seller — Dashboard jaiye"
             className="flex items-center gap-2.5 min-w-0"
           >
             {/* VN monogram */}
-            <span className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center flex-shrink-0">
+            <span className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center shrink-0">
               <span className="text-white text-xs font-bold tracking-tight">
                 VN
               </span>
@@ -650,7 +650,7 @@ export default function SellerSidebar(): React.JSX.Element {
                         isCollapsed ? "justify-center" : "",
                       ].join(" ")}
                     >
-                      <span className="text-white flex-shrink-0">
+                      <span className="text-white shrink-0">
                         {item.icon}
                       </span>
                       {!isCollapsed && (
@@ -676,11 +676,11 @@ export default function SellerSidebar(): React.JSX.Element {
                       isCollapsed ? "justify-center" : "",
                       isActive
                         ? "bg-white/10 border-l-2 border-brand-500 text-white"
-                        : "text-white/65 hover:bg-white/[0.06] hover:text-white border-l-2 border-transparent",
+                        : "text-white/65 hover:bg-white/6 hover:text-white border-l-2 border-transparent",
                     ].join(" ")}
                   >
                     {/* Icon */}
-                    <span className="flex-shrink-0" aria-hidden="true">
+                    <span className="shrink-0" aria-hidden="true">
                       {item.icon}
                     </span>
 
@@ -710,9 +710,9 @@ export default function SellerSidebar(): React.JSX.Element {
         </nav>
 
         {/* ── SIDEBAR FOOTER ────────────────────────────────── */}
-        <div className="border-t border-white/5 p-3 flex-shrink-0 flex items-center gap-2">
+        <div className="border-t border-white/5 p-3 shrink-0 flex items-center gap-2">
           {/* Avatar */}
-          <div className="w-7 h-7 rounded-full bg-brand-600 flex items-center justify-center flex-shrink-0 text-white text-xs font-bold">
+          <div className="w-7 h-7 rounded-full bg-brand-600 flex items-center justify-center shrink-0 text-white text-xs font-bold">
             {user?.name?.[0]?.toUpperCase() ?? "S"}
           </div>
           {!isCollapsed && (
@@ -732,7 +732,7 @@ export default function SellerSidebar(): React.JSX.Element {
               isCollapsed ? "Sidebar expand karein" : "Sidebar collapse karein"
             }
             title="Ctrl+B"
-            className="flex-shrink-0 p-1 text-white/40 hover:text-white rounded transition-colors"
+            className="shrink-0 p-1 text-white/40 hover:text-white rounded transition-colors"
           >
             <span
               className={`block transition-transform duration-200 ${isCollapsed ? "rotate-180" : ""}`}

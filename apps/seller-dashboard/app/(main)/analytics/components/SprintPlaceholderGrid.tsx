@@ -99,7 +99,7 @@ function PlaceholderCard({ title, icon }: SprintPlaceholderCardProps) {
       role="note"
       aria-label={`${title}: coming in Sprint 9`}
     >
-      <div className="flex-shrink-0">{icon}</div>
+      <div className="shrink-0">{icon}</div>
       <div>
         <h3 className="text-sm font-semibold text-text-secondary">{title}</h3>
         <p className="text-xs text-text-muted mt-0.5">Jald aayega</p>

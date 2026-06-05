@@ -27,6 +27,7 @@ export function BrandDetailsForm() {
       const initialBrandName = business.brandName || "";
       const initialTagline = business.brandTagline || "";
 
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         brandName: initialBrandName,
         brandTagline: initialTagline,
@@ -209,7 +210,7 @@ export function BrandDetailsForm() {
               Business Logo (optional)
             </label>
             <div className="flex items-center gap-4">
-              <div className="relative w-20 h-20 rounded-full bg-neutral-50 border-2 border-dashed border-border-default flex items-center justify-center overflow-hidden flex-shrink-0 group">
+              <div className="relative w-20 h-20 rounded-full bg-neutral-50 border-2 border-dashed border-border-default flex items-center justify-center overflow-hidden shrink-0 group">
                 {logoPreview ? (
                   <>
                     {}

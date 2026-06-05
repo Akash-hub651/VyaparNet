@@ -188,7 +188,7 @@ export default function NotificationsPage() {
           <div className="divide-y divide-border-default">
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="p-4 flex gap-4">
-                <SkeletonCard className="w-5 h-5 rounded-full flex-shrink-0" />
+                <SkeletonCard className="w-5 h-5 rounded-full shrink-0" />
                 <div className="flex-1 space-y-2">
                   <SkeletonCard className="h-4 w-1/3" />
                   <SkeletonCard className="h-3 w-2/3" />

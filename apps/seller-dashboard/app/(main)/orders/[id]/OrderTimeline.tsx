@@ -52,7 +52,7 @@ export function OrderTimeline({ timeline, currentStatus }: OrderTimelineProps) {
           />
         )}
         
-        <div className="flex-shrink-0 mt-1">
+        <div className="shrink-0 mt-1">
           {state === 'COMPLETED' && !isException && (
             <CheckCircle2 size={24} className="text-brand-600 bg-surface-default" />
           )}

@@ -41,7 +41,7 @@ function KycChip({ kycStatus }: { kycStatus: string | null | undefined }) {
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="text-success-500 flex-shrink-0"
+          className="text-success-500 shrink-0"
           aria-hidden="true"
         >
           <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
@@ -77,7 +77,7 @@ function KycChip({ kycStatus }: { kycStatus: string | null | undefined }) {
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="text-warning-500 flex-shrink-0"
+          className="text-warning-500 shrink-0"
           aria-hidden="true"
         >
           <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
@@ -94,7 +94,7 @@ function KycChip({ kycStatus }: { kycStatus: string | null | undefined }) {
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="text-error-500 flex-shrink-0"
+          className="text-error-500 shrink-0"
           aria-hidden="true"
         >
           <circle cx="12" cy="12" r="10" />
@@ -206,7 +206,7 @@ function AvatarDropdown({
         aria-label={`Account menu — ${user?.name ?? "Seller"}`}
         className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-surface-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
       >
-        <div className="w-8 h-8 rounded-full bg-brand-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+        <div className="w-8 h-8 rounded-full bg-brand-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
           {initials}
         </div>
         <div className="hidden md:block text-left">
@@ -342,11 +342,11 @@ export default function SellerHeader(): React.JSX.Element {
       <header
         id="seller-header"
         className={[
-          "h-16 flex-shrink-0 fixed top-0 right-0",
+          "h-16 shrink-0 fixed top-0 right-0",
           isNotificationsPage ? "flex left-0 md:left-56" : "hidden md:flex left-0 md:left-56",
           "bg-surface-header border-b border-border-default",
           "items-center justify-between px-4 md:px-6 gap-4",
-          "z-[40]",
+          "z-40",
         ].join(" ")}
       >
         {/* LEFT: Breadcrumb / Mobile Nav */}
@@ -413,7 +413,7 @@ export default function SellerHeader(): React.JSX.Element {
         </button>
 
         {/* RIGHT: KYC + Bell + Avatar */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           {isAuthenticated && (
             <>
               <KycChip kycStatus={kycStatus} />

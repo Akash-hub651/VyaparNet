@@ -129,7 +129,7 @@ export function MobileOrderSearchOverlay({
 
   return (
     <div
-      className="fixed inset-0 z-[60] bg-surface-card flex flex-col animate-slide-up"
+      className="fixed inset-0 z-60 bg-surface-card flex flex-col animate-slide-up"
       role="dialog"
       aria-modal="true"
       aria-label="Order search"

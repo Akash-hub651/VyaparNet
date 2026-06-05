@@ -117,12 +117,12 @@ function ToastCard({
         cfg.bg, cfg.text, cfg.border,
       ].join(' ')}
     >
-      <span aria-hidden="true" className="flex-shrink-0 mt-0.5">{cfg.icon}</span>
+      <span aria-hidden="true" className="shrink-0 mt-0.5">{cfg.icon}</span>
       <p className="flex-1 text-sm font-medium leading-5">{toast.message}</p>
       <button
         onClick={() => onRemove(toast.id)}
         aria-label="Notification band karein"
-        className="flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity -mt-1 -mr-1 p-1"
+        className="shrink-0 opacity-60 hover:opacity-100 transition-opacity -mt-1 -mr-1 p-1"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -142,7 +142,7 @@ function ToastContainer({ toasts, removeToast }: {
     <div
       aria-label="Notifications"
       className={[
-        'fixed z-[70] flex flex-col gap-2',
+        'fixed z-70 flex flex-col gap-2',
         /* Desktop: top-right; Mobile: top-center */
         'top-4 right-4 sm:right-4',
         'left-4 sm:left-auto',

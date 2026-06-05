@@ -55,7 +55,7 @@ export function MobileHeader({
           />
         </Link>
         <button
-          className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center border border-brand-200 flex-shrink-0"
+          className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center border border-brand-200 shrink-0"
           aria-label="User profile"
         >
           <span className="text-xs font-semibold text-brand-700">

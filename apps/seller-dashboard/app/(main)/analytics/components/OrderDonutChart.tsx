@@ -108,14 +108,14 @@ export default function OrderDonutChart({
       </div>
 
       {/* Legend */}
-      <div className="w-32 flex-shrink-0 flex flex-col justify-center gap-2 pl-4 border-l border-border-default ml-2">
+      <div className="w-32 shrink-0 flex flex-col justify-center gap-2 pl-4 border-l border-border-default ml-2">
         {data.slice(0, 6).map((entry) => {
           const percent =
             totalOrders > 0 ? Math.round((entry.count / totalOrders) * 100) : 0;
           return (
             <div key={entry.status} className="flex items-center gap-2">
               <span
-                className="w-2 h-2 rounded-full flex-shrink-0"
+                className="w-2 h-2 rounded-full shrink-0"
                 style={{
                   backgroundColor: STATUS_COLORS[entry.status] || "#94A3B8",
                 }}

@@ -26,7 +26,7 @@ function Spinner({ size, color }: { size: number; color: string }) {
       height={size}
       viewBox="0 0 24 24"
       fill="none"
-      className="animate-spin-fast flex-shrink-0"
+      className="animate-spin-fast shrink-0"
       style={{ color }}
     >
       <circle
@@ -179,7 +179,7 @@ export function Button({
       {!iconRight && (isLoading ? (
         <Spinner size={sizes.spinner} color={getSpinnerColor(variant)} />
       ) : icon ? (
-        <span aria-hidden="true" className="flex-shrink-0">{icon}</span>
+        <span aria-hidden="true" className="shrink-0">{icon}</span>
       ) : null)}
 
       {/* Label */}
@@ -189,7 +189,7 @@ export function Button({
 
       {/* Right icon */}
       {iconRight && !isLoading && icon && (
-        <span aria-hidden="true" className="flex-shrink-0">{icon}</span>
+        <span aria-hidden="true" className="shrink-0">{icon}</span>
       )}
     </button>
   );

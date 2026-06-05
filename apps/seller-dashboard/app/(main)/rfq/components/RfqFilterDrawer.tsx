@@ -80,12 +80,12 @@ export function RfqFilterDrawer({
   return (
     <>
       <div
-        className="fixed inset-0 bg-neutral-900/50 z-[60] backdrop-blur-sm"
+        className="fixed inset-0 bg-neutral-900/50 z-60 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />
       <div
-        className="fixed inset-y-0 right-0 w-[320px] bg-surface-card shadow-2 z-[70] flex flex-col transform transition-transform duration-300"
+        className="fixed inset-y-0 right-0 w-[320px] bg-surface-card shadow-2 z-70 flex flex-col transform transition-transform duration-300"
         role="dialog"
         aria-modal="true"
         aria-label="Filter RFQs"

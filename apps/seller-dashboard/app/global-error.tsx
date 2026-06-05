@@ -58,7 +58,7 @@ export default function GlobalError({
       <body className="bg-surface-app text-text-primary font-sans">
         <div className="min-h-screen flex flex-col">
           {/* Minimal Standard Header */}
-          <header className="h-16 bg-surface-card border-b border-border-default flex items-center px-6 flex-shrink-0">
+          <header className="h-16 bg-surface-card border-b border-border-default flex items-center px-6 shrink-0">
             <span className="text-xl font-bold text-brand-600">VyaparNet</span>
           </header>
 

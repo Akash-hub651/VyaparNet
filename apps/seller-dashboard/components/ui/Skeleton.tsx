@@ -78,7 +78,7 @@ export function SkeletonTableRow({
       style={{ height: "52px" }}
     >
       {/* Checkbox */}
-      <Skeleton className="h-4 w-4 rounded flex-shrink-0" />
+      <Skeleton className="h-4 w-4 rounded shrink-0" />
       {/* Columns */}
       {Array.from({ length: cols - 1 }).map((_, i) => (
         <Skeleton
@@ -134,7 +134,7 @@ export function SkeletonCard({
       className={`bg-surface-card rounded-xl p-4 border border-border-default space-y-3 ${className}`}
     >
       <div className="flex items-center gap-3">
-        <Skeleton className="h-8 w-8 rounded-lg flex-shrink-0" />
+        <Skeleton className="h-8 w-8 rounded-lg shrink-0" />
         <div className="flex-1 space-y-2">
           <Skeleton className="h-4 w-3/4 rounded" />
           <Skeleton className="h-3 w-1/2 rounded" />

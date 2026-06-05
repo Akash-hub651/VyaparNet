@@ -121,6 +121,7 @@ export function BusinessDetailsForm() {
     if (safeUser && (safeUser.business || safeUser.businesses)) {
       const b = safeUser.business || safeUser.businesses?.[0];
 
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         businessName: b.businessName || "",
         businessType: b.businessType || "",

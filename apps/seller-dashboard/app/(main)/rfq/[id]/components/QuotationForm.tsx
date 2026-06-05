@@ -170,7 +170,7 @@ export function QuotationForm({ rfq, token, onSuccess }: QuotationFormProps) {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              className="w-12 h-12 flex-shrink-0 flex items-center justify-center border border-neutral-300 rounded-lg bg-surface-base active:bg-neutral-100 transition-colors"
+              className="w-12 h-12 shrink-0 flex items-center justify-center border border-neutral-300 rounded-lg bg-surface-base active:bg-neutral-100 transition-colors"
               onClick={() => {
                 const current = parseInt(deliveryDays, 10) || 0;
                 if (current > 1) setDeliveryDays(String(current - 1));
@@ -208,7 +208,7 @@ export function QuotationForm({ rfq, token, onSuccess }: QuotationFormProps) {
             </div>
             <button
               type="button"
-              className="w-12 h-12 flex-shrink-0 flex items-center justify-center border border-neutral-300 rounded-lg bg-surface-base active:bg-neutral-100 transition-colors"
+              className="w-12 h-12 shrink-0 flex items-center justify-center border border-neutral-300 rounded-lg bg-surface-base active:bg-neutral-100 transition-colors"
               onClick={() => {
                 const current = parseInt(deliveryDays, 10) || 0;
                 setDeliveryDays(String(current + 1));

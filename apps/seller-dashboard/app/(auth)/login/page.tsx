@@ -61,7 +61,7 @@ function BrandPanel(): React.JSX.Element {
       <div>
         <div className="flex items-center gap-2 mb-12">
           {/* VyaparNet wordmark */}
-          <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center shrink-0">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M9 22V12h6v10" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -184,7 +184,7 @@ function SellerLoginContent(): React.JSX.Element {
       <div className="min-h-screen flex">
 
         {/* ── LEFT: BRAND PANEL (desktop only) — §34.2 ─────── */}
-        <div className="lg:w-5/12 xl:w-5/12 flex-shrink-0">
+        <div className="lg:w-5/12 xl:w-5/12 shrink-0">
           <BrandPanel />
         </div>
 

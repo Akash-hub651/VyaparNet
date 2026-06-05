@@ -50,7 +50,7 @@ export function ProductFilterDrawer({ isOpen, onClose }: ProductFilterDrawerProp
   return (
     <>
       <div 
-        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] animate-[fadeIn_150ms_ease]"
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-60 animate-[fadeIn_150ms_ease]"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -59,7 +59,7 @@ export function ProductFilterDrawer({ isOpen, onClose }: ProductFilterDrawerProp
         role="dialog"
         aria-modal="true"
         aria-label="Filter Products"
-        className={`fixed inset-y-0 right-0 w-full max-w-sm bg-surface-card shadow-3 z-[60] flex flex-col transform transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 right-0 w-full max-w-sm bg-surface-card shadow-3 z-60 flex flex-col transform transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >

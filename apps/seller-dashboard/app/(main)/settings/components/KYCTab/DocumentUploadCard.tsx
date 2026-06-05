@@ -165,14 +165,14 @@ export function DocumentUploadCard({
       </div>
 
       {/* RIGHT: Upload Area or Status */}
-      <div className="w-full md:w-64 flex-shrink-0 flex flex-col justify-center">
+      <div className="w-full md:w-64 shrink-0 flex flex-col justify-center">
         {/* State: File Selected (Ready to Submit) */}
         {selectedFile && !disabled && (
           <div
             className="w-full border border-success-300 rounded-lg p-3 bg-success-50 flex items-center gap-3"
             aria-live="polite"
           >
-            <div className="w-10 h-10 rounded border border-success-200 bg-success-100 flex-shrink-0 flex items-center justify-center">
+            <div className="w-10 h-10 rounded border border-success-200 bg-success-100 shrink-0 flex items-center justify-center">
               {selectedFile.name.toLowerCase().endsWith(".pdf") ? (
                 <span className="text-error-500 font-bold text-xs">PDF</span>
               ) : (
@@ -194,7 +194,7 @@ export function DocumentUploadCard({
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 mb-0.5">
                 <span
-                  className="w-1.5 h-1.5 rounded-full bg-success-500 flex-shrink-0"
+                  className="w-1.5 h-1.5 rounded-full bg-success-500 shrink-0"
                   aria-hidden="true"
                 />
                 <p className="text-xs font-medium text-success-800">
@@ -211,7 +211,7 @@ export function DocumentUploadCard({
             {/* Replace action */}
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="flex-shrink-0 text-[10px] font-medium text-brand-600 hover:text-brand-800 underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
+              className="shrink-0 text-[10px] font-medium text-brand-600 hover:text-brand-800 underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
               aria-label={`Replace ${doc.name}`}
             >
               Replace
@@ -235,7 +235,7 @@ export function DocumentUploadCard({
             className="w-full border border-border-default rounded-lg p-3 bg-surface-base flex items-center gap-3 relative overflow-hidden"
             aria-live="polite"
           >
-            <div className="w-12 h-12 rounded border border-border-default bg-neutral-100 flex-shrink-0 flex items-center justify-center overflow-hidden">
+            <div className="w-12 h-12 rounded border border-border-default bg-neutral-100 shrink-0 flex items-center justify-center overflow-hidden">
               {doc.currentFile.filename.toLowerCase().endsWith(".pdf") ? (
                 <span className="text-error-500 font-bold text-xs">PDF</span>
               ) : (
@@ -249,7 +249,7 @@ export function DocumentUploadCard({
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 mb-0.5">
                 <span
-                  className="w-1.5 h-1.5 rounded-full bg-success-500 flex-shrink-0"
+                  className="w-1.5 h-1.5 rounded-full bg-success-500 shrink-0"
                   aria-hidden="true"
                 />
                 <p className="text-xs font-medium text-text-primary truncate">

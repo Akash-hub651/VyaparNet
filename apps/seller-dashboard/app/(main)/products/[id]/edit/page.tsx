@@ -525,7 +525,7 @@ export default function ProductEditPage({
       {showRestorePrompt && draftTimestamp && (
         <div className="mb-6 bg-amber-50 border border-amber-200 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0" />
+            <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />
             <p className="text-sm text-amber-800">
               <span className="font-medium">Ek adhoora product draft mila</span>{" "}
               (saved:{" "}
@@ -556,7 +556,7 @@ export default function ProductEditPage({
           role="alert"
         >
           <div className="flex gap-3">
-            <AlertTriangle className="w-5 h-5 text-warning-500 flex-shrink-0" />
+            <AlertTriangle className="w-5 h-5 text-warning-500 shrink-0" />
             <div>
               <p className="text-sm font-medium text-warning-800">
                 Ye product abhi live hai — buyers dekh sakte hain.
@@ -592,7 +592,7 @@ export default function ProductEditPage({
           role="alert"
         >
           <div className="flex gap-3">
-            <Archive className="w-5 h-5 text-neutral-400 flex-shrink-0" />
+            <Archive className="w-5 h-5 text-neutral-400 shrink-0" />
             <div>
               <p className="text-sm font-medium text-neutral-700">
                 Ye product archived hai — buyers ise nahi dekh sakte.
@@ -613,7 +613,7 @@ export default function ProductEditPage({
           aria-label="Rejection reasons"
         >
           <div className="flex gap-3">
-            <XCircle className="w-5 h-5 text-error-500 flex-shrink-0" />
+            <XCircle className="w-5 h-5 text-error-500 shrink-0" />
             <div className="w-full">
               <h3 className="text-sm font-bold text-error-700">
                 Product Reject Ho Gaya

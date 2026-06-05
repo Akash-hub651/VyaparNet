@@ -162,7 +162,7 @@ export function Step3Images({
                   style={{ width: `${pct}%` }}
                 />
               </div>
-              <span className="text-xs text-text-secondary flex-shrink-0 w-10 text-right">
+              <span className="text-xs text-text-secondary shrink-0 w-10 text-right">
                 {pct}%
               </span>
             </div>
@@ -174,7 +174,7 @@ export function Step3Images({
               role="alert"
             >
               <svg
-                className="w-3.5 h-3.5 flex-shrink-0"
+                className="w-3.5 h-3.5 shrink-0"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
