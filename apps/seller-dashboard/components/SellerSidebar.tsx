@@ -527,7 +527,8 @@ export default function SellerSidebar(): React.JSX.Element {
       }
     };
     window.addEventListener("kpi-badges-updated", handleKpiBadges);
-    return () => window.removeEventListener("kpi-badges-updated", handleKpiBadges);
+    return () =>
+      window.removeEventListener("kpi-badges-updated", handleKpiBadges);
   }, []);
 
   const toggleCollapse = useCallback(() => {
@@ -557,7 +558,7 @@ export default function SellerSidebar(): React.JSX.Element {
       {/* Mobile Drawer Overlay */}
       {isMobileDrawerOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-45 md:hidden"
+          className="fixed inset-0 bg-black/50 z-[45] md:hidden"
           onClick={() => setIsMobileDrawerOpen(false)}
           aria-hidden="true"
         />
@@ -650,9 +651,7 @@ export default function SellerSidebar(): React.JSX.Element {
                         isCollapsed ? "justify-center" : "",
                       ].join(" ")}
                     >
-                      <span className="text-white shrink-0">
-                        {item.icon}
-                      </span>
+                      <span className="text-white shrink-0">{item.icon}</span>
                       {!isCollapsed && (
                         <span className="text-sm font-medium text-white truncate flex-1">
                           {item.label}

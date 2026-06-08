@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
@@ -17,7 +18,7 @@ import { UserRole } from '@vyaparnet/database';
 
 const MOCK_USER = {
   id: 'user-1',
-  phone: '+919876543210',
+  phone: '+91987654321',
   email: 'seller@example.com',
   name: 'Test Seller',
   role: UserRole.SELLER,
@@ -48,12 +49,12 @@ const MOCK_REQUEST = {
 
 describe('AdminUserService — Phase 5 User Management', () => {
   let service: AdminUserService;
-  let userRepo: unknown;
-  let prismaService: unknown;
-  let redisService: unknown;
-  let notificationService: unknown;
-  let auditWriter: unknown;
-  let metrics: unknown;
+  let userRepo: any;
+  let prismaService: any;
+  let redisService: any;
+  let notificationService: any;
+  let auditWriter: any;
+  let metrics: any;
 
   beforeEach(async () => {
     userRepo = {
